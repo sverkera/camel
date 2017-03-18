@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 import static org.apache.camel.catalog.maven.ComponentArtifactHelper.extractComponentJavaType;
 import static org.apache.camel.catalog.maven.ComponentArtifactHelper.loadComponentJSonSchema;
 import static org.apache.camel.catalog.maven.ComponentArtifactHelper.loadComponentProperties;
-import static org.apache.camel.catalog.maven.ConnectorArtifactHelper.loadConnectorJSonSchema;
+import static org.apache.camel.catalog.maven.ConnectorArtifactHelper.loadJSonSchemas;
 
 /**
  * Default {@link MavenArtifactProvider} which uses Groovy Grape to download the artifact.
@@ -44,6 +44,13 @@ import static org.apache.camel.catalog.maven.ConnectorArtifactHelper.loadConnect
 public class DefaultMavenArtifactProvider implements MavenArtifactProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultMavenArtifactProvider.class);
+
+    private String cacheDirectory;
+
+    @Override
+    public void setCacheDirectory(String directory) {
+        this.cacheDirectory = directory;
+    }
 
     public void addMavenRepository(String name, String url) {
         Map<String, Object> repo = new HashMap<>();
@@ -58,6 +65,11 @@ public class DefaultMavenArtifactProvider implements MavenArtifactProvider {
         final Set<String> names = new LinkedHashSet<>();
 
         try {
+            if (cacheDirectory != null) {
+                LOG.debug("Using cache directory: {}", cacheDirectory);
+                System.setProperty("grape.root", cacheDirectory);
+            }
+
             Grape.setEnableAutoDownload(true);
 
             final ClassLoader classLoader = new GroovyClassLoader();
@@ -117,13 +129,15 @@ public class DefaultMavenArtifactProvider implements MavenArtifactProvider {
     protected void scanCamelConnectors(CamelConnectorCatalog camelConnectorCatalog, ClassLoader classLoader,
                                           String groupId, String artifactId, String version,
                                           Set<String> names) {
-        String[] json = loadConnectorJSonSchema(classLoader);
+        String[] json = loadJSonSchemas(classLoader);
         if (json != null) {
             if (!camelConnectorCatalog.hasConnector(groupId, artifactId, version)) {
                 try {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode tree = mapper.readTree(json[0]);
                     String name = tree.get("name").textValue();
+                    String scheme = tree.get("scheme").textValue();
+                    String javaType = tree.get("javaType").textValue();
                     String description = tree.get("description").textValue();
                     Iterator<JsonNode> it = tree.withArray("labels").iterator();
 
@@ -133,8 +147,9 @@ public class DefaultMavenArtifactProvider implements MavenArtifactProvider {
                         csb.append(text);
                     }
 
+                    LOG.debug("Adding connector: {} with scheme: {}", name, scheme);
                     camelConnectorCatalog.addConnector(groupId, artifactId, version,
-                        name, description, csb.toString(), json[0], json[1]);
+                        name, scheme, javaType, description, csb.toString(), json[0], json[1], json[2]);
 
                     names.add(name);
                 } catch (Throwable e) {

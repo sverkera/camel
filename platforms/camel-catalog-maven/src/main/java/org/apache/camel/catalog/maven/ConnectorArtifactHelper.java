@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,15 +23,15 @@ import org.slf4j.LoggerFactory;
 
 import static org.apache.camel.catalog.CatalogHelper.loadText;
 
-public class ConnectorArtifactHelper {
+public final class ConnectorArtifactHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(ComponentArtifactHelper.class);
 
     private ConnectorArtifactHelper() {
     }
 
-    public static String[] loadConnectorJSonSchema(ClassLoader classLoader) {
-        String[] answer = new String[2];
+    public static String[] loadJSonSchemas(ClassLoader classLoader) {
+        String[] answer = new String[3];
 
         String path = "camel-connector.json";
         try {
@@ -48,6 +48,16 @@ public class ConnectorArtifactHelper {
             InputStream is = classLoader.getResourceAsStream(path);
             if (is != null) {
                 answer[1] = loadText(is);
+            }
+        } catch (Throwable e) {
+            LOG.warn("Error loading " + path + " file", e);
+        }
+
+        path = "camel-component-schema.json";
+        try {
+            InputStream is = classLoader.getResourceAsStream(path);
+            if (is != null) {
+                answer[2] = loadText(is);
             }
         } catch (Throwable e) {
             LOG.warn("Error loading " + path + " file", e);

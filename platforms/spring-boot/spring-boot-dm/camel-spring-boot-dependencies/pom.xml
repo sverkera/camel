@@ -51,7 +51,7 @@
       <dependency>
         <groupId>com.fasterxml.jackson.module</groupId>
         <artifactId>jackson-module-scala_2.11</artifactId>
-        <version>2.8.2</version>
+        <version>2.8.7</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.scriptengines</groupId>
@@ -67,11 +67,6 @@
         <groupId>com.google.truth</groupId>
         <artifactId>truth</artifactId>
         <version>0.30</version>
-      </dependency>
-      <dependency>
-        <groupId>com.hazelcast</groupId>
-        <artifactId>hazelcast-client</artifactId>
-        <version>3.6.5</version>
       </dependency>
       <dependency>
         <groupId>com.jayway.awaitility</groupId>
@@ -162,7 +157,7 @@
       <dependency>
         <groupId>net.sf.saxon</groupId>
         <artifactId>Saxon-HE</artifactId>
-        <version>9.7.0-14</version>
+        <version>9.7.0-15</version>
       </dependency>
       <dependency>
         <groupId>ognl</groupId>
@@ -413,6 +408,11 @@
       <dependency>
         <groupId>org.apache.camel</groupId>
         <artifactId>camel-box</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-box-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -1005,6 +1005,11 @@
       <dependency>
         <groupId>org.apache.camel</groupId>
         <artifactId>camel-groovy</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-groovy-dsl</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -2079,11 +2084,6 @@
       </dependency>
       <dependency>
         <groupId>org.apache.camel</groupId>
-        <artifactId>camel-scala-starter</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.camel</groupId>
         <artifactId>camel-schematron</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -2170,6 +2170,11 @@
       <dependency>
         <groupId>org.apache.camel</groupId>
         <artifactId>camel-sjms-starter</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-sjms2</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -2704,6 +2709,11 @@
       </dependency>
       <dependency>
         <groupId>org.apache.camel</groupId>
+        <artifactId>camel-zookeeper-master</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.camel</groupId>
         <artifactId>camel-zookeeper-starter</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -2844,6 +2854,11 @@
       </dependency>
       <dependency>
         <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-jms_2.0_spec</artifactId>
+        <version>1.0-alpha-2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
         <artifactId>geronimo-jpa_2.0_spec</artifactId>
         <version>1.1</version>
       </dependency>
@@ -2860,12 +2875,12 @@
       <dependency>
         <groupId>org.apache.kafka</groupId>
         <artifactId>kafka-clients</artifactId>
-        <version>0.10.1.1</version>
+        <version>0.10.2.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.kafka</groupId>
         <artifactId>kafka_2.11</artifactId>
-        <version>0.10.1.1</version>
+        <version>0.10.2.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.mina</groupId>
@@ -2967,27 +2982,27 @@
       <dependency>
         <groupId>org.eclipse.jetty.websocket</groupId>
         <artifactId>websocket-api</artifactId>
-        <version>9.3.11.v20160721</version>
+        <version>9.4.2.v20170220</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty.websocket</groupId>
         <artifactId>websocket-common</artifactId>
-        <version>9.3.11.v20160721</version>
+        <version>9.4.2.v20170220</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty.websocket</groupId>
         <artifactId>websocket-servlet</artifactId>
-        <version>9.3.11.v20160721</version>
+        <version>9.4.2.v20170220</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-rewrite</artifactId>
-        <version>9.3.11.v20160721</version>
+        <version>9.4.2.v20170220</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-util-ajax</artifactId>
-        <version>9.3.11.v20160721</version>
+        <version>9.4.2.v20170220</version>
       </dependency>
       <dependency>
         <groupId>org.jdom</groupId>
@@ -3254,7 +3269,7 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-ext</artifactId>
-        <version>1.7.21</version>
+        <version>1.7.22</version>
       </dependency>
       <dependency>
         <groupId>org.testng</groupId>

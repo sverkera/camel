@@ -25,14 +25,17 @@ import org.apache.camel.catalog.DefaultCamelCatalog;
 import org.apache.camel.catalog.connector.CamelConnectorCatalog;
 import org.apache.camel.catalog.connector.ConnectorDto;
 import org.apache.camel.catalog.connector.DefaultCamelConnectorCatalog;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore("Cannot run on CI servers so run manually")
 public class MavenArtifactProviderTest extends TestCase {
 
     @Test
     public void testAddComponent() {
         CamelCatalog camelCatalog = new DefaultCamelCatalog();
         MavenArtifactProvider provider = new DefaultMavenArtifactProvider();
+        provider.setCacheDirectory("target/cache");
 
         int before = camelCatalog.findComponentNames().size();
 
@@ -49,6 +52,7 @@ public class MavenArtifactProviderTest extends TestCase {
         CamelCatalog camelCatalog = new DefaultCamelCatalog();
         CamelConnectorCatalog camelConnectorCatalog = new DefaultCamelConnectorCatalog();
         MavenArtifactProvider provider = new DefaultMavenArtifactProvider();
+        provider.setCacheDirectory("target/cache");
 
         int before = camelCatalog.findComponentNames().size();
         List<ConnectorDto> list = camelConnectorCatalog.findConnector("foo", false);

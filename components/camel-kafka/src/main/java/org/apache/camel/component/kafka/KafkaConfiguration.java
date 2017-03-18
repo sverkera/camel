@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import org.apache.camel.Exchange;
+import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.StateRepository;
 import org.apache.camel.spi.UriParam;
@@ -42,25 +43,22 @@ import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
 @UriParams
-public class KafkaConfiguration {
+public class KafkaConfiguration implements Cloneable {
 
-    @UriPath @Metadata(required = "true")
+    //Common configuration properties
+    @UriPath(label = "common") @Metadata(required = "true")
     private String topic;
+    @UriParam(label = "common")
+    private String brokers;
+    @UriParam(label = "common")
+    private String clientId;
 
-    @UriParam
+    @UriParam(label = "consumer")
     private String groupId;
-    @UriParam(defaultValue = KafkaConstants.KAFKA_DEFAULT_PARTITIONER)
-    private String partitioner = KafkaConstants.KAFKA_DEFAULT_PARTITIONER;
     @UriParam(label = "consumer", defaultValue = "10")
     private int consumerStreams = 10;
     @UriParam(label = "consumer", defaultValue = "1")
     private int consumersCount = 1;
-
-    //Common configuration properties
-    @UriParam(label = "common")
-    private String brokers;
-    @UriParam
-    private String clientId;
 
     //interceptor.classes
     @UriParam(label = "common,monitoring")
@@ -73,8 +71,11 @@ public class KafkaConfiguration {
     @UriParam(label = "consumer", defaultValue = KafkaConstants.KAFKA_DEFAULT_DESERIALIZER)
     private String valueDeserializer = KafkaConstants.KAFKA_DEFAULT_DESERIALIZER;
     //fetch.min.bytes
-    @UriParam(label = "consumer", defaultValue = "1024")
-    private Integer fetchMinBytes = 1024;
+    @UriParam(label = "consumer", defaultValue = "1")
+    private Integer fetchMinBytes = 1;
+    //fetch.min.bytes
+    @UriParam(label = "consumer", defaultValue = "52428800")
+    private Integer fetchMaxBytes = 50 * 1024 * 1024;
     //heartbeat.interval.ms
     @UriParam(label = "consumer", defaultValue = "3000")
     private Integer heartbeatIntervalMs = 3000;
@@ -82,8 +83,8 @@ public class KafkaConfiguration {
     @UriParam(label = "consumer", defaultValue = "1048576")
     private Integer maxPartitionFetchBytes = 1048576;
     //session.timeout.ms
-    @UriParam(label = "consumer", defaultValue = "30000")
-    private Integer sessionTimeoutMs = 30000;
+    @UriParam(label = "consumer", defaultValue = "10000")
+    private Integer sessionTimeoutMs = 10000;
     @UriParam(label = "consumer", defaultValue = "500")
     private Integer maxPollRecords;
     @UriParam(label = "consumer", defaultValue = "5000")
@@ -110,14 +111,16 @@ public class KafkaConfiguration {
     private String seekTo;
 
     //Consumer configuration properties
-    @UriParam(label = "consumer")
-    private String consumerId;
     @UriParam(label = "consumer", defaultValue = "true")
     private Boolean autoCommitEnable = true;
+    @UriParam(label = "consumer", defaultValue = "sync", enums = "sync,async,none")
+    private String autoCommitOnStop = "sync";
     @UriParam(label = "consumer")
     private StateRepository<String, String> offsetRepository;
 
     //Producer configuration properties
+    @UriParam(label = "producer", defaultValue = KafkaConstants.KAFKA_DEFAULT_PARTITIONER)
+    private String partitioner = KafkaConstants.KAFKA_DEFAULT_PARTITIONER;
     @UriParam(label = "producer", defaultValue = "100")
     private Integer retryBackoffMs = 100;
 
@@ -131,11 +134,15 @@ public class KafkaConfiguration {
     //Async producer config
     @UriParam(label = "producer", defaultValue = "10000")
     private Integer queueBufferingMaxMessages = 10000;
-    @UriParam(label = "producer")
-    private String serializerClass;
-    @UriParam(label = "producer")
-    private String keySerializerClass;
+    @UriParam(label = "producer", defaultValue = KafkaConstants.KAFKA_DEFAULT_SERIALIZER)
+    private String serializerClass = KafkaConstants.KAFKA_DEFAULT_SERIALIZER;
+    @UriParam(label = "producer", defaultValue = KafkaConstants.KAFKA_DEFAULT_SERIALIZER)
+    private String keySerializerClass = KafkaConstants.KAFKA_DEFAULT_SERIALIZER;
 
+    @UriParam(label = "producer")
+    private String key;
+    @UriParam(label = "producer")
+    private Integer partitionKey;
     @UriParam(label = "producer", enums = "-1,0,1,all", defaultValue = "1")
     private String requestRequiredAcks = "1";
     //buffer.memory
@@ -163,11 +170,11 @@ public class KafkaConfiguration {
     @UriParam(label = "producer", defaultValue = "1048576")
     private Integer maxRequestSize = 1048576;
     //receive.buffer.bytes
-    @UriParam(label = "producer", defaultValue = "32768")
-    private Integer receiveBufferBytes = 32768;
+    @UriParam(label = "producer", defaultValue = "65536")
+    private Integer receiveBufferBytes = 65536;
     //request.timeout.ms
-    @UriParam(label = "producer", defaultValue = "30000")
-    private Integer requestTimeoutMs = 30000;
+    @UriParam(label = "producer", defaultValue = "305000")
+    private Integer requestTimeoutMs = 305000;
     //send.buffer.bytes
     @UriParam(label = "producer", defaultValue = "131072")
     private Integer sendBufferBytes = 131072;
@@ -270,6 +277,18 @@ public class KafkaConfiguration {
     public KafkaConfiguration() {
     }
 
+    /**
+     * Returns a copy of this configuration
+     */
+    public KafkaConfiguration copy() {
+        try {
+            KafkaConfiguration copy = (KafkaConfiguration) clone();
+            return copy;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeCamelException(e);
+        }
+    }
+
     public Properties createProducerProperties() {
         Properties props = new Properties();
         addPropertyIfNotNull(props, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, getKeySerializerClass());
@@ -334,6 +353,7 @@ public class KafkaConfiguration {
         addPropertyIfNotNull(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, getKeyDeserializer());
         addPropertyIfNotNull(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, getValueDeserializer());
         addPropertyIfNotNull(props, ConsumerConfig.FETCH_MIN_BYTES_CONFIG, getFetchMinBytes());
+        addPropertyIfNotNull(props, ConsumerConfig.FETCH_MAX_BYTES_CONFIG, getFetchMaxBytes());
         addPropertyIfNotNull(props, ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, getHeartbeatIntervalMs());
         addPropertyIfNotNull(props, ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, getMaxPartitionFetchBytes());
         addPropertyIfNotNull(props, ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, getSessionTimeoutMs());
@@ -464,6 +484,8 @@ public class KafkaConfiguration {
     /**
      * A string that uniquely identifies the group of consumer processes to which this consumer belongs.
      * By setting the same group id multiple processes indicate that they are all part of the same consumer group.
+     *
+     * This option is required for consumers.
      */
     public void setGroupId(String groupId) {
         this.groupId = groupId;
@@ -486,6 +508,9 @@ public class KafkaConfiguration {
 
     /**
      * Name of the topic to use.
+     *
+     * On the consumer you can use comma to separate multiple topics.
+     * A producer can only send a message to a single topic.
      */
     public void setTopic(String topic) {
         this.topic = topic;
@@ -523,17 +548,6 @@ public class KafkaConfiguration {
      */
     public void setClientId(String clientId) {
         this.clientId = clientId;
-    }
-
-    public String getConsumerId() {
-        return consumerId;
-    }
-
-    /**
-     * Generated automatically if not set.
-     */
-    public void setConsumerId(String consumerId) {
-        this.consumerId = consumerId;
     }
 
     public Boolean isAutoCommitEnable() {
@@ -583,6 +597,21 @@ public class KafkaConfiguration {
         this.fetchMinBytes = fetchMinBytes;
     }
 
+    /**
+     * The maximum amount of data the server should return for a fetch request
+     * This is not an absolute maximum, if the first message in the first non-empty partition of the fetch is larger than
+     * this value, the message will still be returned to ensure that the consumer can make progress.
+     * The maximum message size accepted by the broker is defined via message.max.bytes (broker config) or
+     * max.message.bytes (topic config). Note that the consumer performs multiple fetches in parallel.
+     */
+    public Integer getFetchMaxBytes() {
+        return fetchMaxBytes;
+    }
+
+    public void setFetchMaxBytes(Integer fetchMaxBytes) {
+        this.fetchMaxBytes = fetchMaxBytes;
+    }
+
     public Integer getFetchWaitMaxMs() {
         return fetchWaitMaxMs;
     }
@@ -606,6 +635,19 @@ public class KafkaConfiguration {
      */
     public void setAutoOffsetReset(String autoOffsetReset) {
         this.autoOffsetReset = autoOffsetReset;
+    }
+
+    public String getAutoCommitOnStop() {
+        return autoCommitOnStop;
+    }
+
+    /**
+     * Whether to perform an explicit auto commit when the consumer stops to ensure the broker
+     * has a commit from the last consumed message. This requires the option autoCommitEnable is turned on.
+     * The possible values are: sync, async, or none. And sync is the default value.
+     */
+    public void setAutoCommitOnStop(String autoCommitOnStop) {
+        this.autoCommitOnStop = autoCommitOnStop;
     }
 
     public String getBrokers() {
@@ -680,24 +722,17 @@ public class KafkaConfiguration {
     }
 
     public String getSerializerClass() {
-        if (serializerClass == null) {
-            return KafkaConstants.KAFKA_DEFAULT_SERIALIZER;
-        }
         return serializerClass;
     }
 
     /**
-     * The serializer class for messages. The default encoder takes a byte[] and returns the same byte[].
-     * The default class is kafka.serializer.DefaultEncoder
+     * The serializer class for messages.
      */
     public void setSerializerClass(String serializerClass) {
         this.serializerClass = serializerClass;
     }
 
     public String getKeySerializerClass() {
-        if (keySerializerClass == null) {
-            return KafkaConstants.KAFKA_DEFAULT_SERIALIZER;
-        }
         return keySerializerClass;
     }
 
@@ -992,6 +1027,30 @@ public class KafkaConfiguration {
      */
     public void setBufferMemorySize(Integer bufferMemorySize) {
         this.bufferMemorySize = bufferMemorySize;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    /**
+     * The record key (or null if no key is specified).
+     * If this option has been configured then it take precedence over header {@link KafkaConstants#KEY}
+     */
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public Integer getPartitionKey() {
+        return partitionKey;
+    }
+
+    /**
+     * The partition to which the record will be sent (or null if no partition was specified).
+     * If this option has been configured then it take precedence over header {@link KafkaConstants#PARTITION_KEY}
+     */
+    public void setPartitionKey(Integer partitionKey) {
+        this.partitionKey = partitionKey;
     }
 
     public String getRequestRequiredAcks() {

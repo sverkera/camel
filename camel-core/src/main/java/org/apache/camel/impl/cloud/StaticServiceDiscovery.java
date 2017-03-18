@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.camel.impl.cloud;
 
 import java.util.ArrayList;
@@ -141,7 +140,7 @@ public class StaticServiceDiscovery extends DefaultServiceDiscovery {
     }
 
     @Override
-    public List<ServiceDefinition> getUpdatedListOfServices(String name) {
+    public List<ServiceDefinition> getServices(String name) {
         return Collections.unmodifiableList(
             services.stream()
                 .filter(s -> Objects.isNull(s.getName()) || Objects.equals(name, s.getName()))

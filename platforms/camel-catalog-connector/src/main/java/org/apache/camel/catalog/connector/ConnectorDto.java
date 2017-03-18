@@ -22,8 +22,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class ConnectorDto {
 
     private String name;
+    private String scheme;
     private String description;
     private String labels;
+    private String javaType;
 
     private String groupId;
     private String artifactId;
@@ -41,6 +43,14 @@ public class ConnectorDto {
         this.name = name;
     }
 
+    public String getScheme() {
+        return scheme;
+    }
+
+    public void setScheme(String scheme) {
+        this.scheme = scheme;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -55,6 +65,14 @@ public class ConnectorDto {
 
     public void setLabels(String labels) {
         this.labels = labels;
+    }
+
+    public String getJavaType() {
+        return javaType;
+    }
+
+    public void setJavaType(String javaType) {
+        this.javaType = javaType;
     }
 
     public String getGroupId() {
@@ -113,6 +131,7 @@ public class ConnectorDto {
     public String toString() {
         return "ConnectorDto["
             + "name='" + name + '\''
+            + ", scheme='" + scheme + '\''
             + ", groupId='" + groupId + '\''
             + ", artifactId='" + artifactId + '\''
             + ", version='" + version + '\''

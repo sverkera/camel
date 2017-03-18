@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,7 +34,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -57,11 +55,12 @@ public class PrepareCatalogMojo extends AbstractMojo {
 
     public static final int BUFFER_SIZE = 128 * 1024;
 
-    private static final String[] EXCLUDE_DOC_FILES = {"camel-core-osgi", "camel-core-xml", "camel-hystrix",
-        "camel-http-common", "camel-jetty", "camel-jetty-common", "camel-jetty8", 
-        "camel-linkedin", "camel-olingo2", "camel-ribbon", "camel-salesforce", "camel-spring-boot-starter",  
-        "camel-spring-dm", "camel-test-karaf", "camel-test-spring", "camel-testng", "camel-test-spring3", 
-        "camel-test-spring40", "camel-zipkin-starter"};
+    private static final String[] EXCLUDE_DOC_FILES = {
+        "camel-core-osgi", "camel-core-xml",
+        "camel-spring-dm",
+        "camel-http-common", "camel-jetty", "camel-jetty-common", "camel-jetty8",
+        "camel-test-karaf", "camel-test-spring", "camel-testng", "camel-test-spring3", "camel-test-spring40", "camel-zipkin-starter"
+    };
 
     private static final Pattern LABEL_PATTERN = Pattern.compile("\\\"label\\\":\\s\\\"([\\w,]+)\\\"");
 
@@ -163,7 +162,7 @@ public class PrepareCatalogMojo extends AbstractMojo {
     /**
      * The archetypes directory where all the Apache Camel Maven archetypes are
      *
-     * @parameter default-value="${project.build.directory}/../../../tooling/archetypes"
+     * @parameter default-value="${project.build.directory}/../../../archetypes"
      */
     protected File archetypesDir;
 
@@ -355,6 +354,8 @@ public class PrepareCatalogMojo extends AbstractMojo {
                             target = new File(dir, "camel-linkedin-component/target/classes");
                         } else if ("camel-olingo2".equals(dir.getName())) {
                             target = new File(dir, "camel-olingo2-component/target/classes");
+                        } else if ("camel-box".equals(dir.getName())) {
+                            target = new File(dir, "camel-box-component/target/classes");
                         }
 
                         int before = componentFiles.size();
@@ -793,6 +794,7 @@ public class PrepareCatalogMojo extends AbstractMojo {
                     // (camel-jetty is a placeholder, as camel-jetty9 is the actual component)
                     if ("camel-core-osgi".equals(dir.getName())
                         || "camel-core-xml".equals(dir.getName())
+                        || "camel-box".equals(dir.getName())
                         || "camel-http-common".equals(dir.getName())
                         || "camel-jetty".equals(dir.getName())
                         || "camel-jetty-common".equals(dir.getName())
@@ -961,6 +963,17 @@ public class PrepareCatalogMojo extends AbstractMojo {
                 for (File dir : componentFiles) {
                     if (dir.isDirectory() && !"target".equals(dir.getName()) && !dir.getName().startsWith(".") && !excludeDocumentDir(dir.getName())) {
                         File target = new File(dir, "src/main/docs");
+
+                        // special for these as they are in sub dir
+                        if ("camel-salesforce".equals(dir.getName())) {
+                            target = new File(dir, "camel-salesforce-component/src/main/docs");
+                        } else if ("camel-linkedin".equals(dir.getName())) {
+                            target = new File(dir, "camel-linkedin-component/src/main/docs");
+                        } else if ("camel-olingo2".equals(dir.getName())) {
+                            target = new File(dir, "camel-olingo2-component/src/main/docs");
+                        } else if ("camel-box".equals(dir.getName())) {
+                            target = new File(dir, "camel-box-component/src/main/docs");
+                        }
 
                         int before = adocFiles.size();
                         findAsciiDocFilesRecursive(target, adocFiles, new CamelAsciiDocFileFilter());

@@ -509,10 +509,11 @@ public interface CamelCatalog {
      * @return the constructed endpoint uri
      * @throws java.net.URISyntaxException is thrown if there is encoding error
      */
+    @Deprecated
     String asEndpointUri(String scheme, String json, boolean encode) throws URISyntaxException;
 
     /**
-     * Creates an endpoint uri in XML style (eg escape & as &ampl;) from the information in the json schema
+     * Creates an endpoint uri in XML style from the information in the json schema
      *
      * @param scheme the endpoint schema
      * @param json the json schema with the endpoint properties
@@ -520,6 +521,7 @@ public interface CamelCatalog {
      * @return the constructed endpoint uri
      * @throws java.net.URISyntaxException is thrown if there is encoding error
      */
+    @Deprecated
     String asEndpointUriXml(String scheme, String json, boolean encode) throws URISyntaxException;
 
     /**
@@ -534,7 +536,7 @@ public interface CamelCatalog {
     String asEndpointUri(String scheme, Map<String, String> properties, boolean encode) throws URISyntaxException;
 
     /**
-     * Creates an endpoint uri in XML style (eg escape & as &ampl;) from the information from the properties
+     * Creates an endpoint uri in XML style from the information from the properties
      *
      * @param scheme the endpoint schema
      * @param properties the properties as key value pairs

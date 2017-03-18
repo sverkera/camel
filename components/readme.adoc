@@ -2,7 +2,7 @@ Components
 ^^^^^^^^^^
 
 // components: START
-Number of Components: 220
+Number of Components: 224 in 178 JAR artifacts (13 deprecated)
 
 [width="100%",cols="4,1,5",options="header"]
 |=======================================================================
@@ -54,7 +54,10 @@ Number of Components: 220
 `aws-ec2:label` | 2.16 | The aws-ec2 is used for managing Amazon EC2 instances.
 
 | link:camel-aws/src/main/docs/aws-kinesis-component.adoc[AWS Kinesis] (camel-aws) +
-`aws-kinesis:streamName` | 2.17 | The aws-kinesis component is for consuming records from Amazon Kinesis Streams.
+`aws-kinesis:streamName` | 2.17 | The aws-kinesis component is for consuming and producing records from Amazon Kinesis Streams.
+
+| link:camel-aws/src/main/docs/aws-kinesis-firehose-component.adoc[AWS Kinesis Firehose] (camel-aws) +
+`aws-kinesis-firehose:streamName` | 2.19 | The aws-kinesis-firehose component is used for producing Amazon's Kinesis Firehose streams.
 
 | link:camel-aws/src/main/docs/aws-s3-component.adoc[AWS S3 Storage Service] (camel-aws) +
 `aws-s3:bucketNameOrArn` | 2.8 | The aws-s3 component is used for storing and retrieving objecct from Amazon S3 Storage Service.
@@ -78,7 +81,7 @@ Number of Components: 220
 `azure-blob:containerOrBlobUri` | 2.19 | The azure-blob component is used for storing and retrieving blobs from Azure Storage Blob Service.
 
 | link:camel-azure/src/main/docs/azure-queue-component.adoc[Azure Storage Queue Service] (camel-azure) +
-`azure-queue:queueOrMessageUri` | 2.19 | The azure-queue component is used for storing and retrieving messages from Azure Storage Queue Service.
+`azure-queue:containerAndQueueUri` | 2.19 | The azure-queue component is used for storing and retrieving messages from Azure Storage Queue Service.
 
 | link:../camel-core/src/main/docs/bean-component.adoc[Bean] (camel-core) +
 `bean:beanName` | 1.0 | The bean component is for invoking Java beans from Camel.
@@ -90,7 +93,7 @@ Number of Components: 220
 `beanstalk:connectionSettings` | 2.15 | The beanstalk component is used for job retrieval and post-processing of Beanstalk jobs.
 
 | link:../camel-core/src/main/docs/binding-component.adoc[Binding] (camel-core) +
-`binding:bindingName:delegateUri` | 2.11 | The binding component is used for as a of wrapping an Endpoint in a contract with a data format.
+`binding:bindingName:delegateUri` | 2.11 | *deprecated* The binding component is used for as a of wrapping an Endpoint in a contract with a data format.
 
 | link:camel-bonita/src/main/docs/bonita-component.adoc[Bonita] (camel-bonita) +
 `bonita:operation` | 2.19 | Camel Bonita support
@@ -506,6 +509,9 @@ Number of Components: 220
 | link:../camel-core/src/main/docs/rest-api-component.adoc[REST API] (camel-core) +
 `rest-api:path/contextIdPattern` | 2.16 | The rest-api component is used for providing Swagger API of the REST services which has been defined using the rest-dsl in Camel.
 
+| link:camel-rest-swagger/src/main/docs/rest-swagger-component.adoc[REST Swagger] (camel-rest-swagger) +
+`rest-swagger:specificationUri#operationId` | 2.19 | An awesome REST endpoint backed by Swagger specifications.
+
 | link:camel-restlet/src/main/docs/restlet-component.adoc[Restlet] (camel-restlet) +
 `restlet:protocol:host:port/uriPattern` | 2.0 | Component for consuming and producing Restful resources using Restlet.
 
@@ -550,6 +556,9 @@ Number of Components: 220
 
 | link:camel-sjms/src/main/docs/sjms-batch-component.adoc[Simple JMS Batch] (camel-sjms) +
 `sjms-batch:destinationName` | 2.16 | The sjms-batch component is a specialized for highly performant transactional batch consumption from a JMS queue.
+
+| link:camel-sjms2/src/main/docs/sjms2-component.adoc[Simple JMS2] (camel-sjms2) +
+`sjms2:destinationType:destinationName` | 2.19 | The sjms2 component (simple jms) allows messages to be sent to (or consumed from) a JMS Queue or Topic.
 
 | link:camel-sip/src/main/docs/sip-component.adoc[SIP] (camel-sip) +
 `sip:uri` | 2.5 | To send and receive messages using the SIP protocol (used in telco and mobile).
@@ -668,6 +677,9 @@ Number of Components: 220
 | link:camel-zookeeper/src/main/docs/zookeeper-component.adoc[ZooKeeper] (camel-zookeeper) +
 `zookeeper:serverUrls/path` | 2.9 | The zookeeper component allows interaction with a ZooKeeper cluster.
 
+| link:camel-zookeeper-master/src/main/docs/zookeeper-master-component.adoc[ZooKeeper Master] (camel-zookeeper-master) +
+`zookeeper-master:groupName:consumerEndpointUri` | 2.19 | Represents an endpoint which only becomes active when it obtains the master lock
+
 |=======================================================================
 // components: END
 
@@ -676,7 +688,7 @@ Data Formats
 ^^^^^^^^^^^^
 
 // dataformats: START
-Number of Data Formats: 45
+Number of Data Formats: 45 in 36 JAR artifacts (0 deprecated)
 
 [width="100%",cols="4,1,5",options="header"]
 |=======================================================================
@@ -779,7 +791,7 @@ Expression Languages
 ^^^^^^^^^^^^^^^^^^^^
 
 // languages: START
-Number of Languages: 24
+Number of Languages: 24 in 12 JAR artifacts (6 deprecated)
 
 [width="100%",cols="4,1,5",options="header"]
 |=======================================================================
@@ -789,7 +801,7 @@ Number of Languages: 24
 
 | link:src/main/docs/constant-language.adoc[Constant] (camel-core) | 1.5 | For expressions and predicates using a constant
 
-| link:camel-juel/src/main/docs/el-language.adoc[EL] (camel-juel) | 1.1 | For EL expressions and predicates
+| link:camel-juel/src/main/docs/el-language.adoc[EL] (camel-juel) | 1.1 | *deprecated* For EL expressions and predicates
 
 | link:src/main/docs/exchangeProperty-language.adoc[ExchangeProperty] (camel-core) | 2.0 | An expression which extracts the named exchange property
 
@@ -805,25 +817,25 @@ Number of Languages: 24
 
 | link:camel-jsonpath/src/main/docs/jsonpath-language.adoc[JSonPath] (camel-jsonpath) | 2.13 | For JSonPath expressions and predicates
 
-| link:camel-jxpath/src/main/docs/jxpath-language.adoc[JXPath] (camel-jxpath) | 1.3 | For JXPath expressions and predicates
+| link:camel-jxpath/src/main/docs/jxpath-language.adoc[JXPath] (camel-jxpath) | 1.3 | *deprecated* For JXPath expressions and predicates
 
 | link:camel-mvel/src/main/docs/mvel-language.adoc[MVEL] (camel-mvel) | 2.0 | For MVEL expressions and predicates
 
 | link:camel-ognl/src/main/docs/ognl-language.adoc[OGNL] (camel-ognl) | 1.1 | For OGNL expressions and predicates
 
-| link:camel-script/src/main/docs/php-language.adoc[PHP] (camel-script) | 1.0 | For PHP expressions and predicates
+| link:camel-script/src/main/docs/php-language.adoc[PHP] (camel-script) | 1.0 | *deprecated* For PHP expressions and predicates
 
-| link:camel-script/src/main/docs/python-language.adoc[Python] (camel-script) | 1.0 | For Python expressions and predicates
+| link:camel-script/src/main/docs/python-language.adoc[Python] (camel-script) | 1.0 | *deprecated* For Python expressions and predicates
 
 | link:src/main/docs/ref-language.adoc[Ref] (camel-core) | 2.8 | For using a custom expression or predicate
 
-| link:camel-script/src/main/docs/ruby-language.adoc[Ruby] (camel-script) | 1.0 | For Ruby expressions and predicates
+| link:camel-script/src/main/docs/ruby-language.adoc[Ruby] (camel-script) | 1.0 | *deprecated* For Ruby expressions and predicates
 
 | link:src/main/docs/simple-language.adoc[Simple] (camel-core) | 1.1 | For expressions and predicates using the simple language
 
 | link:camel-spring/src/main/docs/spel-language.adoc[SpEL] (camel-spring) | 2.7 | For Spring Expression Language (SpEL) expressions and predicates
 
-| link:camel-josql/src/main/docs/sql-language.adoc[SQL] (camel-josql) | 1.0 | For SQL expressions and predicates
+| link:camel-josql/src/main/docs/sql-language.adoc[SQL] (camel-josql) | 1.0 | *deprecated* For SQL expressions and predicates
 
 | link:src/main/docs/tokenize-language.adoc[Tokenize] (camel-core) | 2.0 | For expressions and predicates using a body or header tokenizer
 
@@ -840,7 +852,7 @@ Miscellaneous Components
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 // others: START
-Number of Miscellaneous Components: 35
+Number of Miscellaneous Components: 36 in 36 JAR artifacts (12 deprecated)
 
 [width="100%",cols="4,1,5",options="header"]
 |=======================================================================
@@ -856,9 +868,11 @@ Number of Miscellaneous Components: 35
 
 | link:camel-eclipse/src/main/docs/eclipse.adoc[Eclipse] (camel-eclipse) | 2.3 | *deprecated* Camel classpath scanning support for running in Eclipse Desktop Applications
 
-| link:camel-guice/src/main/docs/guice.adoc[Guice] (camel-guice) | 1.5 | Using Camel with Guice
+| link:camel-groovy-dsl/src/main/docs/groovy-dsl.adoc[Groovy DSL] (camel-groovy-dsl) | 2.19 | *deprecated* Camel Groovy DSL support
 
-| link:camel-hawtdb/src/main/docs/hawtdb.adoc[Hawtdb] (camel-hawtdb) | 2.3 | *deprecated* Using HawtDB as persistent EIP store
+| link:camel-guice/src/main/docs/guice.adoc[Guice] (camel-guice) | 1.5 | *deprecated* Using Camel with Guice
+
+| link:camel-hawtdb/src/main/docs/hawtdb.adoc[HawtDB] (camel-hawtdb) | 2.3 | *deprecated* Using HawtDB as persistent EIP store
 
 | link:camel-hystrix/src/main/docs/hystrix.adoc[Hystrix] (camel-hystrix) | 2.18 | Circuit Breaker EIP using Netflix Hystrix
 
@@ -868,7 +882,7 @@ Number of Miscellaneous Components: 35
 
 | link:camel-leveldb/src/main/docs/leveldb.adoc[LevelDB] (camel-leveldb) | 2.10 | Using LevelDB as persistent EIP store
 
-| link:camel-opentracing/src/main/docs/opentracing.adoc[Opentracing] (camel-opentracing) | 2.19 | Distributed tracing using OpenTracing
+| link:camel-opentracing/src/main/docs/opentracing.adoc[OpenTracing] (camel-opentracing) | 2.19 | Distributed tracing using OpenTracing
 
 | link:camel-ribbon/src/main/docs/ribbon.adoc[Ribbon] (camel-ribbon) | 2.18 | Using Netflix Ribbon for client side load balancing
 
@@ -876,7 +890,7 @@ Number of Miscellaneous Components: 35
 
 | link:camel-rx/src/main/docs/rx.adoc[RX] (camel-rx) | 2.11 | *deprecated* Camel Reactive using RxJava library
 
-| link:camel-scala/src/main/docs/scala.adoc[Scala] (camel-scala) | 1.4 | Camel Scala DSL
+| link:camel-scala/src/main/docs/scala.adoc[Scala DSL] (camel-scala) | 1.4 | *deprecated* Camel Scala DSL
 
 | link:camel-scr/src/main/docs/scr.adoc[SCR] (camel-scr) | 2.15 | Camel with OSGi SCR (Declarative Services)
 

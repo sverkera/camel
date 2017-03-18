@@ -47,12 +47,15 @@ import org.apache.camel.impl.DefaultRouteContext;
 import org.apache.camel.model.rest.RestBindingDefinition;
 import org.apache.camel.model.rest.RestDefinition;
 import org.apache.camel.processor.interceptor.HandleFault;
+import org.apache.camel.spi.AsEndpointUri;
 import org.apache.camel.spi.Contract;
 import org.apache.camel.spi.LifecycleStrategy;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.RouteContext;
 import org.apache.camel.spi.RoutePolicy;
 import org.apache.camel.spi.RoutePolicyFactory;
+import org.apache.camel.spi.Transformer;
+import org.apache.camel.spi.Validator;
 import org.apache.camel.util.CamelContextHelper;
 import org.apache.camel.util.ObjectHelper;
 
@@ -96,7 +99,7 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     public RouteDefinition() {
     }
 
-    public RouteDefinition(String uri) {
+    public RouteDefinition(@AsEndpointUri String uri) {
         from(uri);
     }
 
@@ -107,7 +110,7 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     /**
      * This route is created from the REST DSL.
      */
-    public void fromRest(String uri) {
+    public void fromRest(@AsEndpointUri String uri) {
         from(uri);
         rest = true;
     }
@@ -314,7 +317,7 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
      * @param uri the from uri
      * @return the builder
      */
-    public RouteDefinition from(String uri) {
+    public RouteDefinition from(@AsEndpointUri String uri) {
         getInputs().add(new FromDefinition(uri));
         return this;
     }
@@ -336,7 +339,7 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
      * @param uris the from uris
      * @return the builder
      */
-    public RouteDefinition from(String... uris) {
+    public RouteDefinition from(@AsEndpointUri String... uris) {
         for (String uri : uris) {
             getInputs().add(new FromDefinition(uri));
         }
@@ -635,7 +638,10 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     }
 
     /**
-     * Declare an input type.
+     * Declare the expected data type of the input message. If the actual message type is different
+     * at runtime, camel look for a required {@link Transformer} and apply if exists.
+     * The type name consists of two parts, 'scheme' and 'name' connected with ':'. For Java type 'name'
+     * is a fully qualified class name. For example {@code java:java.lang.String}, {@code json:ABCOrder}.
      * 
      * @see {@link org.apache.camel.spi.Transformer}
      * @param urn input type URN
@@ -649,7 +655,11 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     }
 
     /**
-     * Declare an input type with validation enabled.
+     * Declare the expected data type of the input message with content validation enabled.
+     * If the actual message type is different at runtime, camel look for a required
+     * {@link Transformer} and apply if exists, and then applies {@link Validator} as well.
+     * The type name consists of two parts, 'scheme' and 'name' connected with ':'. For Java type 'name'
+     * is a fully qualified class name. For example {@code java:java.lang.String}, {@code json:ABCOrder}.
      * 
      * @see {@link org.apache.camel.spi.Transformer}, {@link org.apache.camel.spi.Validator}
      * @param urn input type URN
@@ -663,7 +673,9 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     }
 
     /**
-     * Declare an input type with Java class.
+     * Declare the expected data type of the input message by Java class.
+     * If the actual message type is different at runtime, camel look for a required
+     * {@link Transformer} and apply if exists.
      * 
      * @see {@link org.apache.camel.spi.Transformer}
      * @param clazz Class object of the input type
@@ -677,7 +689,9 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     }
 
     /**
-     * Declare an input type with Java class with validation enabled.
+     * Declare the expected data type of the input message by Java class with content validation enabled.
+     * If the actual message type is different at runtime, camel look for a required
+     * {@link Transformer} and apply if exists, and then applies {@link Validator} as well.
      * 
      * @see {@link org.apache.camel.spi.Transformer}, {@link org.apache.camel.spi.Validator}
      * @param clazz Class object of the input type
@@ -691,7 +705,10 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     }
 
     /**
-     * Declare an output type.
+     * Declare the expected data type of the output message. If the actual message type is different
+     * at runtime, camel look for a required {@link Transformer} and apply if exists.
+     * The type name consists of two parts, 'scheme' and 'name' connected with ':'. For Java type 'name'
+     * is a fully qualified class name. For example {@code java:java.lang.String}, {@code json:ABCOrder}.
      * 
      * @see {@link org.apache.camel.spi.Transformer}
      * @param urn output type URN
@@ -705,7 +722,11 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     }
 
     /**
-     * Declare an output type with validation enabled.
+     * Declare the expected data type of the output message with content validation enabled.
+     * If the actual message type is different at runtime, camel look for a required
+     * {@link Transformer} and apply if exists, and then applies {@link Validator} as well.
+     * The type name consists of two parts, 'scheme' and 'name' connected with ':'. For Java type 'name'
+     * is a fully qualified class name. For example {@code java:java.lang.String}, {@code json:ABCOrder}.
      * 
      * @see {@link org.apache.camel.spi.Transformer}, {@link org.apache.camel.spi.Validator}
      * @param urn output type URN
@@ -719,7 +740,9 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     }
 
     /**
-     * Declare an output type with Java class.
+     * Declare the expected data type of the output message by Java class.
+     * If the actual message type is different at runtime, camel look for a required
+     * {@link Transformer} and apply if exists.
      * 
      * @see {@link org.apache.camel.spi.Transformer}
      * @param clazz Class object of the output type
@@ -733,7 +756,9 @@ public class RouteDefinition extends ProcessorDefinition<RouteDefinition> {
     }
 
     /**
-     * Declare an output type with Java class with validation enabled.
+     * Declare the expected data type of the ouput message by Java class with content validation enabled.
+     * If the actual message type is different at runtime, camel look for a required
+     * {@link Transformer} and apply if exists, and then applies {@link Validator} as well.
      * 
      * @see {@link org.apache.camel.spi.Transformer}, {@link org.apache.camel.spi.Validator}
      * @param clazz Class object of the output type

@@ -39,24 +39,35 @@ The Elasticsearch5 component has no options.
 
 
 // endpoint options: START
-The Elasticsearch5 component supports 10 endpoint options which are listed below:
+The Elasticsearch5 endpoint is configured using URI syntax:
 
-{% raw %}
-[width="100%",cols="2,1,1m,1m,5",options="header"]
+    elasticsearch5:clusterName
+
+with the following path and query parameters:
+
+#### Path Parameters (1 parameters):
+
+[width="100%",cols="2,5,^1,2",options="header"]
 |=======================================================================
-| Name | Group | Default | Java Type | Description
-| clusterName | producer |  | String | *Required* Name of the cluster
-| clientTransportSniff | producer | true | Boolean | Is the client allowed to sniff the rest of the cluster or not (default true). This setting map to the client.transport.sniff setting.
-| indexName | producer |  | String | The name of the index to act against
-| indexType | producer |  | String | The type of the index to act against
-| ip | producer |  | String | The TransportClient remote host ip to use
-| operation | producer |  | ElasticsearchOperation | What operation to perform
-| port | producer | 9300 | int | The TransportClient remote port to use (defaults to 9300)
-| transportAddresses | producer |  | String | Comma separated list with ip:port formatted remote transport addresses to use. The ip and port options must be left blank for transportAddresses to be considered instead.
-| waitForActiveShards | producer | 1 | int | Index creation waits for the write consistency number of shards to be available
-| synchronous | advanced | false | boolean | Sets whether synchronous processing should be strictly used or Camel is allowed to use asynchronous processing (if supported).
+| Name | Description | Default | Type
+| **clusterName** | *Required* Name of the cluster |  | String
 |=======================================================================
-{% endraw %}
+
+#### Query Parameters (9 parameters):
+
+[width="100%",cols="2,5,^1,2",options="header"]
+|=======================================================================
+| Name | Description | Default | Type
+| **clientTransportSniff** (producer) | Is the client allowed to sniff the rest of the cluster or not (default true). This setting map to the client.transport.sniff setting. | true | Boolean
+| **indexName** (producer) | The name of the index to act against |  | String
+| **indexType** (producer) | The type of the index to act against |  | String
+| **ip** (producer) | The TransportClient remote host ip to use |  | String
+| **operation** (producer) | What operation to perform |  | ElasticsearchOperation
+| **port** (producer) | The TransportClient remote port to use (defaults to 9300) | 9300 | int
+| **transportAddresses** (producer) | Comma separated list with ip:port formatted remote transport addresses to use. The ip and port options must be left blank for transportAddresses to be considered instead. |  | String
+| **waitForActiveShards** (producer) | Index creation waits for the write consistency number of shards to be available | 1 | int
+| **synchronous** (advanced) | Sets whether synchronous processing should be strictly used or Camel is allowed to use asynchronous processing (if supported). | false | boolean
+|=======================================================================
 // endpoint options: END
 
 

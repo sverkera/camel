@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -191,7 +192,11 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
         }
         buffer.append("\n    \"groupId\": \"").append(componentModel.getGroupId()).append("\",");
         buffer.append("\n    \"artifactId\": \"").append(componentModel.getArtifactId()).append("\",");
+        if (componentModel.getVerifiers() != null) {
+            buffer.append("\n    \"verifiers\": \"").append(componentModel.getVerifiers()).append("\",");
+        }
         buffer.append("\n    \"version\": \"").append(componentModel.getVersionId()).append("\"");
+
         buffer.append("\n  },");
 
         // and component properties
@@ -429,6 +434,11 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
                                                 Set<ComponentOption> componentOptions, TypeElement classElement, String prefix) {
         Elements elementUtils = processingEnv.getElementUtils();
         while (true) {
+            Metadata componentAnnotation = classElement.getAnnotation(Metadata.class);
+            if (componentAnnotation != null && Objects.equals("verifiers", componentAnnotation.label())) {
+                componentModel.setVerifiers(componentAnnotation.enums());
+            }
+
             List<ExecutableElement> methods = ElementFilter.methodsIn(classElement.getEnclosedElements());
             for (ExecutableElement method : methods) {
                 String methodName = method.getSimpleName().toString();
@@ -442,7 +452,8 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
                 }
 
                 // skip unwanted methods as they are inherited from default component and are not intended for end users to configure
-                if ("setEndpointClass".equals(methodName) || "setCamelContext".equals(methodName) || "setEndpointHeaderFilterStrategy".equals(methodName)) {
+                if ("setEndpointClass".equals(methodName) || "setCamelContext".equals(methodName)
+                    || "setEndpointHeaderFilterStrategy".equals(methodName) || "setApplicationContext".equals(methodName)) {
                     continue;
                 }
 

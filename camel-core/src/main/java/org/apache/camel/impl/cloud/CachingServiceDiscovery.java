@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.camel.impl.cloud;
 
 import java.util.List;
@@ -52,7 +51,7 @@ public final class CachingServiceDiscovery implements ServiceDiscovery {
         this.timeout = timeout;
         this.cache = Caffeine.newBuilder()
             .expireAfterAccess(timeout, TimeUnit.MILLISECONDS)
-            .build(delegate::getUpdatedListOfServices);
+            .build(delegate::getServices);
     }
 
     public void setTimeout(long timeout, TimeUnit unit) {
@@ -74,12 +73,7 @@ public final class CachingServiceDiscovery implements ServiceDiscovery {
     }
 
     @Override
-    public List<ServiceDefinition> getInitialListOfServices(String name) {
-        return delegate.getInitialListOfServices(name);
-    }
-
-    @Override
-    public List<ServiceDefinition> getUpdatedListOfServices(String name) {
+    public List<ServiceDefinition> getServices(String name) {
         return cache.get(name);
     }
 

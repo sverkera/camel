@@ -141,20 +141,28 @@ public class UpdateReadmeMojo extends AbstractMojo {
                         }
                     }
 
+                    String docTitle = model.getTitle() + " Component";
+                    boolean deprecated = "true".equals(model.getDeprecated());
+                    if (deprecated) {
+                        docTitle += " (deprecated)";
+                    }
+
                     boolean exists = file.exists();
                     boolean updated;
-
-                    updated = updateTitles(file, model.getTitle() + " Component");
+                    updated = updateTitles(file, docTitle);
                     updated |= updateAvailableFrom(file, model.getFirstVersion());
 
-                    if (model.getComponentOptions() != null) {
-                        String options = templateComponentOptions(model);
-                        updated |= updateComponentOptions(file, options);
+                    // resolvePropertyPlaceholders is an option which only make sense to use if the component has other options
+                    boolean hasOptions = model.getComponentOptions().stream().anyMatch(o -> !o.getName().equals("resolvePropertyPlaceholders"));
+                    if (!hasOptions) {
+                        model.getComponentOptions().clear();
                     }
-                    if (model.getEndpointOptions() != null) {
-                        String options = templateEndpointOptions(model);
-                        updated |= updateEndpointOptions(file, options);
-                    }
+
+                    String options = templateComponentOptions(model);
+                    updated |= updateComponentOptions(file, options);
+
+                    options = templateEndpointOptions(model);
+                    updated |= updateEndpointOptions(file, options);
 
                     if (updated) {
                         getLog().info("Updated doc file: " + file);
@@ -193,16 +201,19 @@ public class UpdateReadmeMojo extends AbstractMojo {
                     String title = asDataFormatTitle(model.getName(), model.getTitle());
                     model.setTitle(title);
 
+                    String docTitle = model.getTitle() + " DataFormat";
+                    boolean deprecated = "true".equals(model.getDeprecated());
+                    if (deprecated) {
+                        docTitle += " (deprecated)";
+                    }
+
                     boolean exists = file.exists();
                     boolean updated;
-
-                    updated = updateTitles(file, model.getTitle() + " DataFormat");
+                    updated = updateTitles(file, docTitle);
                     updated |= updateAvailableFrom(file, model.getFirstVersion());
 
-                    if (model.getDataFormatOptions() != null) {
-                        String options = templateDataFormatOptions(model);
-                        updated |= updateDataFormatOptions(file, options);
-                    }
+                    String options = templateDataFormatOptions(model);
+                    updated |= updateDataFormatOptions(file, options);
 
                     if (updated) {
                         getLog().info("Updated doc file: " + file);
@@ -245,16 +256,19 @@ public class UpdateReadmeMojo extends AbstractMojo {
 
                     LanguageModel model = generateLanguageModel(languageName, json);
 
+                    String docTitle = model.getTitle() + " Language";
+                    boolean deprecated = "true".equals(model.getDeprecated());
+                    if (deprecated) {
+                        docTitle += " (deprecated)";
+                    }
+
                     boolean exists = file.exists();
                     boolean updated;
-
-                    updated = updateTitles(file, model.getTitle() + " Language");
+                    updated = updateTitles(file, docTitle);
                     updated |= updateAvailableFrom(file, model.getFirstVersion());
 
-                    if (model.getLanguageOptions() != null) {
-                        String options = templateLanguageOptions(model);
-                        updated |= updateLanguageOptions(file, options);
-                    }
+                    String options = templateLanguageOptions(model);
+                    updated |= updateLanguageOptions(file, options);
 
                     if (updated) {
                         getLog().info("Updated doc file: " + file);
@@ -293,7 +307,6 @@ public class UpdateReadmeMojo extends AbstractMojo {
             for (File jsonFile : jsonFiles) {
                 String json = loadEipJson(jsonFile);
                 if (json != null) {
-
                     EipModel model = generateEipModel(json);
                     String title = asEipTitle(model.getName(), model.getTitle());
                     model.setTitle(title);
@@ -307,15 +320,18 @@ public class UpdateReadmeMojo extends AbstractMojo {
 
                     File file = new File(eipDocDir, eipName + "-eip.adoc");
 
+                    String docTitle = model.getTitle() + " EIP";
+                    boolean deprecated = model.isDeprecated();
+                    if (deprecated) {
+                        docTitle += " (deprecated)";
+                    }
+
                     boolean exists = file.exists();
                     boolean updated;
+                    updated = updateTitles(file, docTitle);
 
-                    updated = updateTitles(file, model.getTitle() + " EIP");
-
-                    if (model.getEipOptions() != null) {
-                        String options = templateEipOptions(model);
-                        updated |= updateEipOptions(file, options);
-                    }
+                    String options = templateEipOptions(model);
+                    updated |= updateEipOptions(file, options);
 
                     if (updated) {
                         getLog().info("Updated doc file: " + file);
@@ -375,10 +391,9 @@ public class UpdateReadmeMojo extends AbstractMojo {
         boolean updated = false;
 
         try {
-            String text = loadText(new FileInputStream(file));
-
             List<String> newLines = new ArrayList<>();
 
+            String text = loadText(new FileInputStream(file));
             String[] lines = text.split("\n");
             for (int i = 0; i < lines.length; i++) {
                 String line = lines[i];
@@ -759,6 +774,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
         component.setArtifactId(getSafeValue("artifactId", rows));
         component.setVersion(getSafeValue("version", rows));
 
+        String oldGroup = null;
         rows = parseJsonSchema("componentProperties", json, true);
         for (Map<String, String> row : rows) {
             ComponentOptionModel option = new ComponentOptionModel();
@@ -780,8 +796,15 @@ public class UpdateReadmeMojo extends AbstractMojo {
                 option.setDescription(desc);
             }
             component.addComponentOption(option);
+
+            // group separate between different options
+            if (oldGroup == null || !oldGroup.equals(option.getGroup())) {
+                option.setNewGroup(true);
+            }
+            oldGroup = option.getGroup();
         }
 
+        oldGroup = null;
         rows = parseJsonSchema("properties", json, true);
         for (Map<String, String> row : rows) {
             EndpointOptionModel option = new EndpointOptionModel();
@@ -804,7 +827,18 @@ public class UpdateReadmeMojo extends AbstractMojo {
                 String desc = "*Required* " + option.getDescription();
                 option.setDescription(desc);
             }
-            component.addEndpointOption(option);
+            // separate the options in path vs parameter so we can generate two different tables
+            if ("path".equals(option.getKind())) {
+                component.addEndpointPathOption(option);
+            } else {
+                component.addEndpointOption(option);
+            }
+
+            // group separate between different options
+            if (oldGroup == null || !oldGroup.equals(option.getGroup())) {
+                option.setNewGroup(true);
+            }
+            oldGroup = option.getGroup();
         }
 
         return component;

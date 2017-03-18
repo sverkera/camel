@@ -36,6 +36,7 @@
     <module>camel-example-bam</module>
     <module>camel-example-box-osgi</module>
     <module>camel-example-cafe</module>
+    <module>camel-example-cassandra-kubernetes</module>
     <module>camel-example-cdi</module>
     <module>camel-example-cdi-aws-s3</module>
     <module>camel-example-cdi-cassandraql</module>
@@ -56,13 +57,14 @@
     <module>camel-example-ftp</module>
     <module>camel-example-guice-jms</module>
     <module>camel-example-groovy</module>
+    <module>camel-example-hazelcast-kubernetes</module>
     <module>camel-example-hystrix</module>
     <module>camel-example-java8</module>
     <module>camel-example-java8-rx</module>
     <module>camel-example-jdbc</module>
     <module>camel-example-jmx</module>
     <module>camel-example-jms-file</module>
-	  <module>camel-example-kafka</module>
+    <module>camel-example-kafka</module>
     <module>camel-example-loadbalancing</module>
     <module>camel-example-loan-broker-cxf</module>
     <module>camel-example-loan-broker-jms</module>
@@ -90,6 +92,7 @@
     <module>camel-example-spring-boot-live-reload</module>
     <module>camel-example-spring-boot-metrics</module>
     <module>camel-example-spring-boot-rest-jpa</module>
+    <module>camel-example-spring-boot-rest-swagger</module>
     <module>camel-example-spring-dm</module>
     <module>camel-example-spring-javaconfig</module>
     <module>camel-example-spring-jms</module>

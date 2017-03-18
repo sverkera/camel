@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <!--
     Licensed to the Apache Software Foundation (ASF) under one or more
     contributor license agreements.  See the NOTICE file distributed with
@@ -60,7 +61,7 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-    
+
     <!-- logging -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
@@ -82,6 +83,46 @@
 
   <build>
     <plugins>
+
+      <!-- copy catalog source code from camel-core -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven-resources-plugin-version}</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>process-sources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>src/main/java/org/apache/camel/catalog</outputDirectory>
+              <overwrite>true</overwrite>
+              <resources>
+                <resource>
+                  <directory>../../camel-core/src/main/java/org/apache/camel/catalog</directory>
+                  <!-- the following files are maintained in camel-core and not here, so they are copied over -->
+                  <includes>
+                    <include>AbstractCamelCatalog.java</include>
+                    <include>CatalogHelper.java</include>
+                    <include>CollectionStringBuffer.java</include>
+                    <include>EndpointValidationResult.java</include>
+                    <include>JSonSchemaHelper.java</include>
+                    <include>JSonSchemaResolver.java</include>
+                    <include>LanguageValidationResult.java</include>
+                    <include>SimpleValidationResult.java</include>
+                    <include>SuggestionStrategy.java</include>
+                    <include>TimePatternConverter.java</include>
+                    <include>UnsafeUriCharactersEncoder.java</include>
+                    <include>URISupport.java</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
       <!-- generate and include all components in the catalog -->
       <plugin>

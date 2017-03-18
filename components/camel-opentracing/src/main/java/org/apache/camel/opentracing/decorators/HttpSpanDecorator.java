@@ -16,21 +16,11 @@
  */
 package org.apache.camel.opentracing.decorators;
 
-import java.net.URI;
-
-import org.apache.camel.Endpoint;
-import org.apache.camel.Exchange;
-
 public class HttpSpanDecorator extends AbstractHttpSpanDecorator {
 
     @Override
     public String getComponent() {
         return "http";
-    }
-
-    @Override
-    public String getOperationName(Exchange exchange, Endpoint endpoint) {
-        return URI.create(endpoint.getEndpointUri()).getPath();
     }
 
 }

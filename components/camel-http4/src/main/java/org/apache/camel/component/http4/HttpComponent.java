@@ -27,12 +27,13 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HostnameVerifier;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.ComponentVerifier;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Producer;
+import org.apache.camel.VerifiableComponent;
 import org.apache.camel.ResolveEndpointFailedException;
 import org.apache.camel.http.common.HttpBinding;
 import org.apache.camel.http.common.HttpCommonComponent;
-import org.apache.camel.http.common.HttpConfiguration;
 import org.apache.camel.http.common.HttpHelper;
 import org.apache.camel.http.common.HttpRestHeaderFilterStrategy;
 import org.apache.camel.http.common.UrlRewrite;
@@ -68,30 +69,37 @@ import org.slf4j.LoggerFactory;
  *
  * @version 
  */
-public class HttpComponent extends HttpCommonComponent implements RestProducerFactory {
+@Metadata(label = "verifiers", enums = "PARAMETERS,CONNECTIVITY")
+public class HttpComponent extends HttpCommonComponent implements RestProducerFactory, VerifiableComponent {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpComponent.class);
 
-    @Metadata(label = "advanced")
+    @Metadata(label = "advanced", description = "To use the custom HttpClientConfigurer to perform configuration of the HttpClient that will be used.")
     protected HttpClientConfigurer httpClientConfigurer;
-    @Metadata(label = "advanced")
+    @Metadata(label = "advanced", description = "To use a custom and shared HttpClientConnectionManager to manage connections."
+        + " If this has been configured then this is always used for all endpoints created by this component.")
     protected HttpClientConnectionManager clientConnectionManager;
-    @Metadata(label = "advanced")
+    @Metadata(label = "advanced", description = "To use a custom org.apache.http.protocol.HttpContext when executing requests.")
     protected HttpContext httpContext;
-    @Metadata(label = "security")
+    @Metadata(label = "security", description = "To configure security using SSLContextParameters."
+        + " Important: Only one instance of org.apache.camel.util.jsse.SSLContextParameters is supported per HttpComponent."
+        + " If you need to use 2 or more different instances, you need to define a new HttpComponent per instance you need.")
     protected SSLContextParameters sslContextParameters;
-    @Metadata(label = "security")
+    @Metadata(label = "security", description = "To use a custom X509HostnameVerifier such as DefaultHostnameVerifier or NoopHostnameVerifier.")
     protected HostnameVerifier x509HostnameVerifier = new DefaultHostnameVerifier();
-    @Metadata(label = "producer")
+    @Metadata(label = "producer", description = "To use a custom org.apache.http.client.CookieStore."
+        + " By default the org.apache.http.impl.client.BasicCookieStore is used which is an in-memory only cookie store."
+        + " Notice if bridgeEndpoint=true then the cookie store is forced to be a noop cookie store as cookie"
+        + " shouldn't be stored as we are just bridging (eg acting as a proxy).")
     protected CookieStore cookieStore;
 
     // options to the default created http connection manager
-    @Metadata(label = "advanced", defaultValue = "200")
+    @Metadata(label = "advanced", defaultValue = "200", description = "The maximum number of connections.")
     protected int maxTotalConnections = 200;
-    @Metadata(label = "advanced", defaultValue = "20")
+    @Metadata(label = "advanced", defaultValue = "20", description = "The maximum number of connections per route.")
     protected int connectionsPerRoute = 20;
     // It's MILLISECONDS, the default value is always keep alive
-    @Metadata(label = "advanced")
+    @Metadata(label = "advanced", description = "The time for connection to live, the time unit is millisecond, the default value is always keep alive.")
     protected long connectionTimeToLive = -1;
 
     public HttpComponent() {
@@ -125,12 +133,12 @@ public class HttpComponent extends HttpCommonComponent implements RestProducerFa
     }
 
     private HttpClientConfigurer configureBasicAuthentication(Map<String, Object> parameters, HttpClientConfigurer configurer) {
-        String authUsername = getAndRemoveParameter(parameters, "authUsername", String.class);
-        String authPassword = getAndRemoveParameter(parameters, "authPassword", String.class);
+        String authUsername = getParameter(parameters, "authUsername", String.class);
+        String authPassword = getParameter(parameters, "authPassword", String.class);
 
         if (authUsername != null && authPassword != null) {
-            String authDomain = getAndRemoveParameter(parameters, "authDomain", String.class);
-            String authHost = getAndRemoveParameter(parameters, "authHost", String.class);
+            String authDomain = getParameter(parameters, "authDomain", String.class);
+            String authHost = getParameter(parameters, "authHost", String.class);
             
             return CompositeHttpConfigurer.combineConfigurers(configurer, new BasicAuthenticationHttpClientConfigurer(authUsername, authPassword, authDomain, authHost));
         }
@@ -139,19 +147,19 @@ public class HttpComponent extends HttpCommonComponent implements RestProducerFa
     }
 
     private HttpClientConfigurer configureHttpProxy(Map<String, Object> parameters, HttpClientConfigurer configurer, boolean secure) throws Exception {
-        String proxyAuthScheme = getAndRemoveParameter(parameters, "proxyAuthScheme", String.class);
+        String proxyAuthScheme = getParameter(parameters, "proxyAuthScheme", String.class);
         if (proxyAuthScheme == null) {
             // fallback and use either http or https depending on secure
             proxyAuthScheme = secure ? "https" : "http";
         }
-        String proxyAuthHost = getAndRemoveParameter(parameters, "proxyAuthHost", String.class);
-        Integer proxyAuthPort = getAndRemoveParameter(parameters, "proxyAuthPort", Integer.class);
+        String proxyAuthHost = getParameter(parameters, "proxyAuthHost", String.class);
+        Integer proxyAuthPort = getParameter(parameters, "proxyAuthPort", Integer.class);
         
         if (proxyAuthHost != null && proxyAuthPort != null) {
-            String proxyAuthUsername = getAndRemoveParameter(parameters, "proxyAuthUsername", String.class);
-            String proxyAuthPassword = getAndRemoveParameter(parameters, "proxyAuthPassword", String.class);
-            String proxyAuthDomain = getAndRemoveParameter(parameters, "proxyAuthDomain", String.class);
-            String proxyAuthNtHost = getAndRemoveParameter(parameters, "proxyAuthNtHost", String.class);
+            String proxyAuthUsername = getParameter(parameters, "proxyAuthUsername", String.class);
+            String proxyAuthPassword = getParameter(parameters, "proxyAuthPassword", String.class);
+            String proxyAuthDomain = getParameter(parameters, "proxyAuthDomain", String.class);
+            String proxyAuthNtHost = getParameter(parameters, "proxyAuthNtHost", String.class);
             
             if (proxyAuthUsername != null && proxyAuthPassword != null) {
                 return CompositeHttpConfigurer.combineConfigurers(
@@ -205,7 +213,6 @@ public class HttpComponent extends HttpCommonComponent implements RestProducerFa
         HttpClientConfigurer configurer = createHttpClientConfigurer(parameters, secure);
         URI endpointUri = URISupport.createRemainingURI(uriHttpUriAddress, httpClientParameters);
 
-
         // the endpoint uri should use the component name as scheme, so we need to re-create it once more
         String scheme = ObjectHelper.before(uri, "://");
         endpointUri = URISupport.createRemainingURI(
@@ -224,12 +231,21 @@ public class HttpComponent extends HttpCommonComponent implements RestProducerFa
         LOG.debug("Creating endpoint uri {}", endpointUriString);
         final HttpClientConnectionManager localConnectionManager = createConnectionManager(parameters, sslContextParameters);
         HttpEndpoint endpoint = new HttpEndpoint(endpointUriString, this, clientBuilder, localConnectionManager, configurer);
+
+        // configure the endpoint with the common configuration from the component
+        if (getHttpConfiguration() != null) {
+            Map<String, Object> properties = new HashMap<>();
+            IntrospectionSupport.getProperties(getHttpConfiguration(), properties, null);
+            setProperties(endpoint, properties);
+        }
+
         if (urlRewrite != null) {
             // let CamelContext deal with the lifecycle of the url rewrite
             // this ensures its being shutdown when Camel shutdown etc.
             getCamelContext().addService(urlRewrite);
             endpoint.setUrlRewrite(urlRewrite);
         }
+
         // configure the endpoint
         setProperties(endpoint, parameters);
 
@@ -248,6 +264,7 @@ public class HttpComponent extends HttpCommonComponent implements RestProducerFa
                         parameters);
 
         endpoint.setHttpUri(httpUri);
+
         if (headerFilterStrategy != null) {
             endpoint.setHeaderFilterStrategy(headerFilterStrategy);
         } else {
@@ -370,12 +387,12 @@ public class HttpComponent extends HttpCommonComponent implements RestProducerFa
         host = host.replace("http", "http4");
 
         // get the endpoint
-        String url;
-        if (uriTemplate != null) {
-
-            url = String.format("%s/%s/%s", host, basePath, uriTemplate);
-        } else {
-            url = String.format("%s/%s", host, basePath);
+        String url = host;
+        if (!ObjectHelper.isEmpty(basePath)) {
+            url += "/" + basePath;
+        }
+        if (!ObjectHelper.isEmpty(uriTemplate)) {
+            url += "/" + uriTemplate;
         }
 
         HttpEndpoint endpoint = camelContext.getEndpoint(url, HttpEndpoint.class);
@@ -407,39 +424,11 @@ public class HttpComponent extends HttpCommonComponent implements RestProducerFa
     }
 
     /**
-     * To use a custom HttpClientConnectionManager to manage connections
+     * To use a custom and shared HttpClientConnectionManager to manage connections.
+     * If this has been configured then this is always used for all endpoints created by this component.
      */
     public void setClientConnectionManager(HttpClientConnectionManager clientConnectionManager) {
         this.clientConnectionManager = clientConnectionManager;
-    }
-
-    /**
-     * To use a custom HttpBinding to control the mapping between Camel message and HttpClient.
-     */
-    public void setHttpBinding(HttpBinding httpBinding) {
-        // need to override and call super for component docs
-        super.setHttpBinding(httpBinding);
-    }
-
-    /**
-     * To use the shared HttpConfiguration as base configuration.
-     */
-    @Override
-    public void setHttpConfiguration(HttpConfiguration httpConfiguration) {
-        // need to override and call super for component docs
-        super.setHttpConfiguration(httpConfiguration);
-    }
-
-    /**
-     * Whether to allow java serialization when a request uses context-type=application/x-java-serialized-object
-     * <p/>
-     * This is by default turned off. If you enable this then be aware that Java will deserialize the incoming
-     * data from the request to Java and that can be a potential security risk.
-     */
-    @Override
-    public void setAllowJavaSerializedObject(boolean allowJavaSerializedObject) {
-        // need to override and call super for component docs
-        super.setAllowJavaSerializedObject(allowJavaSerializedObject);
     }
 
     public HttpContext getHttpContext() {
@@ -541,5 +530,11 @@ public class HttpComponent extends HttpCommonComponent implements RestProducerFa
         
         super.doStop();
     }
-    
+
+    /**
+     * TODO: document
+     */
+    public ComponentVerifier getVerifier() {
+        return new HttpComponentVerifier(this);
+    }
 }

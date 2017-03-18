@@ -39,11 +39,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import org.apache.camel.maven.packaging.model.ComponentModel;
 import org.apache.camel.maven.packaging.model.ComponentOptionModel;
 import org.apache.camel.maven.packaging.model.DataFormatModel;
@@ -88,6 +90,9 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
+import static org.apache.camel.maven.packaging.JSonSchemaHelper.getPropertyDefaultValue;
+import static org.apache.camel.maven.packaging.JSonSchemaHelper.getPropertyJavaType;
+import static org.apache.camel.maven.packaging.JSonSchemaHelper.getPropertyType;
 import static org.apache.camel.maven.packaging.JSonSchemaHelper.getSafeValue;
 import static org.apache.camel.maven.packaging.PackageHelper.loadText;
 
@@ -98,7 +103,6 @@ import static org.apache.camel.maven.packaging.PackageHelper.loadText;
  * @requiresDependencyResolution compile+runtime
  */
 public class SpringBootAutoConfigurationMojo extends AbstractMojo {
-
 
     /**
      * Useful to move configuration towards starters.
@@ -132,7 +136,16 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         PRIMITIVEMAP.put("float", "java.lang.Float");
     }
 
+    private static final List<String> JAVA_LANG_TYPES = Arrays.asList("Boolean", "Byte", "Character", "Class", "Double", "Float", "Integer", "Long", "Object", "Short", "String");
+
     private static final String[] IGNORE_MODULES = {/* Non-standard -> */ "camel-grape", "camel-connector"};
+
+    /**
+     * The output directory for generated component schema file
+     *
+     * @parameter default-value="${project.build.directory}/classes"
+     */
+    protected File classesDir;
 
     /**
      * The maven project.
@@ -205,7 +218,8 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 ComponentModel model = compModels.get(0); // They should be equivalent
                 List<String> aliases = compModels.stream().map(ComponentModel::getScheme).sorted().collect(Collectors.toList());
 
-                boolean hasOptions = !model.getComponentOptions().isEmpty();
+                // resolvePropertyPlaceholders is an option which only make sense to use if the component has other options
+                boolean hasOptions = model.getComponentOptions().stream().anyMatch(o -> !o.getName().equals("resolvePropertyPlaceholders"));
 
                 // use springboot as sub package name so the code is not in normal
                 // package so the Spring Boot JARs can be optional at runtime
@@ -304,7 +318,6 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 List<LanguageModel> dfModels = grModels.get(languageClass);
                 LanguageModel model = dfModels.get(0); // They should be equivalent
                 List<String> aliases = dfModels.stream().map(LanguageModel::getName).sorted().collect(Collectors.toList());
-
 
                 boolean hasOptions = !model.getLanguageOptions().isEmpty();
 
@@ -462,21 +475,67 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                     prop.getField().getJavaDoc().setFullText(description);
                 }
 
-                String defaultValue = null;
-                if (sourceProp.hasAnnotation(UriParam.class)) {
-                    defaultValue = sourceProp.getAnnotation(UriParam.class).getStringValue("defaultValue");
-                } else if (sourceProp.hasAnnotation(UriPath.class)) {
-                    defaultValue = sourceProp.getAnnotation(UriPath.class).getStringValue("defaultValue");
-                }
-                if (!Strings.isBlank(defaultValue)) {
-                    if ("java.lang.String".equals(optionType)) {
-                        prop.getField().setStringInitializer(defaultValue);
-                    } else if ("integer".equals(optionType) || "boolean".equals(optionType)) {
-                        prop.getField().setLiteralInitializer(defaultValue);
-                    } else if (anEnum) {
-                        String enumShortName = optionClass.getSimpleName();
-                        prop.getField().setLiteralInitializer(enumShortName + "." + defaultValue);
-                        javaClass.addImport(model.getJavaType());
+                // try to see if the source is actually reusing a shared Camel configuration that that has @UriParam options
+                // if so we can fetch the default value from the json file as it holds the correct value vs the annotation
+                // as the annotation can refer to a constant field which we wont have accessible at this point
+                if (sourceProp.hasAnnotation(UriParam.class) || sourceProp.hasAnnotation(UriPath.class)) {
+                    String defaultValue = null;
+                    String javaType = null;
+                    String type = null;
+
+                    String fileName = model.getJavaType();
+                    fileName = fileName.substring(0, fileName.lastIndexOf("."));
+                    fileName = fileName.replace('.', '/');
+                    File jsonFile = new File(classesDir, fileName + "/" + model.getScheme() + ".json");
+                    if (jsonFile.isFile() && jsonFile.exists()) {
+                        try {
+                            String json = FileUtils.readFileToString(jsonFile);
+                            List<Map<String, String>> rows = JSonSchemaHelper.parseJsonSchema("properties", json, true);
+
+                            // grab name from annotation
+                            String optionName;
+                            if (sourceProp.hasAnnotation(UriParam.class)) {
+                                optionName = sourceProp.getAnnotation(UriParam.class).getStringValue("name");
+                            } else {
+                                optionName = sourceProp.getAnnotation(UriPath.class).getStringValue("name");
+                            }
+                            if (optionName == null) {
+                                optionName = sourceProp.hasField() ? sourceProp.getField().getName() : null;
+                            }
+
+                            if (optionName != null) {
+                                javaType = getPropertyJavaType(rows, optionName);
+                                type = getPropertyType(rows, optionName);
+                                defaultValue = getPropertyDefaultValue(rows, optionName);
+                            }
+                        } catch (IOException e) {
+                            // ignore
+                        }
+                    }
+
+                    if (!Strings.isBlank(defaultValue)) {
+
+                        // roaster can create the wrong type for some options so use the correct type we found in the json schema
+                        String wrapperType = getSimpleJavaType(javaType);
+                        if (wrapperType.startsWith("java.lang.")) {
+                            // skip java.lang. as prefix for wrapper type
+                            wrapperType = wrapperType.substring(10);
+                            prop.setType(wrapperType);
+                        }
+
+                        if ("long".equals(javaType) || "java.lang.Long".equals(javaType)) {
+                            // the value should be a Long number
+                            String value = defaultValue + "L";
+                            prop.getField().setLiteralInitializer(value);
+                        } else if ("integer".equals(type) || "boolean".equals(type)) {
+                            prop.getField().setLiteralInitializer(defaultValue);
+                        } else if ("string".equals(type)) {
+                            prop.getField().setStringInitializer(defaultValue);
+                        } else if (anEnum) {
+                            String enumShortName = optionClass.getSimpleName();
+                            prop.getField().setLiteralInitializer(enumShortName + "." + defaultValue);
+                            javaClass.addImport(model.getJavaType());
+                        }
                     }
                 }
             }
@@ -674,6 +733,10 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
             if (!Strings.isBlank(option.getDefaultValue())) {
                 if ("java.lang.String".equals(option.getType())) {
                     prop.getField().setStringInitializer(option.getDefaultValue());
+                } else if ("long".equals(option.getJavaType()) || "java.lang.Long".equals(option.getJavaType())) {
+                    // the value should be a Long number
+                    String value = option.getDefaultValue() + "L";
+                    prop.getField().setLiteralInitializer(value);
                 } else if ("integer".equals(option.getType()) || "boolean".equals(option.getType())) {
                     prop.getField().setLiteralInitializer(option.getDefaultValue());
                 } else if (!Strings.isBlank(option.getEnumValues())) {
@@ -762,6 +825,10 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
             if (!Strings.isBlank(option.getDefaultValue())) {
                 if ("java.lang.String".equals(option.getType())) {
                     prop.getField().setStringInitializer(option.getDefaultValue());
+                } else if ("long".equals(option.getJavaType()) || "java.lang.Long".equals(option.getJavaType())) {
+                    // the value should be a Long number
+                    String value = option.getDefaultValue() + "L";
+                    prop.getField().setLiteralInitializer(value);
                 } else if ("integer".equals(option.getType()) || "boolean".equals(option.getType())) {
                     prop.getField().setLiteralInitializer(option.getDefaultValue());
                 } else if (!Strings.isBlank(option.getEnumValues())) {

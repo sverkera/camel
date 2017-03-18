@@ -46,6 +46,7 @@ import org.apache.camel.StartupListener;
 import org.apache.camel.TimerListener;
 import org.apache.camel.VetoCamelContextStartException;
 import org.apache.camel.api.management.PerformanceCounter;
+import org.apache.camel.catalog.RuntimeCamelCatalog;
 import org.apache.camel.impl.ConsumerCache;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.impl.DefaultEndpointRegistry;
@@ -66,6 +67,7 @@ import org.apache.camel.management.mbean.ManagedInflightRepository;
 import org.apache.camel.management.mbean.ManagedProducerCache;
 import org.apache.camel.management.mbean.ManagedRestRegistry;
 import org.apache.camel.management.mbean.ManagedRoute;
+import org.apache.camel.management.mbean.ManagedRuntimeCamelCatalog;
 import org.apache.camel.management.mbean.ManagedRuntimeEndpointRegistry;
 import org.apache.camel.management.mbean.ManagedService;
 import org.apache.camel.management.mbean.ManagedStreamCachingStrategy;
@@ -101,8 +103,10 @@ import org.apache.camel.spi.RestRegistry;
 import org.apache.camel.spi.RouteContext;
 import org.apache.camel.spi.RuntimeEndpointRegistry;
 import org.apache.camel.spi.StreamCachingStrategy;
+import org.apache.camel.spi.TransformerRegistry;
 import org.apache.camel.spi.TypeConverterRegistry;
 import org.apache.camel.spi.UnitOfWork;
+import org.apache.camel.spi.ValidatorRegistry;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.support.TimerListenerManager;
 import org.apache.camel.util.KeyValueHolder;
@@ -495,10 +499,12 @@ public class DefaultManagementLifecycleStrategy extends ServiceSupport implement
             answer = new ManagedStreamCachingStrategy(context, (StreamCachingStrategy) service);
         } else if (service instanceof EventNotifier) {
             answer = getManagementObjectStrategy().getManagedObjectForEventNotifier(context, (EventNotifier) service);
-        } else if (service instanceof DefaultTransformerRegistry) {
-            answer = new ManagedTransformerRegistry(context, (DefaultTransformerRegistry)service);
-        } else if (service instanceof DefaultValidatorRegistry) {
-            answer = new ManagedValidatorRegistry(context, (DefaultValidatorRegistry)service);
+        } else if (service instanceof TransformerRegistry) {
+            answer = new ManagedTransformerRegistry(context, (TransformerRegistry)service);
+        } else if (service instanceof ValidatorRegistry) {
+            answer = new ManagedValidatorRegistry(context, (ValidatorRegistry)service);
+        } else if (service instanceof RuntimeCamelCatalog) {
+            answer = new ManagedRuntimeCamelCatalog(context, (RuntimeCamelCatalog) service);
         } else if (service != null) {
             // fallback as generic service
             answer = getManagementObjectStrategy().getManagedObjectForService(context, service);

@@ -48,25 +48,36 @@ The Azure Storage Queue Service component has no options.
 
 
 // endpoint options: START
-The Azure Storage Queue Service component supports 11 endpoint options which are listed below:
+The Azure Storage Queue Service endpoint is configured using URI syntax:
 
-{% raw %}
-[width="100%",cols="2,1,1m,1m,5",options="header"]
+    azure-queue:containerAndQueueUri
+
+with the following path and query parameters:
+
+#### Path Parameters (1 parameters):
+
+[width="100%",cols="2,5,^1,2",options="header"]
 |=======================================================================
-| Name | Group | Default | Java Type | Description
-| containerAndQueueUri | common |  | String | *Required* Container Queue compact Uri
-| azureQueueClient | common |  | CloudQueue | The queue service client
-| credentials | common |  | StorageCredentials | Set the storage credentials required in most cases
-| bridgeErrorHandler | consumer | false | boolean | Allows for bridging the consumer to the Camel routing Error Handler which mean any exceptions occurred while the consumer is trying to pickup incoming messages or the likes will now be processed as a message and handled by the routing Error Handler. By default the consumer will use the org.apache.camel.spi.ExceptionHandler to deal with exceptions that will be logged at WARN or ERROR level and ignored.
-| exceptionHandler | consumer (advanced) |  | ExceptionHandler | To let the consumer use a custom ExceptionHandler. Notice if the option bridgeErrorHandler is enabled then this options is not in use. By default the consumer will deal with exceptions that will be logged at WARN or ERROR level and ignored.
-| exchangePattern | consumer (advanced) |  | ExchangePattern | Sets the exchange pattern when the consumer creates an exchange.
-| messageTimeToLive | producer |  | int | Message Time To Live in seconds
-| messageVisibilityDelay | producer |  | int | Message Visibility Delay in seconds
-| operation | producer | listQueues | QueueServiceOperations | Queue service operation hint to the producer
-| queuePrefix | producer |  | String | Set a prefix which can be used for listing the queues
-| synchronous | advanced | false | boolean | Sets whether synchronous processing should be strictly used or Camel is allowed to use asynchronous processing (if supported).
+| Name | Description | Default | Type
+| **containerAndQueueUri** | *Required* Container Queue compact Uri |  | String
 |=======================================================================
-{% endraw %}
+
+#### Query Parameters (10 parameters):
+
+[width="100%",cols="2,5,^1,2",options="header"]
+|=======================================================================
+| Name | Description | Default | Type
+| **azureQueueClient** (common) | The queue service client |  | CloudQueue
+| **credentials** (common) | Set the storage credentials required in most cases |  | StorageCredentials
+| **bridgeErrorHandler** (consumer) | Allows for bridging the consumer to the Camel routing Error Handler which mean any exceptions occurred while the consumer is trying to pickup incoming messages or the likes will now be processed as a message and handled by the routing Error Handler. By default the consumer will use the org.apache.camel.spi.ExceptionHandler to deal with exceptions that will be logged at WARN or ERROR level and ignored. | false | boolean
+| **exceptionHandler** (consumer) | To let the consumer use a custom ExceptionHandler. Notice if the option bridgeErrorHandler is enabled then this options is not in use. By default the consumer will deal with exceptions that will be logged at WARN or ERROR level and ignored. |  | ExceptionHandler
+| **exchangePattern** (consumer) | Sets the exchange pattern when the consumer creates an exchange. |  | ExchangePattern
+| **messageTimeToLive** (producer) | Message Time To Live in seconds |  | int
+| **messageVisibilityDelay** (producer) | Message Visibility Delay in seconds |  | int
+| **operation** (producer) | Queue service operation hint to the producer | listQueues | QueueServiceOperations
+| **queuePrefix** (producer) | Set a prefix which can be used for listing the queues |  | String
+| **synchronous** (advanced) | Sets whether synchronous processing should be strictly used or Camel is allowed to use asynchronous processing (if supported). | false | boolean
+|=======================================================================
 // endpoint options: END
 
 

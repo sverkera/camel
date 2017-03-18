@@ -43,29 +43,12 @@ public class HttpComponentConfiguration {
     @NestedConfigurationProperty
     private HttpClientConfigurer httpClientConfigurer;
     /**
-     * To use a custom HttpClientConnectionManager to manage connections
+     * To use a custom and shared HttpClientConnectionManager to manage
+     * connections. If this has been configured then this is always used for all
+     * endpoints created by this component.
      */
     @NestedConfigurationProperty
     private HttpClientConnectionManager clientConnectionManager;
-    /**
-     * To use a custom HttpBinding to control the mapping between Camel message
-     * and HttpClient.
-     */
-    @NestedConfigurationProperty
-    private HttpBinding httpBinding;
-    /**
-     * To use the shared HttpConfiguration as base configuration.
-     */
-    @NestedConfigurationProperty
-    private HttpConfiguration httpConfiguration;
-    /**
-     * Whether to allow java serialization when a request uses
-     * context-type=application/x-java-serialized-object This is by default
-     * turned off. If you enable this then be aware that Java will deserialize
-     * the incoming data from the request to Java and that can be a potential
-     * security risk.
-     */
-    private Boolean allowJavaSerializedObject = false;
     /**
      * To use a custom org.apache.http.protocol.HttpContext when executing
      * requests.
@@ -108,11 +91,36 @@ public class HttpComponentConfiguration {
     @NestedConfigurationProperty
     private CookieStore cookieStore;
     /**
+     * To use a custom HttpBinding to control the mapping between Camel message
+     * and HttpClient.
+     */
+    @NestedConfigurationProperty
+    private HttpBinding httpBinding;
+    /**
+     * To use the shared HttpConfiguration as base configuration.
+     */
+    @NestedConfigurationProperty
+    private HttpConfiguration httpConfiguration;
+    /**
+     * Whether to allow java serialization when a request uses
+     * context-type=application/x-java-serialized-object. This is by default
+     * turned off. If you enable this then be aware that Java will deserialize
+     * the incoming data from the request to Java and that can be a potential
+     * security risk.
+     */
+    private Boolean allowJavaSerializedObject = false;
+    /**
      * To use a custom org.apache.camel.spi.HeaderFilterStrategy to filter
      * header to and from Camel message.
      */
     @NestedConfigurationProperty
     private HeaderFilterStrategy headerFilterStrategy;
+    /**
+     * Whether the component should resolve property placeholders on itself when
+     * starting. Only properties which are of String type can use property
+     * placeholders.
+     */
+    private Boolean resolvePropertyPlaceholders = true;
 
     public HttpClientConfigurer getHttpClientConfigurer() {
         return httpClientConfigurer;
@@ -130,30 +138,6 @@ public class HttpComponentConfiguration {
     public void setClientConnectionManager(
             HttpClientConnectionManager clientConnectionManager) {
         this.clientConnectionManager = clientConnectionManager;
-    }
-
-    public HttpBinding getHttpBinding() {
-        return httpBinding;
-    }
-
-    public void setHttpBinding(HttpBinding httpBinding) {
-        this.httpBinding = httpBinding;
-    }
-
-    public HttpConfiguration getHttpConfiguration() {
-        return httpConfiguration;
-    }
-
-    public void setHttpConfiguration(HttpConfiguration httpConfiguration) {
-        this.httpConfiguration = httpConfiguration;
-    }
-
-    public Boolean getAllowJavaSerializedObject() {
-        return allowJavaSerializedObject;
-    }
-
-    public void setAllowJavaSerializedObject(Boolean allowJavaSerializedObject) {
-        this.allowJavaSerializedObject = allowJavaSerializedObject;
     }
 
     public HttpContext getHttpContext() {
@@ -213,6 +197,30 @@ public class HttpComponentConfiguration {
         this.cookieStore = cookieStore;
     }
 
+    public HttpBinding getHttpBinding() {
+        return httpBinding;
+    }
+
+    public void setHttpBinding(HttpBinding httpBinding) {
+        this.httpBinding = httpBinding;
+    }
+
+    public HttpConfiguration getHttpConfiguration() {
+        return httpConfiguration;
+    }
+
+    public void setHttpConfiguration(HttpConfiguration httpConfiguration) {
+        this.httpConfiguration = httpConfiguration;
+    }
+
+    public Boolean getAllowJavaSerializedObject() {
+        return allowJavaSerializedObject;
+    }
+
+    public void setAllowJavaSerializedObject(Boolean allowJavaSerializedObject) {
+        this.allowJavaSerializedObject = allowJavaSerializedObject;
+    }
+
     public HeaderFilterStrategy getHeaderFilterStrategy() {
         return headerFilterStrategy;
     }
@@ -220,5 +228,14 @@ public class HttpComponentConfiguration {
     public void setHeaderFilterStrategy(
             HeaderFilterStrategy headerFilterStrategy) {
         this.headerFilterStrategy = headerFilterStrategy;
+    }
+
+    public Boolean getResolvePropertyPlaceholders() {
+        return resolvePropertyPlaceholders;
+    }
+
+    public void setResolvePropertyPlaceholders(
+            Boolean resolvePropertyPlaceholders) {
+        this.resolvePropertyPlaceholders = resolvePropertyPlaceholders;
     }
 }

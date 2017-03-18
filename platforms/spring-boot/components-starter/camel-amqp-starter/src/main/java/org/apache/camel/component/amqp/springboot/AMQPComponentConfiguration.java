@@ -30,7 +30,6 @@ import org.apache.camel.spi.HeaderFilterStrategy;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.context.ApplicationContext;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.jms.core.JmsOperations;
 import org.springframework.jms.support.converter.MessageConverter;
@@ -246,7 +245,7 @@ public class AMQPComponentConfiguration {
      * value to eg 100 to control how fast the consumers will shrink when less
      * work is required.
      */
-    private Integer maxMessagesPerTask = 1;
+    private Integer maxMessagesPerTask = -1;
     /**
      * To use a custom Spring
      * org.springframework.jms.support.converter.MessageConverter so you can be
@@ -323,7 +322,7 @@ public class AMQPComponentConfiguration {
      * When sending messages specifies the time-to-live of the message (in
      * milliseconds).
      */
-    private Long timeToLive = 1L;
+    private Long timeToLive = -1L;
     /**
      * Specifies whether to use transacted mode
      */
@@ -346,7 +345,7 @@ public class AMQPComponentConfiguration {
      * The timeout value of the transaction (in seconds) if using transacted
      * mode.
      */
-    private Integer transactionTimeout = 1;
+    private Integer transactionTimeout = -1;
     /**
      * Specifies whether to test the connection on startup. This ensures that
      * when Camel starts that all the JMS consumers have a valid connection to
@@ -527,10 +526,6 @@ public class AMQPComponentConfiguration {
     @NestedConfigurationProperty
     private JmsKeyFormatStrategy jmsKeyFormatStrategy;
     /**
-     * Sets the Spring ApplicationContext to use
-     */
-    private ApplicationContext applicationContext;
-    /**
      * To use a custom QueueBrowseStrategy when browsing queues
      */
     @NestedConfigurationProperty
@@ -568,6 +563,12 @@ public class AMQPComponentConfiguration {
      */
     @NestedConfigurationProperty
     private HeaderFilterStrategy headerFilterStrategy;
+    /**
+     * Whether the component should resolve property placeholders on itself when
+     * starting. Only properties which are of String type can use property
+     * placeholders.
+     */
+    private Boolean resolvePropertyPlaceholders = true;
 
     public JmsConfiguration getConfiguration() {
         return configuration;
@@ -1126,14 +1127,6 @@ public class AMQPComponentConfiguration {
         this.jmsKeyFormatStrategy = jmsKeyFormatStrategy;
     }
 
-    public ApplicationContext getApplicationContext() {
-        return applicationContext;
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-    }
-
     public QueueBrowseStrategy getQueueBrowseStrategy() {
         return queueBrowseStrategy;
     }
@@ -1184,5 +1177,14 @@ public class AMQPComponentConfiguration {
     public void setHeaderFilterStrategy(
             HeaderFilterStrategy headerFilterStrategy) {
         this.headerFilterStrategy = headerFilterStrategy;
+    }
+
+    public Boolean getResolvePropertyPlaceholders() {
+        return resolvePropertyPlaceholders;
+    }
+
+    public void setResolvePropertyPlaceholders(
+            Boolean resolvePropertyPlaceholders) {
+        this.resolvePropertyPlaceholders = resolvePropertyPlaceholders;
     }
 }
