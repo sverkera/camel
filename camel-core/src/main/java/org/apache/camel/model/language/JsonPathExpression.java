@@ -29,7 +29,7 @@ import org.apache.camel.spi.Metadata;
 import org.apache.camel.util.ObjectHelper;
 
 /**
- * For JSonPath expressions and predicates
+ * To use JSonPath in Camel expressions or predicates.
  *
  * @version 
  */
@@ -48,6 +48,10 @@ public class JsonPathExpression extends ExpressionDefinition {
     private Boolean allowSimple;
     @XmlAttribute @Metadata(defaultValue = "true")
     private Boolean allowEasyPredicate;
+    @XmlAttribute @Metadata(defaultValue = "false")
+    private Boolean writeAsString;
+    @XmlAttribute
+    private String headerName;
 
     public JsonPathExpression() {
     }
@@ -111,6 +115,28 @@ public class JsonPathExpression extends ExpressionDefinition {
         this.suppressExceptions = suppressExceptions;
     }
 
+    public Boolean getWriteAsString() {
+        return writeAsString;
+    }
+
+    /**
+     * Whether to write the output of each row/element as a JSon String value instead of a Map/POJO value.
+     */
+    public void setWriteAsString(Boolean writeAsString) {
+        this.writeAsString = writeAsString;
+    }
+
+    public String getHeaderName() {
+        return headerName;
+    }
+
+    /**
+     * Name of header to use as input, instead of the message body
+     */
+    public void setHeaderName(String headerName) {
+        this.headerName = headerName;
+    }
+
     public String getLanguage() {
         return "jsonpath";
     }
@@ -141,6 +167,12 @@ public class JsonPathExpression extends ExpressionDefinition {
         if (allowEasyPredicate != null) {
             setProperty(expression, "allowEasyPredicate", allowEasyPredicate);
         }
+        if (writeAsString != null) {
+            setProperty(expression, "writeAsString", writeAsString);
+        }
+        if (headerName != null) {
+            setProperty(expression, "headerName", headerName);
+        }
         super.configureExpression(camelContext, expression);
     }
 
@@ -157,6 +189,12 @@ public class JsonPathExpression extends ExpressionDefinition {
         }
         if (allowEasyPredicate != null) {
             setProperty(predicate, "allowEasyPredicate", allowEasyPredicate);
+        }
+        if (writeAsString != null) {
+            setProperty(predicate, "writeAsString", writeAsString);
+        }
+        if (headerName != null) {
+            setProperty(predicate, "headerName", headerName);
         }
         super.configurePredicate(camelContext, predicate);
     }

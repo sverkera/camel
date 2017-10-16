@@ -81,6 +81,9 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Def
     private String messageHistory;
 
     @XmlAttribute
+    private String logMask;
+
+    @XmlAttribute
     private String logExhaustedMessageBody;
 
     @XmlAttribute
@@ -103,6 +106,9 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Def
 
     @XmlAttribute
     private String useMDCLogging;
+
+    @XmlAttribute
+    private String useDataType;
 
     @XmlAttribute
     private String useBreadcrumb;
@@ -128,6 +134,9 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Def
     @Deprecated
     @XmlAttribute
     private Boolean lazyLoadTypeConverters;
+
+    @XmlAttribute
+    private Boolean loadTypeConverters;
 
     @XmlAttribute
     private Boolean typeConverterStatisticsEnabled;
@@ -543,6 +552,14 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Def
         this.messageHistory = messageHistory;
     }
 
+    public String getLogMask() {
+        return logMask;
+    }
+
+    public void setLogMask(String logMask) {
+        this.logMask = logMask;
+    }
+
     @Override
     public String getLogExhaustedMessageBody() {
         return logExhaustedMessageBody;
@@ -600,6 +617,14 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Def
         this.useMDCLogging = useMDCLogging;
     }
 
+    public String getUseDataType() {
+        return useDataType;
+    }
+
+    public void setUseDataType(String useDataType) {
+        this.useDataType = useDataType;
+    }
+
     public String getUseBreadcrumb() {
         return useBreadcrumb;
     }
@@ -648,6 +673,15 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Def
     @Deprecated
     public void setLazyLoadTypeConverters(Boolean lazyLoadTypeConverters) {
         this.lazyLoadTypeConverters = lazyLoadTypeConverters;
+    }
+
+    @Override
+    public Boolean getLoadTypeConverters() {
+        return loadTypeConverters;
+    }
+
+    public void setLoadTypeConverters(Boolean loadTypeConverters) {
+        this.loadTypeConverters = loadTypeConverters;
     }
 
     public Boolean getTypeConverterStatisticsEnabled() {

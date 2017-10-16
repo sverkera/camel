@@ -26,42 +26,29 @@ import org.slf4j.LoggerFactory;
  * <p/>
  * Below are some examples how to call a service and what Camel endpoint URI is constructed based on the input:
  * <pre>
- serviceCall("myService") -> http://hostname:port
- serviceCall("myService/foo") -> http://hostname:port/foo
- serviceCall("http:myService/foo") -> http:hostname:port/foo
- serviceCall("myService", "http:myService.host:myService.port/foo") -> http:hostname:port/foo
+ serviceCall("myService") -> http4://hostname:port
+ serviceCall("myService/foo") -> http4://hostname:port/foo
+ serviceCall("http4:myService/foo") -> http4:hostname:port/foo
+ serviceCall("myService", "http4:myService.host:myService.port/foo") -> http4:hostname:port/foo
  serviceCall("myService", "netty4:tcp:myService?connectTimeout=1000") -> netty:tcp:hostname:port?connectTimeout=1000
  * </pre>
  */
 public class DefaultServiceCallExpression extends ServiceCallExpressionSupport {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultServiceCallExpression.class);
 
+    public DefaultServiceCallExpression() {
+    }
+
+    public DefaultServiceCallExpression(String hostHeader, String portHeader) {
+        super(hostHeader, portHeader);
+    }
+
     @Override
     protected String buildCamelEndpointUri(String name, String host, Integer port, String uri, String contextPath, String scheme) {
         // build basic uri if none provided
         String answer = uri;
         if (answer == null) {
-            if (scheme == null) {
-                // use http/https by default if no scheme or port have been configured
-                if (port == null) {
-                    scheme = "http";
-                } else if (port == 443) {
-                    scheme = "https";
-                } else {
-                    scheme = "http";
-                }
-            }
-            answer = scheme + "://" + host;
-            if (port != null) {
-                answer = answer + ":" + port;
-            }
-            if (contextPath != null) {
-                if (!contextPath.startsWith("/")) {
-                    contextPath = "/" + contextPath;
-                }
-
-                answer += contextPath;
-            }
+            answer = doBuildCamelEndpointUri(host, port, contextPath, scheme);
         } else {
             // we have existing uri, then replace the serviceName with ip:port
             if (answer.contains(name + ".host")) {
@@ -79,6 +66,33 @@ public class DefaultServiceCallExpression extends ServiceCallExpressionSupport {
         }
 
         LOGGER.debug("Camel endpoint uri: {} for calling service: {} on server {}:{}", answer, name, host, port);
+        return answer;
+    }
+
+    protected String doBuildCamelEndpointUri(String host, Integer port, String contextPath, String scheme) {
+        if (scheme == null) {
+            // use http/https by default if no scheme or port have been configured
+            if (port == null) {
+                scheme = "http4";
+            } else if (port == 443) {
+                scheme = "https4";
+            } else {
+                scheme = "http4";
+            }
+        }
+
+        String answer = scheme + "://" + host;
+        if (port != null) {
+            answer = answer + ":" + port;
+        }
+        if (contextPath != null) {
+            if (!contextPath.startsWith("/")) {
+                contextPath = "/" + contextPath;
+            }
+
+            answer += contextPath;
+        }
+
         return answer;
     }
 }

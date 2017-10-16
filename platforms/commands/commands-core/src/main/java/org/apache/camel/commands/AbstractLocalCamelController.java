@@ -83,10 +83,12 @@ public abstract class AbstractLocalCamelController extends AbstractCamelControll
             answer.put("allowUseOriginalMessage", context.isAllowUseOriginalMessage());
             answer.put("messageHistory", context.isMessageHistory());
             answer.put("tracing", context.isTracing());
+            answer.put("logMask", context.isLogMask());
             answer.put("shutdownTimeout", context.getShutdownStrategy().getTimeUnit().toSeconds(context.getShutdownStrategy().getTimeout()));
             answer.put("classResolver", context.getClassResolver().toString());
             answer.put("packageScanClassResolver", context.getPackageScanClassResolver().toString());
             answer.put("applicationContextClassLoader", context.getApplicationContextClassLoader().toString());
+            answer.put("headersMapFactory", context.getHeadersMapFactory().toString());
 
             for (Map.Entry<String, String> entry : context.getProperties().entrySet()) {
                 answer.put("property." + entry.getKey(), entry.getValue());
@@ -456,7 +458,7 @@ public abstract class AbstractLocalCamelController extends AbstractCamelControll
 
         if (camelContextName != null) {
             CamelContext context = this.getLocalCamelContext(camelContextName);
-            if (context != null) {
+            if (context != null && context.getRuntimeEndpointRegistry() != null) {
                 EndpointRegistry staticRegistry = context.getEndpointRegistry();
                 for (RuntimeEndpointRegistry.Statistic stat : context.getRuntimeEndpointRegistry().getEndpointStatistics()) {
 

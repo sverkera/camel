@@ -400,7 +400,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
 
                 if (i == 0) {
                     // first line is the title to make the text less noisy we use level 2
-                    String newLine = "## " + title;
+                    String newLine = "== " + title;
                     newLines.add(newLine);
                     updated = !line.equals(newLine);
                     continue;
@@ -408,7 +408,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
 
                 // use single line headers with # as level instead of the cumbersome adoc weird style
                 if (line.startsWith("^^^") || line.startsWith("~~~") || line.startsWith("+++")) {
-                    String level = line.startsWith("+++") ? "####" : "###";
+                    String level = line.startsWith("+++") ? "====" : "===";
 
                     // transform legacy heading into new style
                     int idx = newLines.size() - 1;
@@ -471,7 +471,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
             newLines.addAll(Arrays.asList(lines));
 
             // check the first four lines
-            boolean title = lines[0].startsWith("##");
+            boolean title = lines[0].startsWith("##") || lines[0].startsWith("==");
             boolean empty = lines[1].trim().isEmpty();
             boolean availableFrom = lines[2].trim().contains("Available as of") || lines[2].trim().contains("Available in");
             boolean empty2 = lines[3].trim().isEmpty();
@@ -767,6 +767,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
         component.setFirstVersion(getSafeValue("firstVersion", rows));
         component.setLabel(getSafeValue("label", rows));
         component.setDeprecated(getSafeValue("deprecated", rows));
+        component.setDeprecationNote(getSafeValue("deprecationNote", rows));
         component.setConsumerOnly(getSafeValue("consumerOnly", rows));
         component.setProducerOnly(getSafeValue("producerOnly", rows));
         component.setJavaType(getSafeValue("javaType", rows));
@@ -787,6 +788,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
             option.setJavaType(getSafeValue("javaType", row));
             option.setEnums(getSafeValue("enum", row));
             option.setDeprecated(getSafeValue("deprecated", row));
+            option.setDeprecationNote(getSafeValue("deprecationNote", row));
             option.setSecret(getSafeValue("secret", row));
             option.setDefaultValue(getSafeValue("defaultValue", row));
             option.setDescription(getSafeValue("description", row));
@@ -794,6 +796,20 @@ public class UpdateReadmeMojo extends AbstractMojo {
             if ("true".equals(option.getRequired())) {
                 String desc = "*Required* " + option.getDescription();
                 option.setDescription(desc);
+            }
+            // is the option deprecated then include that as well in the description
+            if ("true".equals(option.getDeprecated())) {
+                String desc = "*Deprecated* " + option.getDescription();
+                option.setDescription(desc);
+                if (!StringHelper.isEmpty(option.getDeprecationNote())) {
+                    desc = option.getDescription();
+                    if (!desc.endsWith(".")) {
+                        desc = desc + ". Deprecation note: " + option.getDeprecationNote();
+                    } else {
+                        desc = desc + " Deprecation note: " + option.getDeprecationNote();
+                    }
+                    option.setDescription(desc);
+                }
             }
             component.addComponentOption(option);
 
@@ -819,6 +835,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
             option.setPrefix(getSafeValue("prefix", row));
             option.setMultiValue(getSafeValue("multiValue", row));
             option.setDeprecated(getSafeValue("deprecated", row));
+            option.setDeprecationNote(getSafeValue("deprecationNote", row));
             option.setSecret(getSafeValue("secret", row));
             option.setDefaultValue(getSafeValue("defaultValue", row));
             option.setDescription(getSafeValue("description", row));
@@ -826,6 +843,20 @@ public class UpdateReadmeMojo extends AbstractMojo {
             if ("true".equals(option.getRequired())) {
                 String desc = "*Required* " + option.getDescription();
                 option.setDescription(desc);
+            }
+            // is the option deprecated then include that as well in the description
+            if ("true".equals(option.getDeprecated())) {
+                String desc = "*Deprecated* " + option.getDescription();
+                option.setDescription(desc);
+                if (!StringHelper.isEmpty(option.getDeprecationNote())) {
+                    desc = option.getDescription();
+                    if (!desc.endsWith(".")) {
+                        desc = desc + ". Deprecation note: " + option.getDeprecationNote();
+                    } else {
+                        desc = desc + " Deprecation note: " + option.getDeprecationNote();
+                    }
+                    option.setDescription(desc);
+                }
             }
             // separate the options in path vs parameter so we can generate two different tables
             if ("path".equals(option.getKind())) {
@@ -855,6 +886,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
         dataFormat.setFirstVersion(getSafeValue("firstVersion", rows));
         dataFormat.setLabel(getSafeValue("label", rows));
         dataFormat.setDeprecated(getSafeValue("deprecated", rows));
+        dataFormat.setDeprecationNote(getSafeValue("deprecationNote", rows));
         dataFormat.setJavaType(getSafeValue("javaType", rows));
         dataFormat.setGroupId(getSafeValue("groupId", rows));
         dataFormat.setArtifactId(getSafeValue("artifactId", rows));
@@ -869,6 +901,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
             option.setType(getSafeValue("type", row));
             option.setJavaType(getSafeValue("javaType", row));
             option.setDeprecated(getSafeValue("deprecated", row));
+            option.setDeprecationNote(getSafeValue("deprecationNote", row));
             option.setEnumValues(getSafeValue("enum", row));
             option.setDefaultValue(getSafeValue("defaultValue", row));
             option.setDescription(getSafeValue("description", row));
@@ -878,6 +911,21 @@ public class UpdateReadmeMojo extends AbstractMojo {
                 option.setDefaultValue("");
                 String doc = option.getDescription() + " The default value is either Csv or KeyValue depending on chosen dataformat.";
                 option.setDescription(doc);
+            }
+            // lets put required in the description
+            // is the option deprecated then include that as well in the description
+            if ("true".equals(option.getDeprecated())) {
+                String desc = "*Deprecated* " + option.getDescription();
+                option.setDescription(desc);
+                if (!StringHelper.isEmpty(option.getDeprecationNote())) {
+                    desc = option.getDescription();
+                    if (!desc.endsWith(".")) {
+                        desc = desc + ". Deprecation note: " + option.getDeprecationNote();
+                    } else {
+                        desc = desc + " Deprecation note: " + option.getDeprecationNote();
+                    }
+                    option.setDescription(desc);
+                }
             }
 
             // skip option named id
@@ -902,6 +950,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
         language.setFirstVersion(getSafeValue("firstVersion", rows));
         language.setLabel(getSafeValue("label", rows));
         language.setDeprecated(getSafeValue("deprecated", rows));
+        language.setDeprecationNote(getSafeValue("deprecationNote", rows));
         language.setJavaType(getSafeValue("javaType", rows));
         language.setGroupId(getSafeValue("groupId", rows));
         language.setArtifactId(getSafeValue("artifactId", rows));
@@ -916,9 +965,25 @@ public class UpdateReadmeMojo extends AbstractMojo {
             option.setType(getSafeValue("type", row));
             option.setJavaType(getSafeValue("javaType", row));
             option.setDeprecated(getSafeValue("deprecated", row));
+            option.setDeprecationNote(getSafeValue("deprecationNote", row));
             option.setEnumValues(getSafeValue("enum", row));
             option.setDefaultValue(getSafeValue("defaultValue", row));
             option.setDescription(getSafeValue("description", row));
+
+            // is the option deprecated then include that as well in the description
+            if ("true".equals(option.getDeprecated())) {
+                String desc = "*Deprecated* " + option.getDescription();
+                option.setDescription(desc);
+                if (!StringHelper.isEmpty(option.getDeprecationNote())) {
+                    desc = option.getDescription();
+                    if (!desc.endsWith(".")) {
+                        desc = desc + ". Deprecation note: " + option.getDeprecationNote();
+                    } else {
+                        desc = desc + " Deprecation note: " + option.getDeprecationNote();
+                    }
+                    option.setDescription(desc);
+                }
+            }
 
             // skip option named id/expression
             if ("id".equals(option.getName()) || "expression".equals(option.getName())) {
@@ -941,6 +1006,7 @@ public class UpdateReadmeMojo extends AbstractMojo {
         eip.setJavaType(getSafeValue("javaType", rows));
         eip.setLabel(getSafeValue("label", rows));
         eip.setDeprecated("true".equals(getSafeValue("deprecated", rows)));
+        eip.setDeprecationNote(getSafeValue("deprecationNote", rows));
         eip.setInput("true".equals(getSafeValue("input", rows)));
         eip.setOutput("true".equals(getSafeValue("output", rows)));
 
@@ -953,6 +1019,8 @@ public class UpdateReadmeMojo extends AbstractMojo {
             option.setJavaType(getSafeValue("javaType", row));
             option.setRequired(getSafeValue("required", row));
             option.setDeprecated("true".equals(getSafeValue("deprecated", row)));
+            option.setDeprecationNote(getSafeValue("deprecationNote", row));
+            option.setDefaultValue(getSafeValue("defaultValue", row));
             option.setDescription(getSafeValue("description", row));
             option.setInput("true".equals(getSafeValue("input", row)));
             option.setOutput("true".equals(getSafeValue("output", row)));
@@ -961,6 +1029,20 @@ public class UpdateReadmeMojo extends AbstractMojo {
             if ("true".equals(option.getRequired())) {
                 String desc = "*Required* " + option.getDescription();
                 option.setDescription(desc);
+            }
+            // is the option deprecated then include that as well in the description
+            if (option.isDeprecated()) {
+                String desc = "*Deprecated* " + option.getDescription();
+                option.setDescription(desc);
+                if (!StringHelper.isEmpty(option.getDeprecationNote())) {
+                    desc = option.getDescription();
+                    if (!desc.endsWith(".")) {
+                        desc = desc + ". Deprecation note: " + option.getDeprecationNote();
+                    } else {
+                        desc = desc + " Deprecation note: " + option.getDeprecationNote();
+                    }
+                    option.setDescription(desc);
+                }
             }
 
             // skip option named id/description/expression/outputs

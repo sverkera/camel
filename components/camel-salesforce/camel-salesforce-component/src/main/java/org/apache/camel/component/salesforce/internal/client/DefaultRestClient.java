@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtworks.xstream.XStream;
 
 import org.apache.camel.component.salesforce.SalesforceHttpClient;
+import org.apache.camel.component.salesforce.api.NoSuchSObjectException;
 import org.apache.camel.component.salesforce.api.SalesforceException;
 import org.apache.camel.component.salesforce.api.SalesforceMultipleChoicesException;
 import org.apache.camel.component.salesforce.api.TypeReferences;
@@ -59,8 +60,8 @@ public class DefaultRestClient extends AbstractClientBase implements RestClient 
     private ObjectMapper objectMapper;
     private XStream xStream;
 
-    public DefaultRestClient(SalesforceHttpClient httpClient, String version, PayloadFormat format, SalesforceSession session)
-            throws SalesforceException {
+    public DefaultRestClient(final SalesforceHttpClient httpClient, final String version, final PayloadFormat format,
+        final SalesforceSession session) throws SalesforceException {
         super(version, session, httpClient);
 
         this.format = format;
@@ -109,14 +110,11 @@ public class DefaultRestClient extends AbstractClientBase implements RestClient 
                     }
                     return new SalesforceMultipleChoicesException(reason, statusCode, choices);
                 } else {
-                    final List<RestError> restErrors;
-                    if (PayloadFormat.JSON.equals(format)) {
-                        restErrors = objectMapper.readValue(responseContent, TypeReferences.REST_ERROR_LIST_TYPE);
-                    } else {
-                        RestErrors errors = new RestErrors();
-                        xStream.fromXML(responseContent, errors);
-                        restErrors = errors.getErrors();
+                    final List<RestError> restErrors = readErrorsFrom(responseContent, format, objectMapper, xStream);
+                    if (statusCode == HttpStatus.NOT_FOUND_404) {
+                        return new NoSuchSObjectException(restErrors);
                     }
+
                     return new SalesforceException(restErrors, statusCode);
                 }
             }
@@ -395,9 +393,18 @@ public class DefaultRestClient extends AbstractClientBase implements RestClient 
             request = getRequest(httpMethod, apexCallUrl(apexUrl, queryParams));
             // set request SObject and content type
             if (requestDto != null) {
-                request.content(new InputStreamContentProvider(requestDto));
-                request.header(HttpHeader.CONTENT_TYPE,
-                        PayloadFormat.JSON.equals(format) ? APPLICATION_JSON_UTF8 : APPLICATION_XML_UTF8);
+                // guard against requests that do not support bodies
+                switch (request.getMethod()) {
+                case "PUT":
+                case "PATCH":
+                case "POST":
+                    request.content(new InputStreamContentProvider(requestDto));
+                    request.header(HttpHeader.CONTENT_TYPE,
+                            PayloadFormat.JSON.equals(format) ? APPLICATION_JSON_UTF8 : APPLICATION_XML_UTF8);
+                    break;
+                default:
+                    // ignore body for other methods
+                }
             }
 
             // requires authorization token

@@ -33,15 +33,19 @@ import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A quartz based {@link ScheduledPollConsumerScheduler} which uses a {@link CronTrigger} to define when the
- * poll should be triggered.
+ * A quartz based {@link ScheduledPollConsumerScheduler} which uses a
+ * {@link CronTrigger} to define when the poll should be triggered.
  */
 public class QuartzScheduledPollConsumerScheduler extends ServiceSupport implements ScheduledPollConsumerScheduler, NonManagedService {
 
@@ -161,36 +165,89 @@ public class QuartzScheduledPollConsumerScheduler extends ServiceSupport impleme
             setQuartzScheduler(quartz.getScheduler());
         }
 
-        JobDataMap map = new JobDataMap();
-        // do not store task as its not serializable, if we have route id
-        if (routeId != null) {
-            map.put("routeId", routeId);
-        } else {
-            map.put("task", runnable);
-        }
-        map.put(QuartzConstants.QUARTZ_TRIGGER_TYPE, "cron");
-        map.put(QuartzConstants.QUARTZ_TRIGGER_CRON_EXPRESSION, getCron());
-        map.put(QuartzConstants.QUARTZ_TRIGGER_CRON_TIMEZONE, getTimeZone().getID());
-
-        job = JobBuilder.newJob(QuartzScheduledPollConsumerJob.class)
-                .usingJobData(map)
-                .build();
-
-        // store additional information on job such as camel context etc
-        QuartzHelper.updateJobDataMap(getCamelContext(), job, null);
-
         String id = triggerId;
         if (id == null) {
             id = "trigger-" + getCamelContext().getUuidGenerator().generateUuid();
         }
 
-        trigger = TriggerBuilder.newTrigger()
-                .withIdentity(id, triggerGroup)
+        CronTrigger existingTrigger = null;
+        TriggerKey triggerKey = null;
+        if (triggerId != null && triggerGroup != null) {
+            triggerKey = new TriggerKey(triggerId, triggerGroup);
+            existingTrigger = (CronTrigger)quartzScheduler.getTrigger(triggerKey);
+        }
+
+        // Is an trigger already exist for this triggerId ?
+        if (existingTrigger == null) {
+            JobDataMap map = new JobDataMap();
+            // do not store task as its not serializable, if we have route id
+            if (routeId != null) {
+                map.put("routeId", routeId);
+            } else {
+                map.put("task", runnable);
+            }
+            map.put(QuartzConstants.QUARTZ_TRIGGER_TYPE, "cron");
+            map.put(QuartzConstants.QUARTZ_TRIGGER_CRON_EXPRESSION, getCron());
+            map.put(QuartzConstants.QUARTZ_TRIGGER_CRON_TIMEZONE, getTimeZone().getID());
+
+            job = JobBuilder.newJob(QuartzScheduledPollConsumerJob.class).usingJobData(map).build();
+
+            // store additional information on job such as camel context etc
+            QuartzHelper.updateJobDataMap(getCamelContext(), job, null);
+
+            trigger = TriggerBuilder.newTrigger().withIdentity(id, triggerGroup)
                 .withSchedule(CronScheduleBuilder.cronSchedule(getCron()).inTimeZone(getTimeZone()))
                 .build();
 
-        LOG.debug("Scheduling job: {} with trigger: {}", job, trigger.getKey());
-        quartzScheduler.scheduleJob(job, trigger);
+            LOG.debug("Scheduling job: {} with trigger: {}", job, trigger.getKey());
+            quartzScheduler.scheduleJob(job, trigger);
+        } else {
+            checkTriggerIsNonConflicting(existingTrigger);
+
+            LOG.debug("Trigger with key {} is already present in scheduler. Only updating it.", triggerKey);
+            job = quartzScheduler.getJobDetail(existingTrigger.getJobKey());
+            JobDataMap jobData = job.getJobDataMap();
+            jobData.put(QuartzConstants.QUARTZ_TRIGGER_CRON_EXPRESSION, getCron());
+            jobData.put(QuartzConstants.QUARTZ_TRIGGER_CRON_TIMEZONE, getTimeZone().getID());
+
+            // store additional information on job such as camel context etc
+            QuartzHelper.updateJobDataMap(getCamelContext(), job, null);
+            LOG.debug("Updated jobData map to {}", jobData);
+
+            trigger = existingTrigger.getTriggerBuilder()
+                .withSchedule(CronScheduleBuilder.cronSchedule(getCron()).inTimeZone(getTimeZone()))
+                .build();
+
+            // Reschedule job if trigger settings were changed
+            if (hasTriggerChanged(existingTrigger, trigger)) {
+                LOG.debug("Re-scheduling job: {} with trigger: {}", job, trigger.getKey());
+                quartzScheduler.rescheduleJob(triggerKey, trigger);
+            } else {
+                // Schedule it now. Remember that scheduler might not be started it, but we can schedule now.
+                LOG.debug("Scheduling job: {} with trigger: {}", job, trigger.getKey());
+                try {
+                    // Schedule it now. Remember that scheduler might not be started it, but we can schedule now.
+                    quartzScheduler.scheduleJob(job, trigger);
+                } catch (ObjectAlreadyExistsException ex) {
+                    // some other VM might may have stored the job & trigger in DB in clustered mode, in the mean time
+                    QuartzComponent quartz = getCamelContext().getComponent("quartz2", QuartzComponent.class);
+                    if (!(quartz.isClustered())) {
+                        throw ex;
+                    } else {
+                        trigger = (CronTrigger) quartzScheduler.getTrigger(triggerKey);
+                        if (trigger == null) {
+                            throw new SchedulerException("Trigger could not be found in quartz scheduler.");
+                        }
+                    }
+                }
+            }
+        }
+
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Job {} (triggerType={}, jobClass={}) is scheduled. Next fire date is {}",
+                new Object[] {trigger.getKey(), trigger.getClass().getSimpleName(),
+                    job.getJobClass().getSimpleName(), trigger.getNextFireTime()});
+        }
     }
 
     @Override
@@ -203,6 +260,29 @@ public class QuartzScheduledPollConsumerScheduler extends ServiceSupport impleme
 
     @Override
     protected void doShutdown() throws Exception {
+    }
+
+    private void checkTriggerIsNonConflicting(Trigger trigger) {
+        JobDataMap jobDataMap = trigger.getJobDataMap();
+        String routeIdFromTrigger = jobDataMap.getString("routeId");
+        if (routeIdFromTrigger != null && !routeIdFromTrigger.equals(routeId)) {
+            throw new IllegalArgumentException("Trigger key " + trigger.getKey() + " is already used by route: " + routeIdFromTrigger + ". Cannot re-use it for another route: " + routeId);
+        }
+    }
+
+    private boolean hasTriggerChanged(Trigger oldTrigger, Trigger newTrigger) {
+        if (newTrigger instanceof CronTrigger && oldTrigger instanceof CronTrigger) {
+            CronTrigger newCron = (CronTrigger) newTrigger;
+            CronTrigger oldCron = (CronTrigger) oldTrigger;
+            return !newCron.getCronExpression().equals(oldCron.getCronExpression());
+        } else if (newTrigger instanceof SimpleTrigger && oldTrigger instanceof SimpleTrigger) {
+            SimpleTrigger newSimple = (SimpleTrigger) newTrigger;
+            SimpleTrigger oldSimple = (SimpleTrigger) oldTrigger;
+            return newSimple.getRepeatInterval() != oldSimple.getRepeatInterval()
+                || newSimple.getRepeatCount() != oldSimple.getRepeatCount();
+        } else {
+            return !newTrigger.getClass().equals(oldTrigger.getClass()) || !newTrigger.equals(oldTrigger);
+        }
     }
 
 }

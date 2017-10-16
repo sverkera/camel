@@ -47,7 +47,7 @@ public class CamelComponentVerifierTest extends BaseHttpTest {
     private static final String AUTH_PASSWORD = "password";
 
     private HttpServer localServer;
-    
+
     @Before
     @Override
     public void setUp() throws Exception {
@@ -117,13 +117,48 @@ public class CamelComponentVerifierTest extends BaseHttpTest {
     }
 
     // *************************************************
-    // Tests
+    // Tests (parameters)
+    // *************************************************
+
+    @Test
+    public void testParameters() throws Exception {
+        HttpComponent component = context().getComponent("http4", HttpComponent.class);
+        ComponentVerifier verifier = component.getVerifier();
+
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("httpUri", getLocalServerUri("/basic"));
+
+        ComponentVerifier.Result result = verifier.verify(ComponentVerifier.Scope.PARAMETERS, parameters);
+
+        Assert.assertEquals(ComponentVerifier.Result.Status.OK, result.getStatus());
+    }
+
+    @Test
+    public void testMissingMandatoryParameters() throws Exception {
+        HttpComponent component = context().getComponent("http4", HttpComponent.class);
+        ComponentVerifier verifier = component.getVerifier();
+
+        Map<String, Object> parameters = new HashMap<>();
+
+        ComponentVerifier.Result result = verifier.verify(ComponentVerifier.Scope.PARAMETERS, parameters);
+
+        Assert.assertEquals(ComponentVerifier.Result.Status.ERROR, result.getStatus());
+        Assert.assertEquals(1, result.getErrors().size());
+
+        ComponentVerifier.VerificationError error = result.getErrors().get(0);
+
+        Assert.assertEquals(ComponentVerifier.VerificationError.StandardCode.MISSING_PARAMETER, error.getCode());
+        Assert.assertTrue(error.getParameterKeys().contains("httpUri"));
+    }
+
+    // *************************************************
+    // Tests (connectivity)
     // *************************************************
 
     @Test
     public void testConnectivity() throws Exception {
         HttpComponent component = context().getComponent("http4", HttpComponent.class);
-        HttpComponentVerifier verifier = (HttpComponentVerifier)component.getVerifier();
+        ComponentVerifier verifier = component.getVerifier();
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("httpUri", getLocalServerUri("/basic"));
@@ -136,7 +171,7 @@ public class CamelComponentVerifierTest extends BaseHttpTest {
     @Test
     public void testConnectivityWithWrongUri() throws Exception {
         HttpComponent component = context().getComponent("http4", HttpComponent.class);
-        HttpComponentVerifier verifier = (HttpComponentVerifier)component.getVerifier();
+        ComponentVerifier verifier = component.getVerifier();
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("httpUri", "http://www.not-existing-uri.unknown");
@@ -146,17 +181,16 @@ public class CamelComponentVerifierTest extends BaseHttpTest {
         Assert.assertEquals(ComponentVerifier.Result.Status.ERROR, result.getStatus());
         Assert.assertEquals(1, result.getErrors().size());
 
-        ComponentVerifier.Error error = result.getErrors().get(0);
+        ComponentVerifier.VerificationError error = result.getErrors().get(0);
 
-        Assert.assertEquals(ComponentVerifier.CODE_EXCEPTION, error.getCode());
-        Assert.assertEquals(ComponentVerifier.ERROR_TYPE_EXCEPTION, error.getAttributes().get(ComponentVerifier.ERROR_TYPE_ATTRIBUTE));
-        Assert.assertTrue(error.getParameters().contains("httpUri"));
+        Assert.assertEquals(ComponentVerifier.VerificationError.StandardCode.EXCEPTION, error.getCode());
+        Assert.assertTrue(error.getParameterKeys().contains("httpUri"));
     }
 
     @Test
     public void testConnectivityWithAuthentication() throws Exception {
         HttpComponent component = context().getComponent("http4", HttpComponent.class);
-        HttpComponentVerifier verifier = (HttpComponentVerifier)component.getVerifier();
+        ComponentVerifier verifier = component.getVerifier();
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("httpUri", getLocalServerUri("/auth"));
@@ -171,7 +205,7 @@ public class CamelComponentVerifierTest extends BaseHttpTest {
     @Test
     public void testConnectivityWithWrongAuthenticationData() throws Exception {
         HttpComponent component = context().getComponent("http4", HttpComponent.class);
-        HttpComponentVerifier verifier = (HttpComponentVerifier)component.getVerifier();
+        ComponentVerifier verifier = component.getVerifier();
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("httpUri", getLocalServerUri("/auth"));
@@ -183,19 +217,18 @@ public class CamelComponentVerifierTest extends BaseHttpTest {
         Assert.assertEquals(ComponentVerifier.Result.Status.ERROR, result.getStatus());
         Assert.assertEquals(1, result.getErrors().size());
 
-        ComponentVerifier.Error error = result.getErrors().get(0);
+        ComponentVerifier.VerificationError error = result.getErrors().get(0);
 
-        Assert.assertEquals("401", error.getCode());
-        Assert.assertEquals(ComponentVerifier.ERROR_TYPE_HTTP, error.getAttributes().get(ComponentVerifier.ERROR_TYPE_ATTRIBUTE));
-        Assert.assertEquals(401, error.getAttributes().get(ComponentVerifier.HTTP_CODE));
-        Assert.assertTrue(error.getParameters().contains("authUsername"));
-        Assert.assertTrue(error.getParameters().contains("authPassword"));
+        Assert.assertEquals(ComponentVerifier.VerificationError.StandardCode.AUTHENTICATION, error.getCode());
+        Assert.assertEquals(401, error.getDetails().get(ComponentVerifier.VerificationError.HttpAttribute.HTTP_CODE));
+        Assert.assertTrue(error.getParameterKeys().contains("authUsername"));
+        Assert.assertTrue(error.getParameterKeys().contains("authPassword"));
     }
 
     @Test
     public void testConnectivityWithRedirect() throws Exception {
         HttpComponent component = context().getComponent("http4", HttpComponent.class);
-        HttpComponentVerifier verifier = (HttpComponentVerifier)component.getVerifier();
+        ComponentVerifier verifier = component.getVerifier();
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("httpUri", getLocalServerUri("/redirect"));
@@ -208,7 +241,7 @@ public class CamelComponentVerifierTest extends BaseHttpTest {
     @Test
     public void testConnectivityWithRedirectDisabled() throws Exception {
         HttpComponent component = context().getComponent("http4", HttpComponent.class);
-        HttpComponentVerifier verifier = (HttpComponentVerifier)component.getVerifier();
+        ComponentVerifier verifier = component.getVerifier();
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("httpUri", getLocalServerUri("/redirect"));
@@ -219,12 +252,10 @@ public class CamelComponentVerifierTest extends BaseHttpTest {
         Assert.assertEquals(ComponentVerifier.Result.Status.ERROR, result.getStatus());
         Assert.assertEquals(1, result.getErrors().size());
 
-        ComponentVerifier.Error error = result.getErrors().get(0);
+        ComponentVerifier.VerificationError error = result.getErrors().get(0);
 
-        Assert.assertEquals("301", error.getCode());
-        Assert.assertEquals(ComponentVerifier.ERROR_TYPE_HTTP, error.getAttributes().get(ComponentVerifier.ERROR_TYPE_ATTRIBUTE));
-        Assert.assertEquals(true, error.getAttributes().get("http.redirect"));
-        Assert.assertEquals(getLocalServerUri("/redirected"), error.getAttributes().get("http.redirect.location"));
-        Assert.assertTrue(error.getParameters().contains("httpUri"));
+        Assert.assertEquals(ComponentVerifier.VerificationError.StandardCode.GENERIC, error.getCode());
+        Assert.assertEquals(getLocalServerUri("/redirected"), error.getDetails().get(ComponentVerifier.VerificationError.HttpAttribute.HTTP_REDIRECT));
+        Assert.assertTrue(error.getParameterKeys().contains("httpUri"));
     }
 }

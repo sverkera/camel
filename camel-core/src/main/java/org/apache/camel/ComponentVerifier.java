@@ -16,67 +16,18 @@
  */
 package org.apache.camel;
 
-import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-public interface ComponentVerifier {
-    // Todo: should be an enum ?
-    String CODE_EXCEPTION = "exception";
-    String CODE_INTERNAL = "internal";
-    String CODE_MISSING_OPTION = "missing-option";
-    String CODE_UNKNOWN_OPTION = "unknown-option";
-    String CODE_ILLEGAL_OPTION = "illegal-option";
-    String CODE_ILLEGAL_OPTION_VALUE = "illegal-option-value";
-    String CODE_UNSUPPORTED = "unsupported";
-    String CODE_UNSUPPORTED_SCOPE = "unsupported-scope";
-    String ERROR_TYPE_ATTRIBUTE = "error.type";
-    String ERROR_TYPE_EXCEPTION = "exception";
-    String ERROR_TYPE_HTTP = "http";
-    String HTTP_CODE = "http.code";
-    String HTTP_TEXT = "http.text";
-    String HTTP_REDIRECT = "http.redirect";
-    String HTTP_REDIRECT_LOCATION = "http.redirect.location";
-    String EXCEPTION_CLASS = "exception.class";
-    String EXCEPTION_INSTANCE = "exception.instance";
+import org.apache.camel.component.extension.ComponentVerifierExtension;
 
-    enum Scope {
-        NONE,
-        PARAMETERS,
-        CONNECTIVITY
-    }
-
-    /**
-     * Represent an error
-     */
-    interface Error extends Serializable {
-        String getCode();
-        String getDescription();
-        Set<String> getParameters();
-        Map<String, Object> getAttributes();
-    }
-
-    /**
-     * Represent a Result
-     */
-    interface Result extends Serializable {
-        enum Status {
-            OK,
-            ERROR,
-            UNSUPPORTED
-        }
-
-        Scope getScope();
-        Status getStatus();
-        List<Error> getErrors();
-    }
-
-    /**
-     * TODO: document
-     * @param parameters
-     * @param scope
-     * @return
-     */
-    Result verify(Scope scope, Map<String, Object> parameters);
+/**
+ * Defines the interface used for validating component/endpoint parameters. The central method of this
+ * interface is {@link #verify(Scope, Map)} which takes a scope and a set of parameters which should be verified.
+ * <p/>
+ * The return value is a {@link Result} of the verification
+ *
+ * @deprecated use {@link ComponentVerifierExtension}
+ */
+@Deprecated
+public interface ComponentVerifier extends ComponentVerifierExtension {
 }

@@ -411,7 +411,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      * to using a {@link Pipeline} but derived classes could change the behaviour
      */
     protected Processor createCompositeProcessor(RouteContext routeContext, List<Processor> list) throws Exception {
-        return new Pipeline(routeContext.getCamelContext(), list);
+        return Pipeline.newInstance(routeContext.getCamelContext(), list);
     }
 
     /**
@@ -843,7 +843,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      * <a href="http://camel.apache.org/exchange-pattern.html">ExchangePattern:</a>
      * set the {@link ExchangePattern} into the {@link Exchange}.
      * <p/>
-     * The pattern set on the {@link Exchange} will
+     * The pattern set on the {@link Exchange} will be changed from this point going foward.
      *
      * @param exchangePattern  instance of {@link ExchangePattern}
      * @return the builder
@@ -857,6 +857,8 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     /**
      * <a href="http://camel.apache.org/exchange-pattern.html">ExchangePattern:</a>
      * set the exchange's ExchangePattern {@link ExchangePattern} to be InOnly
+     * <p/>
+     * The pattern set on the {@link Exchange} will be changed from this point going foward.
      *
      * @return the builder
      * @deprecated use {@link #setExchangePattern(org.apache.camel.ExchangePattern)} instead
@@ -1411,10 +1413,8 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
-     *
-     * @return the builder
+     * <a href="http://camel.apache.org/idempotent-consumer.html">Idempotent consumer EIP:</a>
+     * Creates an {@link org.apache.camel.processor.idempotent.IdempotentConsumer IdempotentConsumer} using a fluent builder.
      */
     public ExpressionClause<IdempotentConsumerDefinition> idempotentConsumer() {
         IdempotentConsumerDefinition answer = new IdempotentConsumerDefinition();
@@ -2192,8 +2192,8 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
+     * <a href="http://camel.apache.org/throttler.html">Throttler EIP:</a>
+     * Creates a throttler using a fluent builder. 
      *
      * @return the builder
      */
@@ -2278,8 +2278,9 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
+     * <a href="http://camel.apache.org/loop.html">Loop EIP:</a>
+     * Creates a loop allowing to process the a message a number of times and possibly process them
+     * in a different way using a fluent builder.
      *
      * @return the builder
      */
@@ -2747,8 +2748,9 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
+     * <a href="http://camel.apache.org/message-translator.html">Message Translator EIP:</a>
+     * Adds the custom processor using a fluent builder to this destination which could be a final
+     * destination, or could be a transformation in a pipeline
      *
      * @return the builder
      */
@@ -3411,10 +3413,19 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
+     * The <a href="http://camel.apache.org/content-enricher.html">Content Enricher EIP</a>
+     * enriches an exchange with additional data obtained from a <code>resourceUri</code> and 
+     * with an aggregation strategy created using a fluent builder.
+     *     
+     * <blockquote><pre>{@code
+     * fom("direct:start")
+     *     .enrichWith("direct:resource")
+     *         .body(String.class, (o, n) -> n + o);
+     * }</pre></blockquote>
      *
+     * @param resourceUri           URI of resource endpoint for obtaining additional data.
      * @return the builder
+     * @see org.apache.camel.processor.Enricher
      */
     public EnrichClause<ProcessorDefinition<Type>> enrichWith(@AsEndpointUri String resourceUri) {
         EnrichClause<ProcessorDefinition<Type>> clause = new EnrichClause<>(this);
@@ -3423,10 +3434,9 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
-     *
-     * @return the builder
+     * The <a href="http://camel.apache.org/content-enricher.html">Content Enricher EIP</a>
+     * enriches an exchange with additional data obtained from a <code>resourceUri</code> and 
+     * with an aggregation strategy created using a fluent builder.
      */
     public EnrichClause<ProcessorDefinition<Type>> enrichWith(@AsEndpointUri String resourceUri, boolean aggregateOnException) {
         EnrichClause<ProcessorDefinition<Type>> clause = new EnrichClause<>(this);
@@ -3435,10 +3445,9 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
-     *
-     * @return the builder
+     * The <a href="http://camel.apache.org/content-enricher.html">Content Enricher EIP</a>
+     * enriches an exchange with additional data obtained from a <code>resourceUri</code> and 
+     * with an aggregation strategy created using a fluent builder.
      */
     public EnrichClause<ProcessorDefinition<Type>> enrichWith(@AsEndpointUri String resourceUri, boolean aggregateOnException, boolean shareUnitOfWork) {
         EnrichClause<ProcessorDefinition<Type>> clause = new EnrichClause<>(this);
@@ -3650,12 +3659,11 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         return pollEnrich(resourceUri, timeout, aggregationStrategyRef, false);
     }
 
-
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
-     *
-     * @return the builder
+     * The <a href="http://camel.apache.org/content-enricher.html">Content Enricher EIP</a>
+     * enriches an exchange with additional data obtained from a <code>resourceUri</code> 
+     * and with an aggregation strategy created using a fluent builder using 
+     * a {@link org.apache.camel.PollingConsumer} to poll the endpoint.
      */
     public EnrichClause<ProcessorDefinition<Type>> pollEnrichWith(@AsEndpointUri String resourceUri) {
         EnrichClause<ProcessorDefinition<Type>> clause = new EnrichClause<>(this);
@@ -3664,10 +3672,10 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
-     *
-     * @return the builder
+     * The <a href="http://camel.apache.org/content-enricher.html">Content Enricher EIP</a>
+     * enriches an exchange with additional data obtained from a <code>resourceUri</code> 
+     * and with an aggregation strategy created using a fluent builder using 
+     * a {@link org.apache.camel.PollingConsumer} to poll the endpoint.
      */
     public EnrichClause<ProcessorDefinition<Type>> pollEnrichWith(@AsEndpointUri String resourceUri, long timeout) {
         EnrichClause<ProcessorDefinition<Type>> clause = new EnrichClause<>(this);
@@ -3676,10 +3684,10 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     /**
-     * TODO: document
-     * Note: this is experimental and subject to changes in future releases.
-     *
-     * @return the builder
+     * The <a href="http://camel.apache.org/content-enricher.html">Content Enricher EIP</a>
+     * enriches an exchange with additional data obtained from a <code>resourceUri</code> 
+     * and with an aggregation strategy created using a fluent builder using 
+     * a {@link org.apache.camel.PollingConsumer} to poll the endpoint.
      */
     public EnrichClause<ProcessorDefinition<Type>> pollEnrichWith(@AsEndpointUri String resourceUri, long timeout, boolean aggregateOnException) {
         EnrichClause<ProcessorDefinition<Type>> clause = new EnrichClause<>(this);

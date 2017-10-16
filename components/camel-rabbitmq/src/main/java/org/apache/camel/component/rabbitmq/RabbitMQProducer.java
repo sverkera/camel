@@ -79,9 +79,11 @@ public class RabbitMQProducer extends DefaultAsyncProducer {
             channel = channelPool.borrowObject();
         }
         if (!channel.isOpen()) {
-            log.warn("Got a closed channel from the pool");
+            log.warn("Got a closed channel from the pool. Invalidating and borrowing a new one from the pool.");
+            channelPool.invalidateObject(channel);
             // Reconnect if another thread hasn't yet
             checkConnectionAndChannelPool();
+            attemptDeclaration();
             channel = channelPool.borrowObject();
         }
         try {
@@ -103,6 +105,10 @@ public class RabbitMQProducer extends DefaultAsyncProducer {
         log.trace("Creating channel pool...");
         channelPool = new GenericObjectPool<Channel>(new PoolableChannelFactory(this.conn), getEndpoint().getChannelPoolMaxSize(),
                 GenericObjectPool.WHEN_EXHAUSTED_BLOCK, getEndpoint().getChannelPoolMaxWait());
+        attemptDeclaration();
+    }
+
+    private synchronized void attemptDeclaration() throws Exception {
         if (getEndpoint().isDeclare()) {
             execute(new ChannelCallback<Void>() {
                 @Override
@@ -220,7 +226,7 @@ public class RabbitMQProducer extends DefaultAsyncProducer {
             exchangeName = getEndpoint().getExchangeName();
         }
 
-        String key = in.getHeader(RabbitMQConstants.ROUTING_KEY, null, String.class);
+        String key = in.getHeader(RabbitMQConstants.ROUTING_KEY, String.class);
         // we just need to make sure RoutingKey option take effect if it is not BridgeEndpoint
         if (key == null || getEndpoint().isBridgeEndpoint()) {
             key = getEndpoint().getRoutingKey() == null ? "" : getEndpoint().getRoutingKey();
@@ -245,7 +251,7 @@ public class RabbitMQProducer extends DefaultAsyncProducer {
     private boolean processInOnly(Exchange exchange, AsyncCallback callback) throws Exception {
         String exchangeName = getEndpoint().getExchangeName(exchange.getIn());
 
-        String key = exchange.getIn().getHeader(RabbitMQConstants.ROUTING_KEY, null, String.class);
+        String key = exchange.getIn().getHeader(RabbitMQConstants.ROUTING_KEY, String.class);
         // we just need to make sure RoutingKey option take effect if it is not BridgeEndpoint
         if (key == null || getEndpoint().isBridgeEndpoint()) {
             key = getEndpoint().getRoutingKey() == null ? "" : getEndpoint().getRoutingKey();

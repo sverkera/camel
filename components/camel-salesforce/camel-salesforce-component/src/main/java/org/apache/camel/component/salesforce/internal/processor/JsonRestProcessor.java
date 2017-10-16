@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -171,28 +172,32 @@ public class JsonRestProcessor extends AbstractRestProcessor {
 
         // process JSON response for TypeReference
         try {
-            // do we need to un-marshal a response
-            if (responseEntity != null) {
-                Object response = null;
+            final Message out = exchange.getOut();
+            final Message in = exchange.getIn();
+            out.copyFromWithNewBody(in, null);
+
+            if (ex != null) {
+                // if an exception is reported we should not loose it
+                if (shouldReport(ex)) {
+                    exchange.setException(ex);
+                }
+            } else if (responseEntity != null) {
+                // do we need to un-marshal a response
+                final Object response;
                 Class<?> responseClass = exchange.getProperty(RESPONSE_CLASS, Class.class);
-                if (responseClass != null) {
+                if (!rawPayload && responseClass != null) {
                     response = objectMapper.readValue(responseEntity, responseClass);
                 } else {
                     TypeReference<?> responseType = exchange.getProperty(RESPONSE_TYPE, TypeReference.class);
-                    if (responseType != null) {
+                    if (!rawPayload && responseType != null) {
                         response = objectMapper.readValue(responseEntity, responseType);
                     } else {
                         // return the response as a stream, for getBlobField
                         response = responseEntity;
                     }
                 }
-                exchange.getOut().setBody(response);
-            } else {
-                exchange.setException(ex);
+                out.setBody(response);
             }
-            // copy headers and attachments
-            exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
-            exchange.getOut().getAttachmentObjects().putAll(exchange.getIn().getAttachmentObjects());
         } catch (IOException e) {
             String msg = "Error parsing JSON response: " + e.getMessage();
             exchange.setException(new SalesforceException(msg, e));
@@ -214,5 +219,4 @@ public class JsonRestProcessor extends AbstractRestProcessor {
         }
 
     }
-
 }

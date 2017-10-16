@@ -21,9 +21,13 @@ import java.util.Map.Entry;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
@@ -47,6 +51,7 @@ import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
+import org.apache.camel.util.FileUtil;
 import org.apache.camel.util.ObjectHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +130,9 @@ public class SqsEndpoint extends ScheduledPollEndpoint implements HeaderFilterSt
         // If both region and Account ID is provided the queue URL can be built manually.
         // This allows accessing queues where you don't have permission to list queues or query queues
         if (configuration.getRegion() != null && configuration.getQueueOwnerAWSAccountId() != null) {
-            queueUrl = "https://sqs." + configuration.getRegion() + ".amazonaws.com/"
+            String host = configuration.getAmazonAWSHost();
+            host = FileUtil.stripTrailingSeparator(host);
+            queueUrl = "https://sqs." + configuration.getRegion() + "." + host + "/"
                 +  configuration.getQueueOwnerAWSAccountId() + "/" + configuration.getQueueName();
         } else if (configuration.getQueueOwnerAWSAccountId() != null) {
             GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest();
@@ -148,6 +155,7 @@ public class SqsEndpoint extends ScheduledPollEndpoint implements HeaderFilterSt
         if (queueUrl == null) {
             createQueue(client);
         } else {
+            LOG.debug("Using Amazon SQS queue url: {}", queueUrl);
             updateQueueAttributes(client);
         }
     }
@@ -270,6 +278,7 @@ public class SqsEndpoint extends ScheduledPollEndpoint implements HeaderFilterSt
      */
     AmazonSQS createClient() {
         AmazonSQS client = null;
+        AmazonSQSClientBuilder clientBuilder = null;
         ClientConfiguration clientConfiguration = null;
         boolean isClientConfigFound = false;
         if (ObjectHelper.isNotEmpty(configuration.getProxyHost()) && ObjectHelper.isNotEmpty(configuration.getProxyPort())) {
@@ -280,18 +289,24 @@ public class SqsEndpoint extends ScheduledPollEndpoint implements HeaderFilterSt
         }
         if (configuration.getAccessKey() != null && configuration.getSecretKey() != null) {
             AWSCredentials credentials = new BasicAWSCredentials(configuration.getAccessKey(), configuration.getSecretKey());
+            AWSCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(credentials);
             if (isClientConfigFound) {
-                client = new AmazonSQSClient(credentials, clientConfiguration);
+                clientBuilder = AmazonSQSClientBuilder.standard().withClientConfiguration(clientConfiguration).withCredentials(credentialsProvider);
             } else {
-                client = new AmazonSQSClient(credentials);
+                clientBuilder = AmazonSQSClientBuilder.standard().withCredentials(credentialsProvider);
             }
         } else {
             if (isClientConfigFound) {
-                client = new AmazonSQSClient();
+                clientBuilder = AmazonSQSClientBuilder.standard();
             } else {
-                client = new AmazonSQSClient(clientConfiguration);
+                clientBuilder = AmazonSQSClientBuilder.standard().withClientConfiguration(clientConfiguration);
             }
         }
+        if (ObjectHelper.isNotEmpty(configuration.getAmazonSQSEndpoint()) && ObjectHelper.isNotEmpty(configuration.getRegion())) {
+            EndpointConfiguration endpointConfiguration = new EndpointConfiguration(configuration.getAmazonSQSEndpoint(), configuration.getRegion());
+            clientBuilder = clientBuilder.withEndpointConfiguration(endpointConfiguration);
+        }
+        client = clientBuilder.build();
         return client;
     }
 

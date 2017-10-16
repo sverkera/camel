@@ -34,21 +34,21 @@ import org.apache.camel.AsyncCallback;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.TypeConverter;
+import org.apache.camel.component.salesforce.NotFoundBehaviour;
+import org.apache.camel.component.salesforce.SalesforceComponent;
 import org.apache.camel.component.salesforce.SalesforceEndpoint;
 import org.apache.camel.component.salesforce.SalesforceEndpointConfig;
+import org.apache.camel.component.salesforce.api.NoSuchSObjectException;
 import org.apache.camel.component.salesforce.api.SalesforceException;
 import org.apache.camel.component.salesforce.api.dto.AbstractSObjectBase;
 import org.apache.camel.component.salesforce.api.dto.approval.ApprovalRequest;
 import org.apache.camel.component.salesforce.api.dto.approval.ApprovalRequests;
-import org.apache.camel.component.salesforce.internal.PayloadFormat;
-import org.apache.camel.component.salesforce.internal.client.DefaultRestClient;
 import org.apache.camel.component.salesforce.internal.client.RestClient;
 import org.apache.camel.util.ServiceHelper;
 
 import static org.apache.camel.component.salesforce.SalesforceEndpointConfig.APEX_METHOD;
 import static org.apache.camel.component.salesforce.SalesforceEndpointConfig.APEX_QUERY_PARAM_PREFIX;
 import static org.apache.camel.component.salesforce.SalesforceEndpointConfig.APEX_URL;
-import static org.apache.camel.component.salesforce.SalesforceEndpointConfig.API_VERSION;
 import static org.apache.camel.component.salesforce.SalesforceEndpointConfig.SOBJECT_BLOB_FIELD_NAME;
 import static org.apache.camel.component.salesforce.SalesforceEndpointConfig.SOBJECT_CLASS;
 import static org.apache.camel.component.salesforce.SalesforceEndpointConfig.SOBJECT_EXT_ID_NAME;
@@ -67,13 +67,17 @@ public abstract class AbstractRestProcessor extends AbstractSalesforceProcessor 
     private RestClient restClient;
     private Map<String, Class<?>> classMap;
 
+    private final NotFoundBehaviour notFoundBehaviour;
+
     public AbstractRestProcessor(SalesforceEndpoint endpoint) throws SalesforceException {
         super(endpoint);
 
-        final PayloadFormat payloadFormat = endpoint.getConfiguration().getFormat();
+        final SalesforceEndpointConfig configuration = endpoint.getConfiguration();
+        notFoundBehaviour = configuration.getNotFoundBehaviour();
 
-        this.restClient = new DefaultRestClient(httpClient, (String) endpointConfigMap.get(API_VERSION),
-                payloadFormat, session);
+        final SalesforceComponent salesforceComponent = endpoint.getComponent();
+
+        this.restClient = salesforceComponent.createRestClientFor(endpoint);
 
         this.classMap = endpoint.getComponent().getClassMap();
     }
@@ -84,6 +88,8 @@ public abstract class AbstractRestProcessor extends AbstractSalesforceProcessor 
         super(endpoint);
         this.restClient = restClient;
         this.classMap = classMap;
+        final SalesforceEndpointConfig configuration = endpoint.getConfiguration();
+        notFoundBehaviour = configuration.getNotFoundBehaviour();
     }
 
     @Override
@@ -802,6 +808,12 @@ public abstract class AbstractRestProcessor extends AbstractSalesforceProcessor 
     protected abstract InputStream getRequestStream(Object object) throws SalesforceException;
 
     private void setResponseClass(Exchange exchange, String sObjectName) throws SalesforceException {
+
+        // nothing to do if using rawPayload
+        if (rawPayload) {
+            return;
+        }
+
         Class<?> sObjectClass;
 
         if (sObjectName != null) {
@@ -831,4 +843,7 @@ public abstract class AbstractRestProcessor extends AbstractSalesforceProcessor 
     // process response entity and set out message in exchange
     protected abstract void processResponse(Exchange exchange, InputStream responseEntity, SalesforceException ex, AsyncCallback callback);
 
+    final boolean shouldReport(SalesforceException ex) {
+        return !(ex instanceof NoSuchSObjectException && notFoundBehaviour == NotFoundBehaviour.NULL);
+    }
 }

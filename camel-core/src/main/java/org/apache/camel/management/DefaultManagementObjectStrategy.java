@@ -31,13 +31,16 @@ import org.apache.camel.Route;
 import org.apache.camel.Service;
 import org.apache.camel.component.bean.BeanProcessor;
 import org.apache.camel.component.log.LogEndpoint;
+import org.apache.camel.ha.CamelClusterService;
 import org.apache.camel.impl.ScheduledPollConsumer;
 import org.apache.camel.management.mbean.ManagedAggregateProcessor;
 import org.apache.camel.management.mbean.ManagedBeanProcessor;
 import org.apache.camel.management.mbean.ManagedBrowsableEndpoint;
 import org.apache.camel.management.mbean.ManagedCamelContext;
+import org.apache.camel.management.mbean.ManagedCamelHealth;
 import org.apache.camel.management.mbean.ManagedChoice;
 import org.apache.camel.management.mbean.ManagedCircuitBreakerLoadBalancer;
+import org.apache.camel.management.mbean.ManagedClusterService;
 import org.apache.camel.management.mbean.ManagedComponent;
 import org.apache.camel.management.mbean.ManagedConsumer;
 import org.apache.camel.management.mbean.ManagedConvertBody;
@@ -70,6 +73,7 @@ import org.apache.camel.management.mbean.ManagedResequencer;
 import org.apache.camel.management.mbean.ManagedRollback;
 import org.apache.camel.management.mbean.ManagedRoundRobinLoadBalancer;
 import org.apache.camel.management.mbean.ManagedRoute;
+import org.apache.camel.management.mbean.ManagedRouteController;
 import org.apache.camel.management.mbean.ManagedRoutingSlip;
 import org.apache.camel.management.mbean.ManagedSamplingThrottler;
 import org.apache.camel.management.mbean.ManagedScheduledPollConsumer;
@@ -171,6 +175,12 @@ public class DefaultManagementObjectStrategy implements ManagementObjectStrategy
         return mc;
     }
 
+    public Object getManagedObjectForCamelHealth(CamelContext context) {
+        ManagedCamelHealth mch = new ManagedCamelHealth(context);
+        mch.init(context.getManagementStrategy());
+        return mch;
+    }
+
     @SuppressWarnings({"deprecation", "unchecked"})
     public Object getManagedObjectForComponent(CamelContext context, Component component, String name) {
         if (component instanceof org.apache.camel.spi.ManagementAware) {
@@ -220,6 +230,12 @@ public class DefaultManagementObjectStrategy implements ManagementObjectStrategy
         return me;
     }
 
+    public Object getManagedObjectForRouteController(CamelContext context) {
+        ManagedRouteController mrc = new ManagedRouteController((ModelCamelContext)context);
+        mrc.init(context.getManagementStrategy());
+        return mrc;
+    }
+
     public Object getManagedObjectForRoute(CamelContext context, Route route) {
         ManagedRoute mr;
         if (route.supportsSuspension()) {
@@ -265,6 +281,12 @@ public class DefaultManagementObjectStrategy implements ManagementObjectStrategy
         ManagedService mc = new ManagedService(context, service);
         mc.init(context.getManagementStrategy());
         return mc;
+    }
+
+    public Object getManagedObjectForClusterService(CamelContext context, CamelClusterService service) {
+        ManagedClusterService mcs = new ManagedClusterService(context, service);
+        mcs.init(context.getManagementStrategy());
+        return mcs;
     }
 
     @SuppressWarnings({"deprecation", "unchecked"})

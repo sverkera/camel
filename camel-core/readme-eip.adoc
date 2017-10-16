@@ -4,10 +4,10 @@ Enterprise Integration Patterns
 Camel supports most of the link:http://www.eaipatterns.com/toc.html[Enterprise Integration Patterns] from the excellent book by link:http://www.amazon.com/exec/obidos/search-handle-url/105-9796798-8100401?%5Fencoding=UTF8&search-type=ss&index=books&field-author=Gregor%20Hohpe[Gregor Hohpe] and link:http://www.amazon.com/exec/obidos/search-handle-url/105-9796798-8100401?%5Fencoding=UTF8&search-type=ss&index=books&field-author=Bobby%20Woolf[Bobby Woolf].
 
 // eips: START
-Number of EIPs: 61 (2 deprecated)
+Number of EIPs: 62 (2 deprecated)
 
 [width="100%",cols="4,6",options="header"]
-|=======================================================================
+|===
 | EIP | Description
 
 | link:src/main/docs/eips/aggregate-eip.adoc[Aggregate] +
@@ -67,6 +67,9 @@ Number of EIPs: 61 (2 deprecated)
 | link:src/main/docs/eips/loadBalance-eip.adoc[Load Balance] +
 `<loadBalance>` | Balances message processing among a number of nodes
 
+| link:src/main/docs/eips/log-eip.adoc[Log] +
+`<log>` | Logs the defined message to the logger
+
 | link:src/main/docs/eips/loop-eip.adoc[Loop] +
 `<loop>` | Processes a message multiple times
 
@@ -89,7 +92,7 @@ Number of EIPs: 61 (2 deprecated)
 `<pollEnrich>` | Enriches messages with data polled from a secondary resource
 
 | link:src/main/docs/eips/process-eip.adoc[Process] +
-`<process>` | Calls a Camel processor.
+`<process>` | Calls a Camel processor
 
 | link:src/main/docs/eips/random-eip.adoc[Random] +
 `<random>` | Random load balancer
@@ -128,7 +131,7 @@ Number of EIPs: 61 (2 deprecated)
 `<script>` | Executes a script from a language which does not change the message body.
 
 | link:src/main/docs/eips/serviceCall-eip.adoc[Service Call] +
-`<serviceCall>` | Remote service call definition
+`<serviceCall>` | To call remote services
 
 | link:src/main/docs/eips/setBody-eip.adoc[Set Body] +
 `<setBody>` | Sets the contents of the message body
@@ -193,5 +196,5 @@ Number of EIPs: 61 (2 deprecated)
 | link:src/main/docs/eips/wireTap-eip.adoc[Wire Tap] +
 `<wireTap>` | Routes a copy of a message (or creates a new message) to a secondary destination while continue routing the original message.
 
-|=======================================================================
+|===
 // eips: END

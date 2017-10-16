@@ -16,7 +16,6 @@
  */
 package org.apache.camel.component.connector;
 
-import org.apache.camel.Component;
 import org.apache.camel.Consumer;
 import org.apache.camel.DelegateEndpoint;
 import org.apache.camel.Endpoint;
@@ -25,6 +24,7 @@ import org.apache.camel.Producer;
 import org.apache.camel.api.management.ManagedAttribute;
 import org.apache.camel.api.management.ManagedResource;
 import org.apache.camel.impl.DefaultEndpoint;
+import org.apache.camel.processor.Pipeline;
 import org.apache.camel.util.ServiceHelper;
 
 @ManagedResource(description = "Managed Connector Endpoint")
@@ -44,12 +44,35 @@ public class DefaultConnectorEndpoint extends DefaultEndpoint implements Delegat
 
     @Override
     public Producer createProducer() throws Exception {
-        return endpoint.createProducer();
+        final Producer producer = endpoint.createProducer();
+
+        final Processor beforeProducer = getComponent().getBeforeProducer();
+        final Processor afterProducer = getComponent().getAfterProducer();
+
+        // use a pipeline to process before, producer, after in that order
+        // create producer with the pipeline
+        final Processor pipeline = Pipeline.newInstance(getCamelContext(), beforeProducer, producer, afterProducer);
+
+        return new ConnectorProducer(endpoint, pipeline);
     }
 
     @Override
-    public Consumer createConsumer(Processor processor) throws Exception {
-        return endpoint.createConsumer(processor);
+    public Consumer createConsumer(final Processor processor) throws Exception {
+        final Processor beforeConsumer = getComponent().getBeforeConsumer();
+        final Processor afterConsumer = getComponent().getAfterConsumer();
+
+        // use a pipeline to process before, processor, after in that order
+        // create consumer with the pipeline
+        final Processor pipeline = Pipeline.newInstance(getCamelContext(), beforeConsumer, processor, afterConsumer);
+        final Consumer consumer = endpoint.createConsumer(pipeline);
+        configureConsumer(consumer);
+
+        return consumer;
+    }
+
+    @Override
+    public ConnectorComponent getComponent() {
+        return (ConnectorComponent) super.getComponent();
     }
 
     @Override

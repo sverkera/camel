@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 import com.googlecode.junittoolbox.ParallelParameterized;
 
-import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.salesforce.api.dto.approval.ApprovalRequest;
 import org.apache.camel.component.salesforce.api.dto.approval.ApprovalRequest.Action;
 import org.apache.camel.component.salesforce.api.dto.approval.ApprovalResult;
@@ -92,15 +91,6 @@ public class ApprovalIntegrationTest extends AbstractApprovalIntegrationTest {
 
         assertEquals("Should have same number of approval results as requests", approvalRequests.size(),
             approvalResult.size());
-    }
-
-    @Override
-    protected RouteBuilder doCreateRouteBuilder() throws Exception {
-        return new RouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-            }
-        };
     }
 
     @Parameters(name = "format = {0}")

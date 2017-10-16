@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ReturnListener;
 
@@ -69,6 +70,9 @@ public class RabbitMQMessagePublisher {
         if (message.getHeaders() != null && message.getHeaders().containsKey(RabbitMQEndpoint.SERIALIZE_HEADER)) {
             LOG.debug("Removing the {} header", RabbitMQEndpoint.SERIALIZE_HEADER);
             message.getHeaders().remove(RabbitMQEndpoint.SERIALIZE_HEADER);
+        }
+        if (routingKey != null && routingKey.startsWith(RabbitMQConstants.RABBITMQ_DIRECT_REPLY_ROUTING_KEY)) {
+            message.setHeader(RabbitMQConstants.EXCHANGE_NAME, RabbitMQConstants.RABBITMQ_DIRECT_REPLY_EXCHANGE); // use default exchange for reply-to messages
         }
 
         return message;

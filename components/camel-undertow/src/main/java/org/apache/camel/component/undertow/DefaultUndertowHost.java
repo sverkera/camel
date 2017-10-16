@@ -17,8 +17,10 @@
 package org.apache.camel.component.undertow;
 
 import java.net.URI;
+
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
+
 import org.apache.camel.component.undertow.handlers.CamelRootHandler;
 import org.apache.camel.component.undertow.handlers.NotFoundHandler;
 import org.slf4j.Logger;
@@ -31,12 +33,18 @@ public class DefaultUndertowHost implements UndertowHost {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultUndertowHost.class);
 
     private UndertowHostKey key;
+    private UndertowHostOptions options;
     private CamelRootHandler rootHandler;
     private Undertow undertow;
     private String hostString;
 
     public DefaultUndertowHost(UndertowHostKey key) {
+        this(key, null);
+    }
+
+    public DefaultUndertowHost(UndertowHostKey key, UndertowHostOptions options) {
         this.key = key;
+        this.options = options;
         rootHandler = new CamelRootHandler(new NotFoundHandler());
     }
 
@@ -55,9 +63,41 @@ public class DefaultUndertowHost implements UndertowHost {
                 builder.addHttpListener(key.getPort(), key.getHost());
             }
 
+            if (options != null) {
+                if (options.getIoThreads() != null) {
+                    builder.setIoThreads(options.getIoThreads());
+                }
+                if (options.getWorkerThreads() != null) {
+                    builder.setWorkerThreads(options.getWorkerThreads());
+                }
+                if (options.getBufferSize() != null) {
+                    builder.setBufferSize(options.getBufferSize());
+                }
+                if (options.getDirectBuffers() != null) {
+                    builder.setDirectBuffers(options.getDirectBuffers());
+                }
+            }
+
             undertow = builder.setHandler(rootHandler).build();
             LOG.info("Starting Undertow server on {}://{}:{}", key.getSslContext() != null ? "https" : "http", key.getHost(), key.getPort());
-            undertow.start();
+
+            try {
+                // If there is an exception while starting up, Undertow wraps it
+                // as RuntimeException which leaves the consumer in an inconsistent
+                // state as a subsequent start if the route (i.e. manually) won't
+                // start the Undertow instance as undertow is not null.
+                undertow.start();
+            } catch (RuntimeException e) {
+                LOG.warn("Failed to start Undertow server on {}://{}:{}, reason: {}", key.getSslContext() != null ? "https" : "http", key.getHost(), key.getPort(), e.getMessage());
+
+                // Cleanup any resource that may have been created during start
+                // and reset the instance so a subsequent start will trigger the
+                // initialization again.
+                undertow.stop();
+                undertow = null;
+
+                throw e;
+            }
         }
 
         String path = registrationInfo.getUri().getPath();

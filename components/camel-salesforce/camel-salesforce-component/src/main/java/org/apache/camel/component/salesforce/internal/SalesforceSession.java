@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
@@ -38,9 +39,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Service;
+import org.apache.camel.component.salesforce.AuthenticationType;
 import org.apache.camel.component.salesforce.SalesforceHttpClient;
 import org.apache.camel.component.salesforce.SalesforceLoginConfig;
-import org.apache.camel.component.salesforce.SalesforceLoginConfig.Type;
 import org.apache.camel.component.salesforce.api.SalesforceException;
 import org.apache.camel.component.salesforce.api.dto.RestError;
 import org.apache.camel.component.salesforce.api.utils.JsonUtils;
@@ -154,7 +155,7 @@ public class SalesforceSession implements Service {
         fields.put("client_id", config.getClientId());
         fields.put("format", "json");
 
-        final Type type = config.getType();
+        final AuthenticationType type = config.getType();
         switch (type) {
         case USERNAME_PASSWORD:
             fields.put("client_secret", config.getClientSecret());
@@ -247,7 +248,12 @@ public class SalesforceSession implements Service {
                 // don't log token or instance URL for security reasons
                 LOG.info("Login successful");
                 accessToken = token.getAccessToken();
-                instanceUrl = token.getInstanceUrl();
+                instanceUrl = Optional.ofNullable(config.getInstanceUrl()).orElse(token.getInstanceUrl());
+                // strip trailing '/'
+                int lastChar = instanceUrl.length() - 1;
+                if (instanceUrl.charAt(lastChar) == '/') {
+                    instanceUrl = instanceUrl.substring(0, lastChar);
+                }
 
                 // notify all session listeners
                 for (SalesforceSessionListener listener : listeners) {
@@ -263,10 +269,11 @@ public class SalesforceSession implements Service {
             case HttpStatus.BAD_REQUEST_400:
                 // parse the response to get error
                 final LoginError error = objectMapper.readValue(responseContent, LoginError.class);
+                final String errorCode = error.getError();
                 final String msg = String.format("Login error code:[%s] description:[%s]", error.getError(),
                     error.getErrorDescription());
                 final List<RestError> errors = new ArrayList<RestError>();
-                errors.add(new RestError(msg, error.getErrorDescription()));
+                errors.add(new RestError(errorCode, msg));
                 throw new SalesforceException(errors, HttpStatus.BAD_REQUEST_400);
 
             default:

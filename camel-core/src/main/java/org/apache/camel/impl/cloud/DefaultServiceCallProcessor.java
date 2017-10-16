@@ -23,8 +23,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Expression;
 import org.apache.camel.Message;
-import org.apache.camel.cloud.LoadBalancer;
 import org.apache.camel.cloud.ServiceDefinition;
+import org.apache.camel.cloud.ServiceLoadBalancer;
 import org.apache.camel.processor.SendDynamicProcessor;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
@@ -43,13 +43,13 @@ public class DefaultServiceCallProcessor extends ServiceSupport implements Async
     private final String uri;
     private final String contextPath;
     private final CamelContext camelContext;
-    private final LoadBalancer loadBalancer;
+    private final ServiceLoadBalancer loadBalancer;
     private final Expression expression;
     private SendDynamicProcessor processor;
 
     public DefaultServiceCallProcessor(
         CamelContext camelContext, String name, String scheme, String uri, ExchangePattern exchangePattern,
-        LoadBalancer loadBalancer, Expression expression) {
+        ServiceLoadBalancer loadBalancer, Expression expression) {
 
         this.uri = uri;
         this.exchangePattern = exchangePattern;
@@ -83,14 +83,34 @@ public class DefaultServiceCallProcessor extends ServiceSupport implements Async
     // Properties
     // *************************************
 
-    public LoadBalancer getLoadBalancer() {
+
+    public ExchangePattern getExchangePattern() {
+        return exchangePattern;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getScheme() {
+        return scheme;
+    }
+
+    public String getUri() {
+        return uri;
+    }
+
+    public String getContextPath() {
+        return contextPath;
+    }
+
+    public ServiceLoadBalancer getLoadBalancer() {
         return loadBalancer;
     }
 
     public Expression getExpression() {
         return expression;
     }
-
 
     // *************************************
     // Lifecycle

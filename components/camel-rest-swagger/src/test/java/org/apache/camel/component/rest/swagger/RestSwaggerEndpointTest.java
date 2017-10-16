@@ -24,6 +24,7 @@ import java.util.Collections;
 import io.swagger.models.Operation;
 import io.swagger.models.Scheme;
 import io.swagger.models.Swagger;
+import io.swagger.models.parameters.QueryParameter;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
@@ -73,6 +74,15 @@ public class RestSwaggerEndpointTest {
         final Producer producer = endpoint.createProducer();
 
         assertThat(producer).isSameAs(delegateProducer);
+    }
+
+    @Test
+    public void shouldCreateQueryParameterExpressions() {
+        assertThat(RestSwaggerEndpoint.queryParameterExpression(new QueryParameter())).isEmpty();
+        assertThat(RestSwaggerEndpoint.queryParameterExpression(new QueryParameter().name("q").required(true)))
+            .isEqualTo("q={q}");
+        assertThat(RestSwaggerEndpoint.queryParameterExpression(new QueryParameter().name("q").required(false)))
+            .isEqualTo("q={q?}");
     }
 
     @Test
@@ -155,6 +165,18 @@ public class RestSwaggerEndpointTest {
         assertThat(endpoint.determineEndpointParameters(swagger, operation)).containsOnly(
             entry("host", "http://petstore.swagger.io"), entry("componentName", "zyx"),
             entry("consumes", "application/json"), entry("produces", "application/atom+xml"));
+
+        operation.addParameter(new QueryParameter().name("q").required(true));
+        assertThat(endpoint.determineEndpointParameters(swagger, operation)).containsOnly(
+            entry("host", "http://petstore.swagger.io"), entry("componentName", "zyx"),
+            entry("consumes", "application/json"), entry("produces", "application/atom+xml"),
+            entry("queryParameters", "q={q}"));
+
+        operation.addParameter(new QueryParameter().name("o"));
+        assertThat(endpoint.determineEndpointParameters(swagger, operation)).containsOnly(
+            entry("host", "http://petstore.swagger.io"), entry("componentName", "zyx"),
+            entry("consumes", "application/json"), entry("produces", "application/atom+xml"),
+            entry("queryParameters", "q={q}&o={o?}"));
     }
 
     @Test
@@ -222,16 +244,6 @@ public class RestSwaggerEndpointTest {
 
         assertThat(RestSwaggerEndpoint.determineOption(Arrays.asList("specification"), Arrays.asList("operation"),
             "component", "operation")).isEqualTo("operation");
-    }
-
-    @Test
-    public void shouldHaveADefaultSpecificationPathProperty() throws Exception {
-        final RestSwaggerComponent component = new RestSwaggerComponent();
-
-        final RestSwaggerEndpoint endpoint = new RestSwaggerEndpoint("rest-swagger:getPetById", "getPetById",
-            component);
-
-        assertThat(endpoint.getSpecificationUri()).isEqualTo(RestSwaggerComponent.DEFAULT_SPECIFICATION_URI);
     }
 
     @Test
@@ -331,6 +343,26 @@ public class RestSwaggerEndpointTest {
         when(camelContext.getClassResolver()).thenReturn(new DefaultClassResolver());
 
         RestSwaggerEndpoint.loadSpecificationFrom(camelContext, URI.create("non-existant.json"));
+    }
+
+    @Test
+    public void shouldUseDefaultSpecificationUri() throws Exception {
+        final RestSwaggerComponent component = new RestSwaggerComponent();
+
+        final RestSwaggerEndpoint endpoint = new RestSwaggerEndpoint("rest-swagger:getPetById", "getPetById",
+            component);
+
+        assertThat(endpoint.getSpecificationUri()).isEqualTo(RestSwaggerComponent.DEFAULT_SPECIFICATION_URI);
+    }
+
+    @Test
+    public void shouldUseDefaultSpecificationUriEvenIfHashIsPresent() throws Exception {
+        final RestSwaggerComponent component = new RestSwaggerComponent();
+
+        final RestSwaggerEndpoint endpoint = new RestSwaggerEndpoint("rest-swagger:#getPetById", "#getPetById",
+            component);
+
+        assertThat(endpoint.getSpecificationUri()).isEqualTo(RestSwaggerComponent.DEFAULT_SPECIFICATION_URI);
     }
 
 }

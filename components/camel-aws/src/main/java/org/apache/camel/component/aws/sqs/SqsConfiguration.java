@@ -27,13 +27,15 @@ public class SqsConfiguration {
     private String queueName;
     @UriParam
     private AmazonSQS amazonSQSClient;
-    @UriParam
+    @UriParam(label = "security", secret = true)
     private String accessKey;
-    @UriParam
+    @UriParam(label = "security", secret = true)
     private String secretKey;
+    @UriParam(defaultValue = "amazonaws.com")
+    private String amazonAWSHost = "amazonaws.com";
     @UriParam
     private String amazonSQSEndpoint;
-    @UriParam
+    @UriParam(secret = true)
     private String queueOwnerAWSAccountId;
     @UriParam
     private String region;
@@ -91,6 +93,17 @@ public class SqsConfiguration {
 
     public String getAmazonSQSEndpoint() {
         return amazonSQSEndpoint;
+    }
+
+    public String getAmazonAWSHost() {
+        return amazonAWSHost;
+    }
+
+    /**
+     * The hostname of the Amazon AWS cloud.
+     */
+    public void setAmazonAWSHost(String amazonAWSHost) {
+        this.amazonAWSHost = amazonAWSHost;
     }
 
     public String getQueueName() {
@@ -350,33 +363,5 @@ public class SqsConfiguration {
 
     public void setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
-    }
-
-    @Override
-    public String toString() {
-        return "SqsConfiguration[queueName=" + queueName
-            + ", amazonSQSClient=" + amazonSQSClient
-            + ", accessKey=" + accessKey
-            + ", secretKey=xxxxxxxxxxxxxxx"
-            + ", deleteAfterRead=" + deleteAfterRead
-            + ", deleteIfFiltered=" + deleteIfFiltered
-            + ", visibilityTimeout=" + visibilityTimeout
-            + ", attributeNames=" + attributeNames
-            + ", messageAttributeNames=" + messageAttributeNames
-            + ", waitTimeSeconds=" + waitTimeSeconds
-            + ", defaultVisibilityTimeout=" + defaultVisibilityTimeout
-            + ", maximumMessageSize=" + maximumMessageSize
-            + ", messageRetentionPeriod=" + messageRetentionPeriod
-            + ", receiveMessageWaitTimeSeconds=" + receiveMessageWaitTimeSeconds
-            + ", delaySeconds=" + delaySeconds
-            + ", policy=" + policy
-            + ", redrivePolicy=" + redrivePolicy
-            + ", extendMessageVisibility=" + extendMessageVisibility
-            + ", queueOwnerAWSAccountId=" + queueOwnerAWSAccountId
-            + ", concurrentConsumers=" + concurrentConsumers
-            + ", region=" + region
-            + ", proxyHost=" + proxyHost
-            + ", proxyPort=" + proxyPort
-            + "]";
     }
 }

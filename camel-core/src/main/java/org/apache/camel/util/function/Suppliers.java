@@ -19,6 +19,8 @@ package org.apache.camel.util.function;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public final class Suppliers {
@@ -42,12 +44,46 @@ public final class Suppliers {
         };
     }
 
+    public static <T> Supplier<T> memorize(ThrowingSupplier<T, ? extends Exception> supplier, Consumer<Exception> consumer) {
+        final AtomicReference<T> valueHolder = new AtomicReference<>();
+        return () -> {
+            T supplied = valueHolder.get();
+            if (supplied == null) {
+                synchronized (valueHolder) {
+                    supplied = valueHolder.get();
+                    if (supplied == null) {
+                        try {
+                            supplied = Objects.requireNonNull(supplier.get(), "Supplier should not return null");
+                            valueHolder.lazySet(supplied);
+                        } catch (Exception e) {
+                            consumer.accept(e);
+                        }
+                    }
+                }
+            }
+            return supplied;
+        };
+    }
+
     public static <T> Optional<T> firstNotNull(ThrowingSupplier<T, Exception>... suppliers) throws Exception {
         T answer = null;
 
         for (int i = 0; i < suppliers.length; i++) {
             answer = suppliers[i].get();
             if (answer != null) {
+                break;
+            }
+        }
+
+        return Optional.ofNullable(answer);
+    }
+
+    public static <T> Optional<T> firstMatching(Predicate<T> predicate, ThrowingSupplier<T, Exception>... suppliers) throws Exception {
+        T answer = null;
+
+        for (int i = 0; i < suppliers.length; i++) {
+            answer = suppliers[i].get();
+            if (predicate.test(answer)) {
                 break;
             }
         }

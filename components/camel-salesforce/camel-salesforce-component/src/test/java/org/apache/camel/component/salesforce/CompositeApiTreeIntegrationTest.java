@@ -20,7 +20,6 @@ import java.util.Arrays;
 
 import com.googlecode.junittoolbox.ParallelParameterized;
 
-import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.salesforce.api.dto.composite.SObjectTree;
 import org.apache.camel.component.salesforce.dto.generated.Account;
 import org.apache.camel.component.salesforce.dto.generated.Account_IndustryEnum;
@@ -100,15 +99,6 @@ public class CompositeApiTreeIntegrationTest extends AbstractSalesforceTestBase 
         assertNotNull("Third account should have Id set", simpleAccount3.getId());
         assertNotNull("Simple contact on third account should have Id set", contact.getId());
         assertNotNull("Simple asset on the contact of the third account should have Id set", asset.getId());
-    }
-
-    @Override
-    protected RouteBuilder doCreateRouteBuilder() throws Exception {
-        return new RouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-            }
-        };
     }
 
     @Parameters(name = "format = {0}")

@@ -16,8 +16,12 @@
  */
 package org.apache.camel.component.rest;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
@@ -30,6 +34,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultAsyncProducer;
+import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.spi.DataFormat;
 import org.apache.camel.spi.RestConfiguration;
 import org.apache.camel.util.AsyncProcessorConverterHelper;
@@ -53,7 +58,7 @@ public class RestProducer extends DefaultAsyncProducer {
     private final CamelContext camelContext;
     private final RestConfiguration configuration;
     private boolean prepareUriTemplate = true;
-    private String bindingMode;
+    private RestBindingMode bindingMode;
     private Boolean skipBindingOnErrorCode;
     private String type;
     private String outType;
@@ -104,11 +109,11 @@ public class RestProducer extends DefaultAsyncProducer {
         this.prepareUriTemplate = prepareUriTemplate;
     }
 
-    public String getBindingMode() {
+    public RestBindingMode getBindingMode() {
         return bindingMode;
     }
 
-    public void setBindingMode(String bindingMode) {
+    public void setBindingMode(final RestBindingMode bindingMode) {
         this.bindingMode = bindingMode;
     }
 
@@ -169,30 +174,7 @@ public class RestProducer extends DefaultAsyncProducer {
         }
 
         // resolve uri parameters
-        String query = getEndpoint().getQueryParameters();
-        if (query != null) {
-            Map<String, Object> params = URISupport.parseQuery(query);
-            for (Map.Entry<String, Object> entry : params.entrySet()) {
-                Object v = entry.getValue();
-                if (v != null) {
-                    String a = v.toString();
-                    // decode the key as { may be decoded to %NN
-                    a = URLDecoder.decode(a, "UTF-8");
-                    if (a.startsWith("{") && a.endsWith("}")) {
-                        String key = a.substring(1, a.length() - 1);
-                        String value = inMessage.getHeader(key, String.class);
-                        if (value != null) {
-                            params.put(key, value);
-                        } else {
-                            params.put(entry.getKey(), entry.getValue());
-                        }
-                    } else {
-                        params.put(entry.getKey(), entry.getValue());
-                    }
-                }
-            }
-            query = URISupport.createQueryString(params);
-        }
+        String query = createQueryParameters(getEndpoint().getQueryParameters(), inMessage);
 
         if (query != null) {
             // the query parameters for the rest call to be used
@@ -214,6 +196,21 @@ public class RestProducer extends DefaultAsyncProducer {
             }
             // the http uri for the rest call to be used
             inMessage.setHeader(Exchange.REST_HTTP_URI, overrideUri);
+
+            // when chaining RestConsumer with RestProducer, the
+            // HTTP_PATH header will be present, we remove it here
+            // as the REST_HTTP_URI contains the full URI for the
+            // request and every other HTTP producer will concatenate
+            // REST_HTTP_URI with HTTP_PATH resulting in incorrect URIs
+            inMessage.removeHeader(Exchange.HTTP_PATH);
+        }
+
+        // method
+        String method = getEndpoint().getMethod();
+        if (method != null) {
+            // the method should be in upper case 
+            String upper = method.toUpperCase(Locale.US);
+            inMessage.setHeader(Exchange.HTTP_METHOD, upper);
         }
 
         final String produces = getEndpoint().getProduces();
@@ -248,7 +245,7 @@ public class RestProducer extends DefaultAsyncProducer {
         // these options can be overridden per endpoint
         String mode = configuration.getBindingMode().name();
         if (bindingMode != null) {
-            mode = bindingMode;
+            mode = bindingMode.name();
         }
         boolean skip = configuration.isSkipBindingOnErrorCode();
         if (skipBindingOnErrorCode != null) {
@@ -352,7 +349,7 @@ public class RestProducer extends DefaultAsyncProducer {
             setAdditionalConfiguration(configuration, camelContext, outJaxb, "xml.out.");
         }
 
-        return new RestProducerBindingProcessor(producer, camelContext, json, jaxb, outJson, outJaxb, mode, skip, type, outType);
+        return new RestProducerBindingProcessor(producer, camelContext, json, jaxb, outJson, outJaxb, mode, skip, outType);
     }
 
     private void setAdditionalConfiguration(RestConfiguration config, CamelContext context,
@@ -390,4 +387,37 @@ public class RestProducer extends DefaultAsyncProducer {
         return key.startsWith("json.in.") || key.startsWith("json.out.") || key.startsWith("xml.in.") || key.startsWith("xml.out.");
     }
 
+    static String createQueryParameters(String query, Message inMessage) throws URISyntaxException, UnsupportedEncodingException {
+        if (query != null) {
+            final Map<String, Object> givenParams = URISupport.parseQuery(query);
+            final Map<String, Object> params = new LinkedHashMap<>(givenParams.size());
+            for (Map.Entry<String, Object> entry : givenParams.entrySet()) {
+                Object v = entry.getValue();
+                if (v != null) {
+                    String a = v.toString();
+                    // decode the key as { may be decoded to %NN
+                    a = URLDecoder.decode(a, "UTF-8");
+                    if (a.startsWith("{") && a.endsWith("}")) {
+                        String key = a.substring(1, a.length() - 1);
+                        boolean optional = false;
+                        if (key.endsWith("?")) {
+                            key = key.substring(0, key.length() - 1);
+                            optional = true;
+                        }
+                        String value = inMessage.getHeader(key, String.class);
+                        if (value != null) {
+                            params.put(key, value);
+                        } else if (!optional) {
+                            // value is null and parameter is not optional
+                            params.put(entry.getKey(), entry.getValue());
+                        }
+                    } else {
+                        params.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+            query = URISupport.createQueryString(params);
+        }
+        return query;
+    }
 }

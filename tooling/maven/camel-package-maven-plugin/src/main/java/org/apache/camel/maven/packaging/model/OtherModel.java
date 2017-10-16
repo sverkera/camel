@@ -16,6 +16,9 @@
  */
 package org.apache.camel.maven.packaging.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.apache.camel.maven.packaging.StringHelper.cutLastZeroDigit;
 
 public class OtherModel {
@@ -27,9 +30,20 @@ public class OtherModel {
     private String firstVersion;
     private String label;
     private String deprecated;
+    private String deprecationNote;
     private String groupId;
     private String artifactId;
     private String version;
+    private String javaType;
+    private final List<OtherOptionModel> options = new ArrayList<>();
+
+    public String getJavaType() {
+        return javaType;
+    }
+
+    public void setJavaType(String javaType) {
+        this.javaType = javaType;
+    }
 
     public String getKind() {
         return kind;
@@ -87,6 +101,14 @@ public class OtherModel {
         this.deprecated = deprecated;
     }
 
+    public String getDeprecationNote() {
+        return deprecationNote;
+    }
+
+    public void setDeprecationNote(String deprecationNote) {
+        this.deprecationNote = deprecationNote;
+    }
+
     public String getGroupId() {
         return groupId;
     }
@@ -119,4 +141,27 @@ public class OtherModel {
         return cutLastZeroDigit(firstVersion);
     }
 
+    public List<OtherOptionModel> getOptions() {
+        return options;
+    }
+
+    public void addOptionModel(OtherOptionModel option) {
+        options.add(option);
+    }
+
+    public String getShortJavaType() {
+        if (javaType.startsWith("java.util.Map")) {
+            return "Map";
+        } else if (javaType.startsWith("java.util.Set")) {
+            return "Set";
+        } else if (javaType.startsWith("java.util.List")) {
+            return "List";
+        }
+        int pos = javaType.lastIndexOf(".");
+        if (pos != -1) {
+            return javaType.substring(pos + 1);
+        } else {
+            return javaType;
+        }
+    }
 }

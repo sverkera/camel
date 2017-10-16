@@ -17,13 +17,16 @@
 package org.apache.camel;
 
 /**
- * TODO: document
+ * An interface to represent an object which support validation
+ *
+ * @deprecated see {@link org.apache.camel.extension.ComponentExtension}
  */
+@Deprecated
 public interface VerifiableComponent {
     /**
-     * TODO: document
+     * Get the {@link ComponentVerifier}
      *
-     * @return a Component Verifier
+     * @return the Component Verifier
      */
     ComponentVerifier getVerifier();
 }

@@ -19,45 +19,46 @@ package org.apache.camel.component.consul.cloud;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.orbitz.consul.Consul;
 import com.orbitz.consul.model.catalog.CatalogService;
 import com.orbitz.consul.model.health.ServiceHealth;
-import com.orbitz.consul.option.CatalogOptions;
-import com.orbitz.consul.option.ImmutableCatalogOptions;
+import com.orbitz.consul.option.ImmutableQueryOptions;
+import com.orbitz.consul.option.QueryOptions;
 import org.apache.camel.cloud.ServiceDefinition;
 import org.apache.camel.component.consul.ConsulConfiguration;
 import org.apache.camel.impl.cloud.DefaultServiceDefinition;
 import org.apache.camel.impl.cloud.DefaultServiceDiscovery;
 import org.apache.camel.impl.cloud.DefaultServiceHealth;
 import org.apache.camel.util.ObjectHelper;
+import org.apache.camel.util.function.Suppliers;
 
 public final class ConsulServiceDiscovery extends DefaultServiceDiscovery {
-    private final Consul client;
-    private final CatalogOptions catalogOptions;
+    private final Supplier<Consul> client;
+    private final QueryOptions queryOptions;
 
     public ConsulServiceDiscovery(ConsulConfiguration configuration) throws Exception {
-        this.client = configuration.createConsulClient();
+        this.client = Suppliers.memorize(
+            () -> configuration.createConsulClient(getCamelContext()),
+            e -> ObjectHelper.wrapRuntimeCamelException(e)
+        );
 
-        ImmutableCatalogOptions.Builder builder = ImmutableCatalogOptions.builder();
-        if (ObjectHelper.isNotEmpty(configuration.getDc())) {
-            builder.datacenter(configuration.getDc());
-        }
-        if (ObjectHelper.isNotEmpty(configuration.getTags())) {
-            configuration.getTags().forEach(builder::tag);
-        }
+        ImmutableQueryOptions.Builder builder = ImmutableQueryOptions.builder();
+        ObjectHelper.ifNotEmpty(configuration.getDatacenter(), builder::datacenter);
+        ObjectHelper.ifNotEmpty(configuration.getTags(), builder::tag);
 
-        catalogOptions = builder.build();
+        queryOptions = builder.build();
     }
 
     @Override
     public List<ServiceDefinition> getServices(String name) {
-        List<CatalogService> services = client.catalogClient()
-            .getService(name, catalogOptions)
+        List<CatalogService> services = client.get().catalogClient()
+            .getService(name, queryOptions)
             .getResponse();
-        List<ServiceHealth> healths = client.healthClient()
-            .getAllServiceInstances(name, catalogOptions)
+        List<ServiceHealth> healths = client.get().healthClient()
+            .getAllServiceInstances(name, queryOptions)
             .getResponse();
 
         return services.stream()

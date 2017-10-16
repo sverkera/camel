@@ -93,6 +93,8 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Blu
     @XmlAttribute
     private String messageHistory;
     @XmlAttribute
+    private String logMask;
+    @XmlAttribute
     private String logExhaustedMessageBody;
     @XmlAttribute
     private String streamCache = "false";
@@ -106,6 +108,8 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Blu
     private String autoStartup = "true";
     @XmlAttribute
     private String useMDCLogging;
+    @XmlAttribute
+    private String useDataType;
     @XmlAttribute
     private String useBreadcrumb;
     @XmlAttribute
@@ -125,6 +129,8 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Blu
     @XmlAttribute
     @Deprecated
     private Boolean lazyLoadTypeConverters;
+    @XmlAttribute
+    private Boolean loadTypeConverters;
     @XmlAttribute
     private Boolean typeConverterStatisticsEnabled;
     @XmlAttribute
@@ -381,6 +387,14 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Blu
         this.useMDCLogging = useMDCLogging;
     }
 
+    public String getUseDataType() {
+        return useDataType;
+    }
+
+    public void setUseDataType(String useDataType) {
+        this.useDataType = useDataType;
+    }
+
     public String getUseBreadcrumb() {
         return useBreadcrumb;
     }
@@ -430,6 +444,15 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Blu
     @Deprecated
     public void setLazyLoadTypeConverters(Boolean lazyLoadTypeConverters) {
         this.lazyLoadTypeConverters = lazyLoadTypeConverters;
+    }
+
+    @Override
+    public Boolean getLoadTypeConverters() {
+        return loadTypeConverters;
+    }
+
+    public void setLoadTypeConverters(Boolean loadTypeConverters) {
+        this.loadTypeConverters = loadTypeConverters;
     }
 
     public Boolean getTypeConverterStatisticsEnabled() {
@@ -534,6 +557,14 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Blu
 
     public void setMessageHistory(String messageHistory) {
         this.messageHistory = messageHistory;
+    }
+
+    public String getLogMask() {
+        return logMask;
+    }
+
+    public void setLogMask(String logMask) {
+        this.logMask = logMask;
     }
 
     public String getLogExhaustedMessageBody() {

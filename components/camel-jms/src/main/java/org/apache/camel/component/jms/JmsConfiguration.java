@@ -127,8 +127,6 @@ public class JmsConfiguration implements Cloneable {
     private String clientId;
     @UriParam(description = "The durable subscriber name for specifying durable topic subscriptions. The clientId option must be configured as well.")
     private String durableSubscriptionName;
-    @Deprecated
-    private boolean subscriptionDurable;
     @UriParam(label = "consumer,advanced",
             description = "Specifies whether the listener session should be exposed when consuming messages.")
     private boolean exposeListenerSession = true;
@@ -275,10 +273,11 @@ public class JmsConfiguration implements Cloneable {
                     + " values from the endpoint instead. So, when using this option, the headers override the values from the endpoint."
                     + " The explicitQosEnabled option, by contrast, will only use options set on the endpoint, and not values from the message header.")
     private boolean preserveMessageQos;
-    @UriParam(description = "If true, a producer will behave like a InOnly exchange with the exception that JMSReplyTo header is sent out and"
-            + " not be suppressed like in the case of InOnly. Like InOnly the producer will not wait for a reply."
-            + " A consumer with this flag will behave like InOnly. This feature can be used to bridge InOut requests to"
-            + " another queue so that a route on the other queue will send its response directly back to the original JMSReplyTo.")
+    @UriParam(description = "Specifies whether Camel ignores the JMSReplyTo header in messages. If true, Camel does not send a reply back to"
+            + " the destination specified in the JMSReplyTo header. You can use this option if you want Camel to consume from a"
+            + " route and you do not want Camel to automatically send back a reply message because another component in your code"
+            + " handles the reply message. You can also use this option if you want to use Camel as a proxy between different"
+            + " message brokers and you want to route message from one system to another.")
     private boolean disableReplyTo;
     @UriParam(label = "consumer,advanced",
             description = "Enables eager loading of JMS properties as soon as a message is loaded"
@@ -451,6 +450,40 @@ public class JmsConfiguration implements Cloneable {
                     + " JMS property to correlate messages. If set messages will be correlated solely on the"
                     + " value of this property JMSCorrelationID property will be ignored and not set by Camel.")
     private String correlationProperty;
+    @UriParam(label = "producer,advanced",
+            description = "This option is used to allow additional headers which may have values that are invalid according to JMS specification."
+                    + " For example some message systems such as WMQ do this with header names using prefix JMS_IBM_MQMD_ containing values with byte array or other invalid types."
+                    + " You can specify multiple header names separated by comma, and use * as suffix for wildcard matching.")
+    private String allowAdditionalHeaders;
+
+    // JMS 2.0 API
+    @UriParam(label = "consumer", description = "Set the name of a subscription to create. To be applied in case"
+        + " of a topic (pub-sub domain) with a shared or durable subscription."
+        + " The subscription name needs to be unique within this client's"
+        + " JMS client id. Default is the class name of the specified message listener."
+        + " Note: Only 1 concurrent consumer (which is the default of this"
+        + " message listener container) is allowed for each subscription,"
+        + " except for a shared subscription (which requires JMS 2.0).")
+    private String subscriptionName;
+    @UriParam(label = "consumer", description = "Set whether to make the subscription durable. The durable subscription name"
+        + " to be used can be specified through the subscriptionName property."
+        + " Default is false. Set this to true to register a durable subscription,"
+        + " typically in combination with a subscriptionName value (unless"
+        + " your message listener class name is good enough as subscription name)."
+        + " Only makes sense when listening to a topic (pub-sub domain),"
+        + " therefore this method switches the pubSubDomain flag as well.")
+    private boolean subscriptionDurable;
+    @UriParam(label = "consumer", description = "Set whether to make the subscription shared. The shared subscription name"
+        + " to be used can be specified through the subscriptionName property."
+        + " Default is false. Set this to true to register a shared subscription,"
+        + " typically in combination with a subscriptionName value (unless"
+        + " your message listener class name is good enough as subscription name)."
+        + " Note that shared subscriptions may also be durable, so this flag can"
+        + " (and often will) be combined with subscriptionDurable as well."
+        + " Only makes sense when listening to a topic (pub-sub domain),"
+        + " therefore this method switches the pubSubDomain flag as well."
+        + " Requires a JMS 2.0 compatible message broker.")
+    private boolean subscriptionShared;
 
     public JmsConfiguration() {
     }
@@ -915,16 +948,6 @@ public class JmsConfiguration implements Cloneable {
         this.errorHandlerLogStackTrace = errorHandlerLogStackTrace;
     }
 
-    @Deprecated
-    public boolean isSubscriptionDurable() {
-        return subscriptionDurable;
-    }
-
-    @Deprecated
-    public void setSubscriptionDurable(boolean subscriptionDurable) {
-        this.subscriptionDurable = subscriptionDurable;
-    }
-
     public String getAcknowledgementModeName() {
         return acknowledgementModeName;
     }
@@ -1372,10 +1395,11 @@ public class JmsConfiguration implements Cloneable {
     }
 
     /**
-     * If true, a producer will behave like a InOnly exchange with the exception that JMSReplyTo header is sent out and
-     * not be suppressed like in the case of InOnly. Like InOnly the producer will not wait for a reply.
-     * A consumer with this flag will behave like InOnly. This feature can be used to bridge InOut requests to
-     * another queue so that a route on the other queue will send its response directly back to the original JMSReplyTo.
+     * Specifies whether Camel ignores the JMSReplyTo header in messages. If true, Camel does not send a reply back to
+     * the destination specified in the JMSReplyTo header. You can use this option if you want Camel to consume from a
+     * route and you do not want Camel to automatically send back a reply message because another component in your code
+     * handles the reply message. You can also use this option if you want to use Camel as a proxy between different
+     * message brokers and you want to route message from one system to another.
      */
     public void setDisableReplyTo(boolean disableReplyTo) {
         this.disableReplyTo = disableReplyTo;
@@ -2102,4 +2126,72 @@ public class JmsConfiguration implements Cloneable {
     public String getCorrelationProperty() {
         return correlationProperty;
     }
+
+    public String getAllowAdditionalHeaders() {
+        return allowAdditionalHeaders;
+    }
+
+    /**
+     * This option is used to allow additional headers which may have values that are invalid according to JMS specification.
+     + For example some message systems such as WMQ do this with header names using prefix JMS_IBM_MQMD_ containing values with byte array or other invalid types.
+     + You can specify multiple header names separated by comma, and use * as suffix for wildcard matching.
+     */
+    public void setAllowAdditionalHeaders(String allowAdditionalHeaders) {
+        this.allowAdditionalHeaders = allowAdditionalHeaders;
+    }
+
+    public boolean isSubscriptionDurable() {
+        return subscriptionDurable;
+    }
+
+    /**
+     * Set whether to make the subscription durable. The durable subscription name
+     * to be used can be specified through the "subscriptionName" property.
+     * <p>Default is "false". Set this to "true" to register a durable subscription,
+     * typically in combination with a "subscriptionName" value (unless
+     * your message listener class name is good enough as subscription name).
+     * <p>Only makes sense when listening to a topic (pub-sub domain),
+     * therefore this method switches the "pubSubDomain" flag as well.
+     */
+    public void setSubscriptionDurable(boolean subscriptionDurable) {
+        this.subscriptionDurable = subscriptionDurable;
+    }
+
+    public boolean isSubscriptionShared() {
+        return subscriptionShared;
+    }
+
+    /**
+     * Set whether to make the subscription shared. The shared subscription name
+     * to be used can be specified through the "subscriptionName" property.
+     * <p>Default is "false". Set this to "true" to register a shared subscription,
+     * typically in combination with a "subscriptionName" value (unless
+     * your message listener class name is good enough as subscription name).
+     * Note that shared subscriptions may also be durable, so this flag can
+     * (and often will) be combined with "subscriptionDurable" as well.
+     * <p>Only makes sense when listening to a topic (pub-sub domain),
+     * therefore this method switches the "pubSubDomain" flag as well.
+     * <p><b>Requires a JMS 2.0 compatible message broker.</b>
+     */
+    public void setSubscriptionShared(boolean subscriptionShared) {
+        this.subscriptionShared = subscriptionShared;
+    }
+
+    public String getSubscriptionName() {
+        return subscriptionName;
+    }
+
+    /**
+     * Set the name of a subscription to create. To be applied in case
+     * of a topic (pub-sub domain) with a shared or durable subscription.
+     * <p>The subscription name needs to be unique within this client's
+     * JMS client id. Default is the class name of the specified message listener.
+     * <p>Note: Only 1 concurrent consumer (which is the default of this
+     * message listener container) is allowed for each subscription,
+     * except for a shared subscription (which requires JMS 2.0).
+     */
+    public void setSubscriptionName(String subscriptionName) {
+        this.subscriptionName = subscriptionName;
+    }
+    
 }

@@ -24,6 +24,8 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +46,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
 
 import org.apache.camel.component.salesforce.SalesforceEndpointConfig;
 import org.apache.camel.component.salesforce.SalesforceHttpClient;
@@ -65,8 +68,8 @@ import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.util.IntrospectionSupport;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.jsse.SSLContextParameters;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -77,7 +80,6 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.log.Log4JLogChute;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.Origin;
@@ -109,6 +111,8 @@ public class CamelSalesforceMojo extends AbstractMojo {
     private static final String SOBJECT_QUERY_RECORDS_VM = "/sobject-query-records.vm";
     private static final String SOBJECT_QUERY_RECORDS_OPTIONAL_VM = "/sobject-query-records-optional.vm";
     private static final String SOBJECT_PICKLIST_VM = "/sobject-picklist.vm";
+
+    private static final List<String> IGNORED_OBJECTS = Arrays.asList("FieldDefinition");
 
     // used for velocity logging, to avoid creating velocity.log
     private static final Logger LOG = Logger.getLogger(CamelSalesforceMojo.class.getName());
@@ -270,6 +274,24 @@ public class CamelSalesforceMojo extends AbstractMojo {
     @Parameter(property = "camelSalesforce.useStringsForPicklists", defaultValue = "false")
     protected Boolean useStringsForPicklists;
 
+    /**
+     * Generate JSON Schema for DTOs, instead of Java Objects.
+     */
+    @Parameter(property = "camelSalesforce.jsonSchema")
+    protected boolean jsonSchema;
+
+    /**
+     * Schema ID for JSON Schema for DTOs.
+     */
+    @Parameter(property = "camelSalesforce.jsonSchemaId", defaultValue = JsonUtils.DEFAULT_ID_PREFIX)
+    protected String jsonSchemaId;
+
+    /**
+     * Schema ID for JSON Schema for DTOs.
+     */
+    @Parameter(property = "camelSalesforce.jsonSchemaFilename", defaultValue = "salesforce-dto-schema.json")
+    protected String jsonSchemaFilename;
+
     VelocityEngine engine;
 
     private long responseTimeout;
@@ -371,7 +393,14 @@ public class CamelSalesforceMojo extends AbstractMojo {
                     if (ex != null) {
                         throw ex;
                     }
-                    descriptions.add(mapper.readValue(callback.getResponse(), SObjectDescription.class));
+                    final SObjectDescription description = mapper.readValue(callback.getResponse(), SObjectDescription.class);
+
+                    // remove some of the unused used metadata
+                    // properties in order to minimize the code size
+                    // for CAMEL-11310
+                    final SObjectDescription descriptionToAdd = description.prune();
+
+                    descriptions.add(descriptionToAdd);
                 } catch (Exception e) {
                     String msg = "Error getting SObject description for '" + name + "': " + e.getMessage();
                     throw new MojoExecutionException(msg, e);
@@ -393,19 +422,52 @@ public class CamelSalesforceMojo extends AbstractMojo {
                 }
             }
 
-            getLog().info("Generating Java Classes...");
-            // generate POJOs for every object description
-            final GeneratorUtility utility = new GeneratorUtility(useStringsForPicklists);
-            // should we provide a flag to control timestamp generation?
-            final String generatedDate = new Date().toString();
-            for (SObjectDescription description : descriptions) {
-                try {
-                    processDescription(pkgDir, description, utility, generatedDate);
-                } catch (IOException e) {
-                    throw new MojoExecutionException("Unable to generate source files for: " + description.getName(), e);
+            if (!jsonSchema) {
+
+                getLog().info("Generating Java Classes...");
+                // generate POJOs for every object description
+                final GeneratorUtility utility = new GeneratorUtility(useStringsForPicklists);
+                // should we provide a flag to control timestamp generation?
+                final String generatedDate = new Date().toString();
+                for (SObjectDescription description : descriptions) {
+                    if (IGNORED_OBJECTS.contains(description.getName())) {
+                        continue;
+                    }
+                    try {
+                        processDescription(pkgDir, description, utility, generatedDate);
+                    } catch (IOException e) {
+                        throw new MojoExecutionException("Unable to generate source files for: " + description.getName(), e);
+                    }
                 }
+
+                getLog().info(String.format("Successfully generated %s Java Classes", descriptions.size() * 2));
+
+            } else {
+
+                getLog().info("Generating JSON Schema...");
+                // generate JSON schema for every object description
+                final ObjectMapper schemaObjectMapper = JsonUtils.createSchemaObjectMapper();
+                final Set<JsonSchema> allSchemas = new HashSet<>();
+                for (SObjectDescription description : descriptions) {
+                    if (IGNORED_OBJECTS.contains(description.getName())) {
+                        continue;
+                    }
+                    try {
+                        allSchemas.addAll(JsonUtils.getSObjectJsonSchema(schemaObjectMapper, description, jsonSchemaId, true));
+                    } catch (IOException e) {
+                        throw new MojoExecutionException("Unable to generate JSON Schema types for: " + description.getName(), e);
+                    }
+                }
+
+                final Path schemaFilePath = outputDirectory.toPath().resolve(jsonSchemaFilename);
+                try {
+                    Files.write(schemaFilePath, JsonUtils.getJsonSchemaString(schemaObjectMapper, allSchemas, jsonSchemaId).getBytes("UTF-8"));
+                } catch (IOException e) {
+                    throw new MojoExecutionException("Unable to generate JSON Schema source file: " + schemaFilePath, e);
+                }
+
+                getLog().info(String.format("Successfully generated %s JSON Types in file %s", descriptions.size() * 2, schemaFilePath));
             }
-            getLog().info(String.format("Successfully generated %s Java Classes", descriptions.size() * 2));
 
         } finally {
             // remember to stop the client
@@ -433,9 +495,7 @@ public class CamelSalesforceMojo extends AbstractMojo {
         final Properties velocityProperties = new Properties();
         velocityProperties.setProperty(RuntimeConstants.RESOURCE_LOADER, "cloader");
         velocityProperties.setProperty("cloader.resource.loader.class", ClasspathResourceLoader.class.getName());
-        velocityProperties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, Log4JLogChute.class.getName());
-        velocityProperties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM + ".log4j.logger", LOG.getName());
-
+        velocityProperties.setProperty(RuntimeConstants.RUNTIME_LOG_NAME, LOG.getName());
         final VelocityEngine engine = new VelocityEngine(velocityProperties);
 
         return engine;

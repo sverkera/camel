@@ -49,6 +49,8 @@ public class SalesforceEndpointConfig implements Cloneable {
 
     // parameters for Rest API
     public static final String FORMAT = "format";
+    public static final String RAW_PAYLOAD = "rawPayload";
+
     public static final String SOBJECT_NAME = "sObjectName";
     public static final String SOBJECT_ID = "sObjectId";
     public static final String SOBJECT_FIELDS = "sObjectFields";
@@ -91,6 +93,8 @@ public class SalesforceEndpointConfig implements Cloneable {
     public static final long DEFAULT_BACKOFF_INCREMENT = 1000L;
     public static final long DEFAULT_MAX_BACKOFF = 30000L;
 
+    public static final String NOT_FOUND_BEHAVIOUR = "notFoundBehaviour";
+
     // general properties
     @UriParam
     private String apiVersion = DEFAULT_VERSION;
@@ -98,6 +102,8 @@ public class SalesforceEndpointConfig implements Cloneable {
     // Rest API properties
     @UriParam
     private PayloadFormat format = PayloadFormat.JSON;
+    @UriParam
+    private boolean rawPayload;
     @UriParam(displayName = "SObject Name")
     private String sObjectName;
     @UriParam(displayName = "SObject Id")
@@ -187,6 +193,9 @@ public class SalesforceEndpointConfig implements Cloneable {
     @UriParam
     private Integer limit;
 
+    @UriParam
+    private NotFoundBehaviour notFoundBehaviour = NotFoundBehaviour.EXCEPTION;
+
     public SalesforceEndpointConfig copy() {
         try {
             final SalesforceEndpointConfig copy = (SalesforceEndpointConfig) super.clone();
@@ -206,6 +215,18 @@ public class SalesforceEndpointConfig implements Cloneable {
      */
     public void setFormat(PayloadFormat format) {
         this.format = format;
+    }
+
+    public boolean getRawPayload() {
+        return rawPayload;
+    }
+
+    /**
+     * Use raw payload {@link String} for request and response (either JSON or XML depending on {@code format}),
+     * instead of DTOs, false by default
+     */
+    public void setRawPayload(boolean rawPayload) {
+        this.rawPayload = rawPayload;
     }
 
     public String getApiVersion() {
@@ -341,7 +362,9 @@ public class SalesforceEndpointConfig implements Cloneable {
     }
 
     public Map<String, Object> getApexQueryParams() {
-        return apexQueryParams == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(apexQueryParams);
+        final Map<String, Object> value = Optional.ofNullable(apexQueryParams).orElse(Collections.emptyMap());
+
+        return Collections.unmodifiableMap(value);
     }
 
     /**
@@ -612,6 +635,8 @@ public class SalesforceEndpointConfig implements Cloneable {
         valueMap.put(DEFAULT_REPLAY_ID, defaultReplayId);
         valueMap.put(INITIAL_REPLAY_ID_MAP, initialReplayIdMap);
 
+        valueMap.put(NOT_FOUND_BEHAVIOUR, notFoundBehaviour);
+
         return Collections.unmodifiableMap(valueMap);
     }
 
@@ -813,5 +838,19 @@ public class SalesforceEndpointConfig implements Cloneable {
         }
 
         approval.setSkipEntryCriteria(skipEntryCriteria);
+    }
+
+    public NotFoundBehaviour getNotFoundBehaviour() {
+        return notFoundBehaviour;
+    }
+
+    /**
+     * Sets the behaviour of 404 not found status received from Salesforce API.
+     * Should the body be set to NULL {@link NotFoundBehaviour#NULL} or should a
+     * exception be signaled on the exchange {@link NotFoundBehaviour#EXCEPTION}
+     * - the default.
+     */
+    public void setNotFoundBehaviour(final NotFoundBehaviour notFoundBehaviour) {
+        this.notFoundBehaviour = notFoundBehaviour;
     }
 }
