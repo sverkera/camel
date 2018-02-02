@@ -36,6 +36,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.camel.AsyncCallback;
 import org.apache.camel.AsyncProcessor;
 import org.apache.camel.CamelContext;
+import org.apache.camel.CamelContextAware;
 import org.apache.camel.CamelExchangeException;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
@@ -1306,6 +1307,9 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         if (strategy instanceof DelegateAggregationStrategy) {
             strategy = ((DelegateAggregationStrategy) strategy).getDelegate();
         }
+        if (strategy instanceof CamelContextAware) {
+            ((CamelContextAware) strategy).setCamelContext(camelContext);
+        }
         if (strategy instanceof PreCompletionAwareAggregationStrategy) {
             preCompletion = true;
             LOG.info("PreCompletionAwareAggregationStrategy detected. Aggregator {} is in pre-completion mode.", getId());
@@ -1323,7 +1327,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
 
         if (getCloseCorrelationKeyOnCompletion() != null) {
             if (getCloseCorrelationKeyOnCompletion() > 0) {
-                LOG.info("Using ClosedCorrelationKeys with a LRUCache with a capacity of " + getCloseCorrelationKeyOnCompletion());
+                LOG.info("Using ClosedCorrelationKeys with a LRUCache with a capacity of {}", getCloseCorrelationKeyOnCompletion());
                 closedCorrelationKeys = LRUCacheFactory.newLRUCache(getCloseCorrelationKeyOnCompletion());
             } else {
                 LOG.info("Using ClosedCorrelationKeys with unbounded capacity");
@@ -1357,7 +1361,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
                 // create a background recover thread to check every interval
                 recoverService = camelContext.getExecutorServiceManager().newScheduledThreadPool(this, "AggregateRecoverChecker", 1);
                 Runnable recoverTask = new RecoverTask(recoverable);
-                LOG.info("Using RecoverableAggregationRepository by scheduling recover checker to run every " + interval + " millis.");
+                LOG.info("Using RecoverableAggregationRepository by scheduling recover checker to run every {} millis.", interval);
                 // use fixed delay so there is X interval between each run
                 recoverService.scheduleWithFixedDelay(recoverTask, 1000L, interval, TimeUnit.MILLISECONDS);
 
@@ -1366,7 +1370,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
                     if (max <= 0) {
                         throw new IllegalArgumentException("Option maximumRedeliveries must be a positive number, was: " + max);
                     }
-                    LOG.info("After " + max + " failed redelivery attempts Exchanges will be moved to deadLetterUri: " + recoverable.getDeadLetterUri());
+                    LOG.info("After {} failed redelivery attempts Exchanges will be moved to deadLetterUri: {}", max, recoverable.getDeadLetterUri());
 
                     // dead letter uri must be a valid endpoint
                     Endpoint endpoint = camelContext.getEndpoint(recoverable.getDeadLetterUri());
@@ -1382,7 +1386,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
             throw new IllegalArgumentException("Only one of completionInterval or completionTimeout can be used, not both.");
         }
         if (getCompletionInterval() > 0) {
-            LOG.info("Using CompletionInterval to run every " + getCompletionInterval() + " millis.");
+            LOG.info("Using CompletionInterval to run every {} millis.", getCompletionInterval());
             if (getTimeoutCheckerExecutorService() == null) {
                 setTimeoutCheckerExecutorService(camelContext.getExecutorServiceManager().newScheduledThreadPool(this, AGGREGATE_TIMEOUT_CHECKER, 1));
                 shutdownTimeoutCheckerExecutorService = true;
@@ -1393,7 +1397,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
 
         // start timeout service if its in use
         if (getCompletionTimeout() > 0 || getCompletionTimeoutExpression() != null) {
-            LOG.info("Using CompletionTimeout to trigger after " + getCompletionTimeout() + " millis of inactivity.");
+            LOG.info("Using CompletionTimeout to trigger after {} millis of inactivity.", getCompletionTimeout());
             if (getTimeoutCheckerExecutorService() == null) {
                 setTimeoutCheckerExecutorService(camelContext.getExecutorServiceManager().newScheduledThreadPool(this, AGGREGATE_TIMEOUT_CHECKER, 1));
                 shutdownTimeoutCheckerExecutorService = true;

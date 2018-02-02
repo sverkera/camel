@@ -108,8 +108,8 @@ to several children model classes.
 
 |separator |string |mandatory - can be ',' or ';' or 'anything'. This value is interpreted
 as a regular expression. If you want to use a sign which has a special
-meaning in regular expressions, e.g. the '|' sign, than you have to mask
-it, like '|'
+meaning in regular expressions, e.g. the '\|' sign, than you have to mask
+it, like '\|'
 
 |skipFirstLine |boolean |optional - default value = false - allow to skip the first line of the
 CSV file
@@ -136,6 +136,11 @@ declared one time.
 
 |quoting |boolean |*Camel 2.11:*optional - default value = false - Indicate if the values
 must be quoted when marshaling when CSV is generated.
+
+|endWithLineBreak |boolean |*Camel 2.21:* optional - default value = true - Indicate if the CSV generated file 
+should end with a line break.
+
+|
 |=======================================================================
 
 *case 1 : separator = ','*
@@ -704,7 +709,14 @@ field, we can then add 'padd' characters.
 |crlf |string |optional - possible values = WINDOWS,UNIX,MAC, or custom; default value.
 WINDOWS - allow to define the carriage return character to use. If you
 specify a value other than the three listed before, the value you enter
-(custom) will be used as the CRLF character(s)
+(custom) will be used as the CRLF character(s). This option is used only during marshalling, 
+whereas unmarshalling uses system default JDK provided line delimiter unless eol is customized
+
+|eol |string |optional - default="" which is empty string. Character to be used to process
+considering end of line after each record while unmarshalling (optional - default = "" 
+which help default JDK provided line delimiter to be used unless any other line delimiter
+provided). This option is used only during unmarshalling, where marshalling uses system default
+provided line delimiter as "WINDOWS" unless any other value is provided
 
 |paddingChar |char |mandatory - default value = ' '
 

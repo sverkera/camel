@@ -40,12 +40,12 @@ import org.apache.camel.TypeConverterExists;
 import org.apache.camel.TypeConverters;
 import org.apache.camel.builder.ErrorHandlerBuilderRef;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.cluster.CamelClusterService;
 import org.apache.camel.component.properties.PropertiesComponent;
 import org.apache.camel.component.properties.PropertiesFunction;
 import org.apache.camel.component.properties.PropertiesLocation;
 import org.apache.camel.component.properties.PropertiesParser;
 import org.apache.camel.component.properties.PropertiesResolver;
-import org.apache.camel.ha.CamelClusterService;
 import org.apache.camel.health.HealthCheckRegistry;
 import org.apache.camel.health.HealthCheckRepository;
 import org.apache.camel.health.HealthCheckService;
@@ -96,6 +96,7 @@ import org.apache.camel.spi.HeadersMapFactory;
 import org.apache.camel.spi.InflightRepository;
 import org.apache.camel.spi.InterceptStrategy;
 import org.apache.camel.spi.LifecycleStrategy;
+import org.apache.camel.spi.LogListener;
 import org.apache.camel.spi.ManagementNamingStrategy;
 import org.apache.camel.spi.ManagementStrategy;
 import org.apache.camel.spi.MessageHistoryFactory;
@@ -374,6 +375,23 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         if (routeController != null) {
             LOG.info("Using RouteController: " + routeController);
             getContext().setRouteController(routeController);
+        }
+        // UuidGenerator
+        UuidGenerator uuidGenerator = getBeanForType(UuidGenerator.class);
+        if (uuidGenerator != null) {
+            LOG.info("Using custom UuidGenerator: {}", uuidGenerator);
+            getContext().setUuidGenerator(uuidGenerator);
+        }
+        // LogListener
+        Map<String, LogListener> logListeners = getContext().getRegistry().findByTypeWithName(LogListener.class);
+        if (logListeners != null && !logListeners.isEmpty()) {
+            for (Map.Entry<String, LogListener> entry : logListeners.entrySet()) {
+                LogListener logListener = entry.getValue();
+                if (!getContext().getLogListeners().contains(logListener)) {
+                    LOG.info("Using custom LogListener with id: {} and implementation: {}", entry.getKey(), logListener);
+                    getContext().addLogListener(logListener);
+                }
+            }
         }
 
         // set the default thread pool profile if defined

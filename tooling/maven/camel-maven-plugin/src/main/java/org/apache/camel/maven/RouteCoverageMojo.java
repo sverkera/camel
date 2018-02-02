@@ -108,7 +108,7 @@ public class RouteCoverageMojo extends AbstractExecMojo {
      * @parameter property="camel.anonymousRoutes"
      *            default-value="false"
      */
-    private boolean anonymousRoutes = false;
+    private boolean anonymousRoutes;
 
     // CHECKSTYLE:OFF
     @Override
@@ -153,7 +153,7 @@ public class RouteCoverageMojo extends AbstractExecMojo {
                     String baseDir = ".";
                     JavaType out = Roaster.parse(file);
                     // we should only parse java classes (not interfaces and enums etc)
-                    if (out != null && out instanceof JavaClassSource) {
+                    if (out instanceof JavaClassSource) {
                         JavaClassSource clazz = (JavaClassSource) out;
                         List<CamelNodeDetails> result = RouteBuilderParser.parseRouteBuilderTree(clazz, baseDir, fqn, true);
                         routeTrees.addAll(result);
@@ -196,7 +196,7 @@ public class RouteCoverageMojo extends AbstractExecMojo {
         // favor strict matching on route ids
         for (CamelNodeDetails t : routeIdTrees) {
             String routeId = t.getRouteId();
-            String fileName = asRelativeFile(t.getFileName());
+            String fileName = stripRootPath(asRelativeFile(t.getFileName()));
 
             // grab dump data for the route
             try {
@@ -243,7 +243,8 @@ public class RouteCoverageMojo extends AbstractExecMojo {
                         }
 
                         if (!coverage.isEmpty()) {
-                            String out = templateCoverageData(className, null, coverage, notCovered);
+                            String fileName = stripRootPath(asRelativeFile(t.getValue().get(0).getFileName()));
+                            String out = templateCoverageData(fileName, null, coverage, notCovered);
                             getLog().info("Route coverage summary:\n\n" + out);
                             getLog().info("");
                         }
@@ -365,6 +366,15 @@ public class RouteCoverageMojo extends AbstractExecMojo {
     }
 
     private static void gatherRouteCoverageSummary(CamelNodeDetails node, Iterator<CoverageData> it, AtomicInteger level, List<RouteCoverageNode> answer) {
+        // we want to skip data for policy/transacted as they are abstract nodes and just gather their children immediately
+        boolean skipData = "policy".equals(node.getName()) || "transacted".equals(node.getName());
+        if (skipData) {
+            for (CamelNodeDetails child : node.getOutputs()) {
+                gatherRouteCoverageSummary(child, it, level, answer);
+            }
+            return;
+        }
+
         RouteCoverageNode data = new RouteCoverageNode();
         data.setName(node.getName());
         data.setLineNumber(Integer.valueOf(node.getLineNumber()));

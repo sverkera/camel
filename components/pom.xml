@@ -77,6 +77,7 @@
     <module>camel-atomix</module>
     <module>camel-avro</module>
     <module>camel-aws</module>
+    <module>camel-aws-xray</module>
     <module>camel-azure</module>
     <module>camel-base64</module>
     <module>camel-beanio</module>
@@ -118,6 +119,7 @@
     <module>camel-ejb</module>
     <module>camel-elasticsearch</module>
     <module>camel-elasticsearch5</module>
+    <module>camel-elasticsearch5-rest</module>
     <module>camel-elsql</module>
     <module>camel-etcd</module>
     <module>camel-eventadmin</module>
@@ -196,6 +198,7 @@
     <module>camel-ldif</module>
     <module>camel-leveldb</module>
     <module>camel-linkedin</module>
+    <module>camel-lra</module>
     <module>camel-lucene</module>
     <module>camel-lumberjack</module>
     <module>camel-lzf</module>
@@ -301,6 +304,8 @@
     <module>camel-vertx</module>
     <module>camel-weather</module>
     <module>camel-websocket</module>
+    <module>camel-wordpress</module>
+    <module>camel-xchange</module>
     <module>camel-xmlbeans</module>
     <module>camel-xmljson</module>
     <module>camel-xmlrpc</module>
@@ -308,6 +313,7 @@
     <module>camel-xmpp</module>
     <module>camel-xstream</module>
     <module>camel-yammer</module>
+    <module>camel-yql</module>
     <module>camel-zendesk</module>
     <module>camel-zipfile</module>
     <module>camel-zipkin</module>

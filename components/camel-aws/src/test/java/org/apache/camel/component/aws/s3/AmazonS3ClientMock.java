@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
@@ -358,7 +359,7 @@ public class AmazonS3ClientMock extends AmazonS3Client {
 
     @Override
     public void deleteObject(DeleteObjectRequest deleteObjectRequest) throws AmazonClientException, AmazonServiceException {
-        throw new UnsupportedOperationException();
+        // noop
     }
 
     @Override
@@ -429,7 +430,13 @@ public class AmazonS3ClientMock extends AmazonS3Client {
 
     @Override
     public URL generatePresignedUrl(GeneratePresignedUrlRequest generatePresignedUrlRequest) throws AmazonClientException {
-        throw new UnsupportedOperationException();
+        URL url = null;
+        try {
+            url = new URL("http://aws.amazonas.s3/file.zip");
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return url;
     }
 
     @Override

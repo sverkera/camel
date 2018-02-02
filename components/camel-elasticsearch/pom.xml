@@ -29,7 +29,7 @@
 
   <artifactId>camel-elasticsearch</artifactId>
   <packaging>jar</packaging>
-  <name>Camel :: ElasticSearch</name>
+  <name>Camel :: ElasticSearch (deprecated)</name>
   <description>Camel Elasticsearch support</description>
 
   <properties>
@@ -99,8 +99,6 @@
           <systemPropertyVariables>
             <es.path.data>target/data</es.path.data>
           </systemPropertyVariables>
-          <forkCount>1</forkCount>
-          <reuseForks>false</reuseForks>
         </configuration>
       </plugin>
     </plugins>

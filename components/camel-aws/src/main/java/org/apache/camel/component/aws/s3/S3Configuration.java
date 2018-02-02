@@ -19,6 +19,7 @@ package org.apache.camel.component.aws.s3;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 
+import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
 import org.apache.camel.util.ObjectHelper;
@@ -29,15 +30,15 @@ public class S3Configuration implements Cloneable {
     private String bucketName;
     @UriParam
     private AmazonS3 amazonS3Client;
-    @UriParam
+    @UriParam(label = "security", secret = true)
     private String accessKey;
-    @UriParam
+    @UriParam(label = "security", secret = true)
     private String secretKey;
     @UriParam(label = "consumer")
     private String fileName;
     @UriParam(label = "consumer")
     private String prefix;
-    @UriParam(label = "producer")
+    @UriParam
     private String region;
     @UriParam(label = "consumer", defaultValue = "true")
     private boolean deleteAfterRead = true;
@@ -63,14 +64,28 @@ public class S3Configuration implements Cloneable {
     private boolean includeBody = true;
     @UriParam
     private boolean pathStyleAccess;
-    @UriParam(label = "producer", enums = "copyObject,deleteBucket,listBuckets")
+    @UriParam(label = "producer", enums = "copyObject,deleteBucket,listBuckets,downloadLink")
     private S3Operations operation;
     @UriParam(label = "consumer,advanced", defaultValue = "true")
     private boolean autocloseBody = true;
-    @UriParam(label = "common")
+    @UriParam(label = "common,advanced")
     private EncryptionMaterials encryptionMaterials;
-    @UriParam(label = "common", defaultValue = "false")
+    @UriParam(label = "common,advanced", defaultValue = "false")
     private boolean useEncryption;
+    @UriParam(label = "common, advanced", defaultValue = "false")
+    private boolean chunkedEncodingDisabled;
+    @UriParam(label = "common, advanced", defaultValue = "false")
+    private boolean accelerateModeEnabled;
+    @UriParam(label = "common, advanced", defaultValue = "false")
+    private boolean dualstackEnabled;
+    @UriParam(label = "common, advanced", defaultValue = "false")
+    private boolean payloadSigningEnabled;
+    @UriParam(label = "common, advanced", defaultValue = "false")
+    private boolean forceGlobalBucketAccessEnabled;
+    @UriParam(label = "producer,advanced", defaultValue = "false")
+    private boolean useAwsKMS;
+    @UriParam(label = "producer,advanced")
+    private String awsKMSKeyId;
 
     public long getPartSize() {
         return partSize;
@@ -159,7 +174,7 @@ public class S3Configuration implements Cloneable {
     }
 
     /**
-     * Name of the bucket. The bucket will be created if it don't already
+     * Name of the bucket. The bucket will be created if it doesn't already
      * exists.
      */
     public void setBucketName(String bucketName) {
@@ -355,7 +370,96 @@ public class S3Configuration implements Cloneable {
         this.useEncryption = useEncryption;
     }
 
+    public boolean isUseAwsKMS() {
+        return useAwsKMS;
+    }
+
+    /**
+     * Define if KMS must be used or not
+     */
+    public void setUseAwsKMS(boolean useAwsKMS) {
+        this.useAwsKMS = useAwsKMS;
+    }
+
+    public String getAwsKMSKeyId() {
+        return awsKMSKeyId;
+    }
+
+    /**
+     * Define the id of KMS key to use in case KMS is enabled
+     */
+    public void setAwsKMSKeyId(String awsKMSKeyId) {
+        this.awsKMSKeyId = awsKMSKeyId;
+    }
+
+    public boolean isChunkedEncodingDisabled() {
+        return chunkedEncodingDisabled;
+    }
+
+    /**
+     * Define if disabled Chunked Encoding is true or false
+     */
+    public void setChunkedEncodingDisabled(boolean chunkedEncodingDisabled) {
+        this.chunkedEncodingDisabled = chunkedEncodingDisabled;
+    }
+
+    public boolean isAccelerateModeEnabled() {
+        return accelerateModeEnabled;
+    }
+
+    /**
+     * Define if Accelerate Mode enabled is true or false
+     */
+    public void setAccelerateModeEnabled(boolean accelerateModeEnabled) {
+        this.accelerateModeEnabled = accelerateModeEnabled;
+    }
+
+    public boolean isDualstackEnabled() {
+        return dualstackEnabled;
+    }
+    
+    /**
+     * Define if Dualstack enabled is true or false
+     */
+    public void setDualstackEnabled(boolean dualstackEnabled) {
+        this.dualstackEnabled = dualstackEnabled;
+    }
+
+    public boolean isPayloadSigningEnabled() {
+        return payloadSigningEnabled;
+    }
+
+    /**
+     * Define if Payload Signing enabled is true or false
+     */
+    public void setPayloadSigningEnabled(boolean payloadSigningEnabled) {
+        this.payloadSigningEnabled = payloadSigningEnabled;
+    }
+
+    public boolean isForceGlobalBucketAccessEnabled() {
+        return forceGlobalBucketAccessEnabled;
+    }
+
+    /**
+     * Define if Force Global Bucket Access enabled is true or false
+     */
+    public void setForceGlobalBucketAccessEnabled(boolean forceGlobalBucketAccessEnabled) {
+        this.forceGlobalBucketAccessEnabled = forceGlobalBucketAccessEnabled;
+    }
+
     boolean hasProxyConfiguration() {
         return ObjectHelper.isNotEmpty(getProxyHost()) && ObjectHelper.isNotEmpty(getProxyPort());
+    }
+    
+    // *************************************************
+    //
+    // *************************************************
+
+    public S3Configuration copy() {
+        try {
+            return (S3Configuration)super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeCamelException(e);
+        }
     }
 }

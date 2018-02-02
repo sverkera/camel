@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
@@ -46,7 +43,6 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 import com.jcraft.jsch.UIKeyboardInteractive;
 import com.jcraft.jsch.UserInfo;
-
 import org.apache.camel.Exchange;
 import org.apache.camel.InvalidPayloadException;
 import org.apache.camel.LoggingLevel;
@@ -59,7 +55,6 @@ import org.apache.camel.util.FileUtil;
 import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.ResourceHelper;
-
 import org.apache.camel.util.StopWatch;
 import org.apache.camel.util.TimeUtils;
 import org.slf4j.Logger;
@@ -72,7 +67,7 @@ import static org.apache.camel.util.ObjectHelper.isNotEmpty;
  * <p/>
  * The JSCH session and channel are not thread-safe so we need to synchronize access to using this operation.
  */
-public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry> {
+public class SftpOperations implements RemoteFileOperations<SftpRemoteFile> {
     private static final Logger LOG = LoggerFactory.getLogger(SftpOperations.class);
     private static final Pattern UP_DIR_PATTERN = Pattern.compile("/[^/]+");
     private Proxy proxy;
@@ -93,7 +88,7 @@ public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry>
     public interface ExtendedUserInfo extends UserInfo, UIKeyboardInteractive {
     }
 
-    public void setEndpoint(GenericFileEndpoint<ChannelSftp.LsEntry> endpoint) {
+    public void setEndpoint(GenericFileEndpoint<SftpRemoteFile> endpoint) {
         this.endpoint = (SftpEndpoint) endpoint;
     }
 
@@ -425,9 +420,24 @@ public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry>
         }
     }
 
+    public synchronized void forceDisconnect() throws GenericFileOperationFailedException {
+        try {
+            if (session != null) {
+                session.disconnect();
+            }
+            if (channel != null) {
+                channel.disconnect();
+            }
+        } finally {
+            // ensure these
+            session = null;
+            channel = null;
+        }
+    }
+
     private void reconnectIfNecessary() {
         if (!isConnected()) {
-            connect((RemoteFileConfiguration) endpoint.getConfiguration());
+            connect(endpoint.getConfiguration());
         }
     }
 
@@ -447,6 +457,9 @@ public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry>
         LOG.debug("Renaming file: {} to: {}", from, to);
         try {
             reconnectIfNecessary();
+            //make use of the '/' separator because JSch expects this 
+            // as the file separator even on Windows
+            to = FileUtil.compactPath(to, '/');
             channel.rename(from, to);
             return true;
         } catch (SftpException e) {
@@ -620,11 +633,11 @@ public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry>
         changeCurrentDirectory(parent);
     }
 
-    public synchronized List<ChannelSftp.LsEntry> listFiles() throws GenericFileOperationFailedException {
+    public synchronized List<SftpRemoteFile> listFiles() throws GenericFileOperationFailedException {
         return listFiles(".");
     }
 
-    public synchronized List<ChannelSftp.LsEntry> listFiles(String path) throws GenericFileOperationFailedException {
+    public synchronized List<SftpRemoteFile> listFiles(String path) throws GenericFileOperationFailedException {
         LOG.trace("listFiles({})", path);
         if (ObjectHelper.isEmpty(path)) {
             // list current directory if file path is not given
@@ -632,14 +645,14 @@ public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry>
         }
 
         try {
-            final List<ChannelSftp.LsEntry> list = new ArrayList<ChannelSftp.LsEntry>();
+            final List<SftpRemoteFile> list = new ArrayList<>();
 
             @SuppressWarnings("rawtypes")
             Vector files = channel.ls(path);
             // can return either null or an empty list depending on FTP servers
             if (files != null) {
                 for (Object file : files) {
-                    list.add((ChannelSftp.LsEntry) file);
+                    list.add(new SftpRemoteFileJCraft((ChannelSftp.LsEntry) file));
                 }
             }
             return list;
@@ -648,7 +661,7 @@ public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry>
         }
     }
 
-    public synchronized boolean retrieveFile(String name, Exchange exchange) throws GenericFileOperationFailedException {
+    public synchronized boolean retrieveFile(String name, Exchange exchange, long size) throws GenericFileOperationFailedException {
         LOG.trace("retrieveFile({})", name);
         if (ObjectHelper.isNotEmpty(endpoint.getLocalWorkDirectory())) {
             // local work directory is configured so we should store file content as files in this local directory
@@ -659,7 +672,7 @@ public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry>
         }
     }
 
-    public synchronized void releaseRetreivedFileResources(Exchange exchange) throws GenericFileOperationFailedException {
+    public synchronized void releaseRetrievedFileResources(Exchange exchange) throws GenericFileOperationFailedException {
         InputStream is = exchange.getIn().getHeader(RemoteFileComponent.REMOTE_FILE_INPUT_STREAM, InputStream.class);
 
         if (is != null) {
@@ -820,7 +833,7 @@ public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry>
         return true;
     }
 
-    public synchronized boolean storeFile(String name, Exchange exchange) throws GenericFileOperationFailedException {
+    public synchronized boolean storeFile(String name, Exchange exchange, long size) throws GenericFileOperationFailedException {
         // must normalize name first
         name = endpoint.getConfiguration().normalizePath(name);
 
@@ -909,10 +922,10 @@ public class SftpOperations implements RemoteFileOperations<ChannelSftp.LsEntry>
                 // override is default
                 channel.put(is, targetName);
             }
-            watch.stop();
             if (LOG.isDebugEnabled()) {
+                long time = watch.taken();
                 LOG.debug("Took {} ({} millis) to store file: {} and FTP client returned: true",
-                        new Object[]{TimeUtils.printDuration(watch.taken()), watch.taken(), targetName});
+                        new Object[]{TimeUtils.printDuration(time), time, targetName});
             }
 
             // after storing file, we may set chmod on the file

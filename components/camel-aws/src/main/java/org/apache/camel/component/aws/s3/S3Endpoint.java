@@ -16,8 +16,6 @@
  */
 package org.apache.camel.component.aws.s3;
 
-import java.io.IOException;
-
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
@@ -28,7 +26,6 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder;
-import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -265,12 +262,22 @@ public class S3Endpoint extends ScheduledPollEndpoint {
                     clientBuilder = clientBuilder.withRegion(Regions.valueOf(configuration.getRegion()));
                 }
                 clientBuilder = clientBuilder.withPathStyleAccessEnabled(configuration.isPathStyleAccess());
+                clientBuilder = clientBuilder.withChunkedEncodingDisabled(configuration.isChunkedEncodingDisabled());
+                clientBuilder = clientBuilder.withAccelerateModeEnabled(configuration.isAccelerateModeEnabled());
+                clientBuilder = clientBuilder.withDualstackEnabled(configuration.isDualstackEnabled());
+                clientBuilder = clientBuilder.withPayloadSigningEnabled(configuration.isPayloadSigningEnabled());
+                clientBuilder = clientBuilder.withForceGlobalBucketAccessEnabled(configuration.isForceGlobalBucketAccessEnabled());
                 client = clientBuilder.build();
             } else {
                 if (ObjectHelper.isNotEmpty(configuration.getRegion())) {
                     encClientBuilder = encClientBuilder.withRegion(Regions.valueOf(configuration.getRegion()));
                 }
                 encClientBuilder = encClientBuilder.withPathStyleAccessEnabled(configuration.isPathStyleAccess());
+                encClientBuilder = encClientBuilder.withChunkedEncodingDisabled(configuration.isChunkedEncodingDisabled());
+                encClientBuilder = encClientBuilder.withAccelerateModeEnabled(configuration.isAccelerateModeEnabled());
+                encClientBuilder = encClientBuilder.withDualstackEnabled(configuration.isDualstackEnabled());
+                encClientBuilder = encClientBuilder.withPayloadSigningEnabled(configuration.isPayloadSigningEnabled());
+                encClientBuilder = encClientBuilder.withForceGlobalBucketAccessEnabled(configuration.isForceGlobalBucketAccessEnabled());
                 client = encClientBuilder.build();
             }
         } else {
@@ -287,16 +294,26 @@ public class S3Endpoint extends ScheduledPollEndpoint {
                     clientBuilder = clientBuilder.withRegion(Regions.valueOf(configuration.getRegion()));
                 }
                 clientBuilder = clientBuilder.withPathStyleAccessEnabled(configuration.isPathStyleAccess());
+                clientBuilder = clientBuilder.withChunkedEncodingDisabled(configuration.isChunkedEncodingDisabled());
+                clientBuilder = clientBuilder.withAccelerateModeEnabled(configuration.isAccelerateModeEnabled());
+                clientBuilder = clientBuilder.withDualstackEnabled(configuration.isDualstackEnabled());
+                clientBuilder = clientBuilder.withPayloadSigningEnabled(configuration.isPayloadSigningEnabled());
+                clientBuilder = clientBuilder.withForceGlobalBucketAccessEnabled(configuration.isForceGlobalBucketAccessEnabled());
                 client = clientBuilder.build();
+                
             } else {
                 if (ObjectHelper.isNotEmpty(configuration.getRegion())) {
                     encClientBuilder = encClientBuilder.withRegion(Regions.valueOf(configuration.getRegion()));
                 }
                 encClientBuilder = encClientBuilder.withPathStyleAccessEnabled(configuration.isPathStyleAccess());
+                encClientBuilder = encClientBuilder.withChunkedEncodingDisabled(configuration.isChunkedEncodingDisabled());
+                encClientBuilder = encClientBuilder.withAccelerateModeEnabled(configuration.isAccelerateModeEnabled());
+                encClientBuilder = encClientBuilder.withDualstackEnabled(configuration.isDualstackEnabled());
+                encClientBuilder = encClientBuilder.withPayloadSigningEnabled(configuration.isPayloadSigningEnabled());
+                encClientBuilder = encClientBuilder.withForceGlobalBucketAccessEnabled(configuration.isForceGlobalBucketAccessEnabled());
                 client = encClientBuilder.build();
             }
         }
-
         return client;
     }
 

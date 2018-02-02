@@ -68,8 +68,9 @@ public final class RouteCoverageHelper {
                 for (int i = 0; i < routes.getLength(); i++) {
                     Node route = routes.item(i);
                     String id = route.getAttributes().getNamedItem("id").getNodeValue();
-                    // must be the target route
-                    if (routeId.equals(id)) {
+                    String customId = route.getAttributes().getNamedItem("customId") != null ? route.getAttributes().getNamedItem("customId").getNodeValue() : "false";
+                    // must be the target route and the route must be explicit assigned with that route id (not anonymous route)
+                    if ("true".equals(customId) && routeId.equals(id)) {
                         // parse each route and build a List<CoverageData> for line by line coverage data
                         AtomicInteger counter = new AtomicInteger();
                         parseRouteData(catalog, route, answer, counter);
@@ -129,15 +130,14 @@ public final class RouteCoverageHelper {
 
         // inlined error handler, on completion etc should be skipped (and currently not supported in route coverage)
         boolean skip = "onException".equals(key) || "onCompletion".equals(key)
-            || "intercept".equals(key) || "interceptFrom".equals(key) || "interceptSendToEndpoint".equals(key)
-            || "policy".equals(key) || "transacted".equals(key);
+            || "intercept".equals(key) || "interceptFrom".equals(key) || "interceptSendToEndpoint".equals(key);
 
         if (skip) {
             return;
         }
 
-        // only calculate for elements within the route
-        if (!"route".equals(key)) {
+        // only calculate for elements within the route or children of policy/transaction
+        if (!"route".equals(key) && !"policy".equals(key) && !"transacted".equals(key)) {
             Integer count = 0;
             Node total = node.getAttributes().getNamedItem("exchangesTotal");
             if (total != null) {

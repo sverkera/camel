@@ -25,10 +25,10 @@ import org.apache.camel.StartupListener;
 import org.apache.camel.SuspendableService;
 import org.apache.camel.api.management.ManagedAttribute;
 import org.apache.camel.api.management.ManagedResource;
-import org.apache.camel.ha.CamelClusterEventListener;
-import org.apache.camel.ha.CamelClusterMember;
-import org.apache.camel.ha.CamelClusterService;
-import org.apache.camel.ha.CamelClusterView;
+import org.apache.camel.cluster.CamelClusterEventListener;
+import org.apache.camel.cluster.CamelClusterMember;
+import org.apache.camel.cluster.CamelClusterService;
+import org.apache.camel.cluster.CamelClusterView;
 import org.apache.camel.impl.DefaultConsumer;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.ServiceHelper;
@@ -90,7 +90,7 @@ public class MasterConsumer extends DefaultConsumer {
 
     @Override
     protected void doResume() throws Exception {
-        if (delegatedConsumer != null && delegatedConsumer instanceof SuspendableService) {
+        if (delegatedConsumer instanceof SuspendableService) {
             ((SuspendableService)delegatedConsumer).resume();
         }
         super.doResume();
@@ -98,7 +98,7 @@ public class MasterConsumer extends DefaultConsumer {
 
     @Override
     protected void doSuspend() throws Exception {
-        if (delegatedConsumer != null && delegatedConsumer instanceof SuspendableService) {
+        if (delegatedConsumer instanceof SuspendableService) {
             ((SuspendableService)delegatedConsumer).suspend();
         }
         super.doSuspend();

@@ -54,6 +54,8 @@ public class KafkaConfiguration implements Cloneable {
     private String clientId;
 
     @UriParam(label = "consumer")
+    private boolean topicIsPattern;
+    @UriParam(label = "consumer")
     private String groupId;
     @UriParam(label = "consumer", defaultValue = "10")
     private int consumerStreams = 10;
@@ -89,6 +91,8 @@ public class KafkaConfiguration implements Cloneable {
     private Integer maxPollRecords;
     @UriParam(label = "consumer", defaultValue = "5000")
     private Long pollTimeoutMs = 5000L;
+    @UriParam(label = "consumer")
+    private Long maxPollIntervalMs;
     //auto.offset.reset1
     @UriParam(label = "consumer", defaultValue = "latest", enums = "latest,earliest,none")
     private String autoOffsetReset = "latest";
@@ -113,6 +117,8 @@ public class KafkaConfiguration implements Cloneable {
     //Consumer configuration properties
     @UriParam(label = "consumer", defaultValue = "true")
     private Boolean autoCommitEnable = true;
+    @UriParam(label = "consumer")
+    private boolean allowManualCommit;
     @UriParam(label = "consumer", defaultValue = "sync", enums = "sync,async,none")
     private String autoCommitOnStop = "sync";
     @UriParam(label = "consumer")
@@ -210,6 +216,9 @@ public class KafkaConfiguration implements Cloneable {
     //reconnect.backoff.ms
     @UriParam(label = "producer", defaultValue = "false")
     private boolean enableIdempotence;
+    //reconnect.backoff.max.ms
+    @UriParam(label = "common", defaultValue = "1000")
+    private Integer reconnectBackoffMaxMs = 1000;
 
     // SSL
     @UriParam(label = "common,security")
@@ -333,6 +342,8 @@ public class KafkaConfiguration implements Cloneable {
         addPropertyIfNotNull(props, ProducerConfig.RECONNECT_BACKOFF_MS_CONFIG, getReconnectBackoffMs());
         addPropertyIfNotNull(props, ProducerConfig.RETRY_BACKOFF_MS_CONFIG, getRetryBackoffMs());
         addPropertyIfNotNull(props, ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, isEnableIdempotence());
+        addPropertyIfNotNull(props, ProducerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG, getReconnectBackoffMaxMs());
+        
         // SSL
         applySslConfiguration(props, getSslContextParameters());
         addPropertyIfNotNull(props, CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, getSecurityProtocol());
@@ -372,6 +383,7 @@ public class KafkaConfiguration implements Cloneable {
         addPropertyIfNotNull(props, ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, getHeartbeatIntervalMs());
         addPropertyIfNotNull(props, ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, getMaxPartitionFetchBytes());
         addPropertyIfNotNull(props, ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, getSessionTimeoutMs());
+        addPropertyIfNotNull(props, ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, getMaxPollIntervalMs());
         addPropertyIfNotNull(props, ConsumerConfig.MAX_POLL_RECORDS_CONFIG, getMaxPollRecords());
         addPropertyIfNotNull(props, ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, getInterceptorClasses());
         addPropertyIfNotNull(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, getAutoOffsetReset());
@@ -390,6 +402,7 @@ public class KafkaConfiguration implements Cloneable {
         addPropertyIfNotNull(props, ConsumerConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG, getMetricsSampleWindowMs());
         addPropertyIfNotNull(props, ConsumerConfig.RECONNECT_BACKOFF_MS_CONFIG, getReconnectBackoffMs());
         addPropertyIfNotNull(props, ConsumerConfig.RETRY_BACKOFF_MS_CONFIG, getRetryBackoffMs());
+        addPropertyIfNotNull(props, ConsumerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG, getReconnectBackoffMaxMs());
         
         // SSL
         applySslConfiguration(props, getSslContextParameters());
@@ -491,6 +504,18 @@ public class KafkaConfiguration implements Cloneable {
         if (values != null && !values.isEmpty()) {
             props.put(key, values.stream().collect(Collectors.joining(",")));
         }
+    }
+
+    public boolean isTopicIsPattern() {
+        return topicIsPattern;
+    }
+
+    /**
+     * Whether the topic is a pattern (regular expression).
+     * This can be used to subscribe to dynamic number of topics matching the pattern.
+     */
+    public void setTopicIsPattern(boolean topicIsPattern) {
+        this.topicIsPattern = topicIsPattern;
     }
 
     public String getGroupId() {
@@ -602,6 +627,20 @@ public class KafkaConfiguration implements Cloneable {
      */
     public void setAutoCommitEnable(Boolean autoCommitEnable) {
         this.autoCommitEnable = autoCommitEnable;
+    }
+
+    public boolean isAllowManualCommit() {
+        return allowManualCommit;
+    }
+
+    /**
+     * Whether to allow doing manual commits via {@link KafkaManualCommit}.
+     * <p/>
+     * If this option is enabled then an instance of {@link KafkaManualCommit} is stored on the {@link Exchange} message header,
+     * which allows end users to access this API and perform manual offset commits via the Kafka consumer.
+     */
+    public void setAllowManualCommit(boolean allowManualCommit) {
+        this.allowManualCommit = allowManualCommit;
     }
 
     public StateRepository<String, String> getOffsetRepository() {
@@ -1377,6 +1416,20 @@ public class KafkaConfiguration implements Cloneable {
         this.pollTimeoutMs = pollTimeoutMs;
     }
 
+    public Long getMaxPollIntervalMs() {
+        return maxPollIntervalMs;
+    }
+
+    /**
+     * The maximum delay between invocations of poll() when using consumer group management.
+     * This places an upper bound on the amount of time that the consumer can be idle before fetching more records.
+     * If poll() is not called before expiration of this timeout, then the consumer is considered failed and the group
+     * will rebalance in order to reassign the partitions to another member.
+     */
+    public void setMaxPollIntervalMs(Long maxPollIntervalMs) {
+        this.maxPollIntervalMs = maxPollIntervalMs;
+    }
+
     public String getPartitionAssignor() {
         return partitionAssignor;
     }
@@ -1527,5 +1580,20 @@ public class KafkaConfiguration implements Cloneable {
      */
     public void setEnableIdempotence(boolean enableIdempotence) {
         this.enableIdempotence = enableIdempotence;
+    }
+
+    public Integer getReconnectBackoffMaxMs() {
+        return reconnectBackoffMaxMs;
+    }
+
+    /**
+     * The maximum amount of time in milliseconds to wait when reconnecting to a
+     * broker that has repeatedly failed to connect. If provided, the backoff
+     * per host will increase exponentially for each consecutive connection
+     * failure, up to this maximum. After calculating the backoff increase, 20%
+     * random jitter is added to avoid connection storms.
+     */
+    public void setReconnectBackoffMaxMs(Integer reconnectBackoffMaxMs) {
+        this.reconnectBackoffMaxMs = reconnectBackoffMaxMs;
     }
 }

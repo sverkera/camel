@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -153,6 +154,18 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      * @return <tt>true</tt> for abstract, otherwise <tt>false</tt> for regular.
      */
     public boolean isAbstract() {
+        return false;
+    }
+
+    /**
+     * Whether this definition is wrapping the entire output.
+     * <p/>
+     * When a definition is wrapping the entire output, the check to ensure
+     * that a route definition is empty should be done on the wrapped output.
+     *
+     * @return <tt>true</tt> when wrapping the entire output.
+     */
+    public boolean isWrappingEntireOutput() {
         return false;
     }
 
@@ -2695,6 +2708,17 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         return answer;
     }
 
+    /**
+     * Marks this route as participating to a saga.
+     *
+     * @return the saga definition
+     */
+    public SagaDefinition saga() {
+        SagaDefinition answer = new SagaDefinition();
+        addOutput(answer);
+        return answer;
+    }
+
     // Transformers
     // -------------------------------------------------------------------------
 
@@ -3047,6 +3071,42 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     @SuppressWarnings("unchecked")
     public Type setBody(Expression expression) {
         SetBodyDefinition answer = new SetBodyDefinition(expression);
+        addOutput(answer);
+        return (Type) this;
+    }
+
+    /**
+     * <a href="http://camel.apache.org/message-translator.html">Message Translator EIP:</a>
+     * Adds a processor which sets the body on the IN message
+     *
+     * @param supplier   the supplier that provides a value to the IN message body
+     * @return the builder
+     */
+    public <Result> Type setBody(Supplier<Result> supplier) {
+        SetBodyDefinition answer = new SetBodyDefinition(new ExpressionAdapter() {
+            @Override
+            public Result evaluate(Exchange exchange) {
+                return supplier.get();
+            }
+        });
+        addOutput(answer);
+        return (Type) this;
+    }
+
+    /**
+     * <a href="http://camel.apache.org/message-translator.html">Message Translator EIP:</a>
+     * Adds a processor which sets the body on the IN message
+     *
+     * @param function   the function that provides a value to the IN message body
+     * @return the builder
+     */
+    public <Result> Type setBody(Function<Exchange, Result> function) {
+        SetBodyDefinition answer = new SetBodyDefinition(new ExpressionAdapter() {
+            @Override
+            public Result evaluate(Exchange exchange) {
+                return function.apply(exchange);
+            }
+        });
         addOutput(answer);
         return (Type) this;
     }

@@ -4,10 +4,10 @@
 [![Javadocs](http://www.javadoc.io/badge/org.apache.camel/apache-camel.svg?color=brightgreen)](http://www.javadoc.io/doc/org.apache.camel/camel-core)
 [![Stack Overflow](https://img.shields.io/:stack%20overflow-apache--camel-brightgreen.svg)](http://stackoverflow.com/questions/tagged/apache-camel)
 [![Gitter](https://img.shields.io/gitter/room/apache/apache-camel.js.svg)](https://gitter.im/apache/apache-camel)
-
+ 
 
 [Apache Camel](http://camel.apache.org/) is a powerful open source integration framework based on known
-Enterprise Integration Patterns with powerful Bean Integration.
+Enterprise Integration Patterns with powerful bean integration.
 
 ### Introduction
 
@@ -68,7 +68,7 @@ It is also recommended to get started by trying out some of the beginner example
 
 We welcome contributions of all kinds, for details of how you can help
   
-<http://camel.apache.org/contributing.html>
+<https://github.com/apache/camel/blob/master/CONTRIBUTING.md>
 
 Please refer to the website for details of finding the issue tracker, 
 email lists, IRC and Gitter chat
@@ -76,6 +76,8 @@ email lists, IRC and Gitter chat
 Website: <http://camel.apache.org/>
 
 Github: <https://github.com/apache/camel>
+
+Issue tracker: <https://issues.apache.org/jira/projects/CAMEL>
 
 Mailing list: <http://camel.apache.org/mailing-lists.html>
 

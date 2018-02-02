@@ -56,8 +56,8 @@ public abstract class DefaultConnectorComponent extends DefaultComponent impleme
     private final CamelCatalog catalog = new DefaultCamelCatalog(false);
 
     private final String baseScheme;
-    private final String componentName;
     private final String componentScheme;
+    private final String componentName;
     private final ConnectorModel model;
     private final Map<String, Object> options;
     private Processor beforeProducer;
@@ -66,14 +66,22 @@ public abstract class DefaultConnectorComponent extends DefaultComponent impleme
     private Processor afterConsumer;
 
     protected DefaultConnectorComponent(String componentName, String className) {
-        this(componentName, loadConnectorClass(className));
+        this(componentName, null, loadConnectorClass(className));
+    }
+
+    protected DefaultConnectorComponent(String componentName, String componentScheme, String className) {
+        this(componentName, componentScheme, loadConnectorClass(className));
     }
 
     protected DefaultConnectorComponent(String componentName, Class<?> componentClass) {
+        this(componentName, null, componentClass);
+    }
+
+    protected DefaultConnectorComponent(String componentName, String componentScheme, Class<?> componentClass) {
         this.model = new ConnectorModel(componentName, componentClass);
         this.baseScheme = this.model.getBaseScheme();
         this.componentName = componentName;
-        this.componentScheme = componentName + "-component";
+        this.componentScheme = componentScheme != null ? baseScheme + "-" + componentScheme : baseScheme + "-" + componentName + "-component";
         this.options = new HashMap<>();
 
         // add to catalog
@@ -86,8 +94,8 @@ public abstract class DefaultConnectorComponent extends DefaultComponent impleme
 
         // Add an alias for the base component so there's no clash between connectors
         // if they set options targeting the component.
-        if (!catalog.findComponentNames().contains(componentScheme)) {
-            this.catalog.addComponent(componentScheme, this.model.getBaseJavaType(), catalog.componentJSonSchema(baseScheme));
+        if (!catalog.findComponentNames().contains(this.componentScheme)) {
+            this.catalog.addComponent(this.componentScheme, this.model.getBaseJavaType(), catalog.componentJSonSchema(baseScheme));
         }
 
         registerExtension(this::getComponentVerifierExtension);
@@ -133,7 +141,7 @@ public abstract class DefaultConnectorComponent extends DefaultComponent impleme
             log.info("Connector resolved: {} -> {}", sanitizeUri(uri), sanitizeUri(delegateUri));
         }
 
-        Endpoint answer;
+        DefaultConnectorEndpoint answer;
         // are we scheduler based?
         if ("timer".equals(model.getScheduler())) {
             SchedulerTimerConnectorEndpoint endpoint = new SchedulerTimerConnectorEndpoint(uri, this, delegate, model.getInputDataType(), model.getOutputDataType());
@@ -142,6 +150,11 @@ public abstract class DefaultConnectorComponent extends DefaultComponent impleme
         } else {
             answer = new DefaultConnectorEndpoint(uri, this, delegate, model.getInputDataType(), model.getOutputDataType());
         }
+
+        answer.setBeforeProducer(getBeforeProducer());
+        answer.setAfterProducer(getAfterProducer());
+        answer.setBeforeConsumer(getBeforeConsumer());
+        answer.setAfterConsumer(getAfterConsumer());
 
         // clean-up parameters so that validation won't fail later on
         // in DefaultConnectorComponent.validateParameters()
@@ -174,6 +187,11 @@ public abstract class DefaultConnectorComponent extends DefaultComponent impleme
     @Override
     public String getComponentName() {
         return componentName;
+    }
+
+    @Override
+    public String getComponentScheme() {
+        return componentScheme;
     }
 
     @Override
@@ -268,6 +286,13 @@ public abstract class DefaultConnectorComponent extends DefaultComponent impleme
 
         Component component = createNewBaseComponent();
         if (component != null) {
+            log.info("Register component: {} (type: {}) with scheme: {}",
+                this.componentName,
+                component.getClass().getName(),
+                this.componentScheme
+            );
+
+            //String delegateComponentScheme =
             getCamelContext().removeComponent(this.componentScheme);
 
             // ensure component is started and stopped when Camel shutdown

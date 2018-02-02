@@ -164,6 +164,7 @@ public class KafkaEndpoint extends DefaultEndpoint implements MultipleConsumersS
         return getCamelContext().getExecutorServiceManager().newThreadPool(this, "KafkaProducer[" + configuration.getTopic() + "]", core, max);
     }
 
+    @SuppressWarnings("rawtypes")
     public Exchange createKafkaExchange(ConsumerRecord record) {
         Exchange exchange = super.createExchange();
 
@@ -171,6 +172,7 @@ public class KafkaEndpoint extends DefaultEndpoint implements MultipleConsumersS
         message.setHeader(KafkaConstants.PARTITION, record.partition());
         message.setHeader(KafkaConstants.TOPIC, record.topic());
         message.setHeader(KafkaConstants.OFFSET, record.offset());
+        message.setHeader(KafkaConstants.HEADERS, record.headers());
         if (record.key() != null) {
             message.setHeader(KafkaConstants.KEY, record.key());
         }

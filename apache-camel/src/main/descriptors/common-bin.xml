@@ -36,6 +36,7 @@
         <include>org.apache.camel:camel-atom</include>
         <include>org.apache.camel:camel-atomix</include>
         <include>org.apache.camel:camel-aws</include>
+        <include>org.apache.camel:camel-aws-xray</include>
         <include>org.apache.camel:camel-azure</include>
         <include>org.apache.camel:camel-avro</include>
         <include>org.apache.camel:camel-bam</include>
@@ -171,6 +172,7 @@
         <include>org.apache.camel:camel-leveldb</include>
         <include>org.apache.camel:camel-linkedin-api</include>
         <include>org.apache.camel:camel-linkedin</include>
+        <include>org.apache.camel:camel-lra</include>
         <include>org.apache.camel:camel-lucene</include>
         <include>org.apache.camel:camel-lumberjack</include>
         <include>org.apache.camel:camel-lzf</include>
@@ -286,18 +288,31 @@
         <include>org.apache.camel:camel-vertx</include>
         <include>org.apache.camel:camel-weather</include>
         <include>org.apache.camel:camel-websocket</include>
+        <include>org.apache.camel:camel-wordpress</include>
         <include>org.apache.camel:camel-xmlbeans</include>
+        <include>org.apache.camel:camel-xchange</include>
         <include>org.apache.camel:camel-xmljson</include>
         <include>org.apache.camel:camel-xmlrpc</include>
         <include>org.apache.camel:camel-xmlsecurity</include>
         <include>org.apache.camel:camel-xmpp</include>
         <include>org.apache.camel:camel-xstream</include>
         <include>org.apache.camel:camel-yammer</include>
+        <include>org.apache.camel:camel-yql</include>
         <include>org.apache.camel:camel-zendesk</include>
         <include>org.apache.camel:camel-zipfile</include>
         <include>org.apache.camel:camel-zipkin</include>
         <include>org.apache.camel:camel-zookeeper</include>
         <include>org.apache.camel:camel-zookeeper-master</include>
+      </includes>
+    </dependencySet>
+
+    <!-- this is needed for the jasypt tooling -->
+    <dependencySet>
+      <outputDirectory>/lib/optional</outputDirectory>
+      <unpack>false</unpack>
+      <scope>runtime</scope>
+      <includes>
+        <include>org.jasypt:jasypt</include>
       </includes>
     </dependencySet>
 
@@ -340,6 +355,7 @@
         <include>org.apache.camel:camel-atomix-starter</include>
         <include>org.apache.camel:camel-avro-starter</include>
         <include>org.apache.camel:camel-aws-starter</include>
+        <include>org.apache.camel:camel-aws-xray-starter</include>
         <include>org.apache.camel:camel-bam-starter</include>
         <include>org.apache.camel:camel-barcode-starter</include>
         <include>org.apache.camel:camel-base64-starter</include>
@@ -465,6 +481,7 @@
         <include>org.apache.camel:camel-ldif-starter</include>
         <include>org.apache.camel:camel-leveldb-starter</include>
         <include>org.apache.camel:camel-linkedin-starter</include>
+        <include>org.apache.camel:camel-lra-starter</include>
         <include>org.apache.camel:camel-lucene-starter</include>
         <include>org.apache.camel:camel-lumberjack-starter</include>
         <include>org.apache.camel:camel-lzf-starter</include>
@@ -568,13 +585,16 @@
         <include>org.apache.camel:camel-vertx-starter</include>
         <include>org.apache.camel:camel-weather-starter</include>
         <include>org.apache.camel:camel-websocket-starter</include>
+        <include>org.apache.camel:camel-wordpress-starter</include>
         <include>org.apache.camel:camel-xmlbeans-starter</include>
+        <include>org.apache.camel:camel-xchange-starter</include>
         <include>org.apache.camel:camel-xmljson-starter</include>
         <include>org.apache.camel:camel-xmlrpc-starter</include>
         <include>org.apache.camel:camel-xmlsecurity-starter</include>
         <include>org.apache.camel:camel-xmpp-starter</include>
         <include>org.apache.camel:camel-xstream-starter</include>
         <include>org.apache.camel:camel-yammer-starter</include>
+        <include>org.apache.camel:camel-yql-starter</include>
         <include>org.apache.camel:camel-zendesk-starter</include>
         <include>org.apache.camel:camel-zipfile-starter</include>
         <include>org.apache.camel:camel-zipkin-starter</include>

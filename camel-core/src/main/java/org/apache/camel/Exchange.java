@@ -170,6 +170,10 @@ public interface Exchange {
     String LOOP_INDEX               = "CamelLoopIndex";
     String LOOP_SIZE                = "CamelLoopSize";
 
+    // Long running action (saga): using "Long-Running-Action" as header value allows sagas
+    // to be propagated to any remote system supporting the LRA framework
+    String SAGA_LONG_RUNNING_ACTION = "Long-Running-Action";
+
     String MAXIMUM_CACHE_POOL_SIZE     = "CamelMaximumCachePoolSize";
     String MAXIMUM_ENDPOINT_CACHE_SIZE = "CamelMaximumEndpointCacheSize";
     String MAXIMUM_SIMPLE_CACHE_SIZE = "CamelMaximumSimpleCacheSize";
@@ -212,6 +216,7 @@ public interface Exchange {
     String SKIP_GZIP_ENCODING = "CamelSkipGzipEncoding";
     String SKIP_WWW_FORM_URLENCODED = "CamelSkipWwwFormUrlEncoding"; 
     String SLIP_ENDPOINT      = "CamelSlipEndpoint";
+    String SLIP_PRODUCER      = "CamelSlipProducer";
     String SPLIT_INDEX        = "CamelSplitIndex";
     String SPLIT_COMPLETE     = "CamelSplitComplete";
     String SPLIT_SIZE         = "CamelSplitSize";
@@ -356,6 +361,28 @@ public interface Exchange {
      * @return the message
      */
     Message getIn();
+
+    /**
+     * Returns the current message
+     *
+     * @return the current message
+     */
+    Message getMessage();
+
+    /**
+     * Returns the current message as the given type
+     *
+     * @param type the given type
+     * @return the message as the given type or <tt>null</tt> if not possible to covert to given type
+     */
+    <T> T getMessage(Class<T> type);
+
+    /**
+     * Replace the current message instance.
+     *
+     * @param message the new message
+     */
+    void setMessage(Message message);
 
     /**
      * Returns the inbound request message as the given type
