@@ -16,11 +16,8 @@
  */
 package org.apache.camel.spring.boot.actuate.endpoint;
 
-import java.util.List;
-
 import org.apache.camel.CamelContext;
 import org.apache.camel.spring.boot.CamelAutoConfiguration;
-import org.apache.camel.spring.boot.model.RouteInfo;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,17 +36,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @EnableAutoConfiguration
 @SpringBootApplication
-@SpringBootTest(classes = {CamelAutoConfiguration.class, CamelRoutesEndpointAutoConfiguration.class, ActuatorTestRoute.class},
-        properties = {
-                "endpoints.camelroutes.enabled = false"
-        })
+@SpringBootTest(
+    classes = {CamelAutoConfiguration.class, CamelRoutesEndpointAutoConfiguration.class, ActuatorTestRoute.class},
+    properties = {"management.endpoint.camelroutes.enabled = false"}
+)
 public class CamelRoutesEndpointDisabledTest extends Assert {
 
     @Autowired(required = false)
     CamelRoutesEndpoint routesEndpoint;
-
-    @Autowired(required = false)
-    CamelRoutesMvcEndpoint routesMvcEndpoint;
 
     @Autowired
     CamelContext camelContext;
@@ -57,7 +51,6 @@ public class CamelRoutesEndpointDisabledTest extends Assert {
     @Test
     public void testRoutesEndpointNotPresent() throws Exception {
         Assert.assertNull(routesEndpoint);
-        Assert.assertNull(routesMvcEndpoint);
     }
 
 }

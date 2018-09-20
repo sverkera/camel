@@ -17,20 +17,48 @@
 package org.apache.camel.component.xchange;
 
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
 import org.apache.camel.spi.UriPath;
 import org.apache.camel.util.ObjectHelper;
+import org.knowm.xchange.Exchange;
+import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 
 @UriParams
 public class XChangeConfiguration {
 
+    // Available service
+    public enum XChangeService { marketdata, metadata, account }
+    
+    // Available methods
+    public enum XChangeMethod {
+        // Account service methods
+        balances, fundingHistory, wallets, 
+        // Metadata service methods
+        currencies, currencyMetaData, currencyPairs, currencyPairMetaData,
+        // Marketdata service methods
+        ticker 
+    }
+    
+    public static final String HEADER_CURRENCY = "Currency";
+    public static final String HEADER_CURRENCY_PAIR = "CurrencyPair";
+    
+    static Map<String, Class<? extends Exchange>> xchangeMapping = new HashMap<>();
+
     @UriPath(description = "The exchange to connect to") @Metadata(required = "true")
     private String name;
+    @UriParam(description = "The service to call") @Metadata(required = "true")
+    private XChangeService service;
     @UriParam(description = "The method to execute") @Metadata(required = "true")
-    private String method;
+    private XChangeMethod method;
+    @UriParam(description = "The currency") 
+    private Currency currency;
     @UriParam(description = "The currency pair") 
     private CurrencyPair currencyPair;
 
@@ -46,12 +74,28 @@ public class XChangeConfiguration {
         this.name = name;
     }
 
-    public String getMethod() {
+    public XChangeService getService() {
+        return service;
+    }
+
+    public void setService(XChangeService service) {
+        this.service = service;
+    }
+
+    public XChangeMethod getMethod() {
         return method;
     }
 
-    public void setMethod(String method) {
+    public void setMethod(XChangeMethod method) {
         this.method = method;
+    }
+
+    public Currency getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String curr) {
+        this.currency = Currency.getInstanceNoCreate(curr);
     }
 
     public CurrencyPair getCurrencyPair() {
@@ -60,5 +104,25 @@ public class XChangeConfiguration {
 
     public void setCurrencyPair(String pair) {
         this.currencyPair = new CurrencyPair(pair);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Class<? extends Exchange> getXChangeClass() {
+        Class<? extends Exchange> xchangeClass = xchangeMapping.get(name);
+        if (xchangeClass == null) {
+            String firstUpper = name.substring(0, 1).toUpperCase() + name.substring(1);
+            String className = "org.knowm.xchange." + name + "." + firstUpper + "Exchange";
+            ClassLoader classLoader = getClass().getClassLoader();
+            try {
+                xchangeClass = (Class<? extends Exchange>) classLoader.loadClass(className);
+            } catch (ClassNotFoundException e) {
+                // ignore
+            }
+        }
+        return xchangeClass;
+    }
+
+    public Set<String> getSupportedXChangeNames() {
+        return xchangeMapping.keySet();
     }
 }

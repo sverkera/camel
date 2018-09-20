@@ -40,6 +40,7 @@ import org.apache.camel.NoSuchEndpointException;
 import org.apache.camel.NoSuchHeaderException;
 import org.apache.camel.NoSuchPropertyException;
 import org.apache.camel.NoTypeConversionAvailableException;
+import org.apache.camel.Route;
 import org.apache.camel.TypeConversionException;
 import org.apache.camel.TypeConverter;
 import org.apache.camel.impl.DefaultExchange;
@@ -384,8 +385,8 @@ public final class ExchangeHelper {
      * Copies the <code>source</code> exchange to <code>target</code> exchange
      * preserving the {@link ExchangePattern} of <code>target</code>.
      *
-     * @param source source exchange.
      * @param result target exchange.
+     * @param source source exchange.
      */
     public static void copyResultsPreservePattern(Exchange result, Exchange source) {
 
@@ -469,7 +470,7 @@ public final class ExchangeHelper {
      * @return a Map populated with the require variables
      */
     public static Map<String, Object> createVariableMap(Exchange exchange) {
-        Map<String, Object> answer = new HashMap<String, Object>();
+        Map<String, Object> answer = new HashMap<>();
         populateVariableMap(exchange, answer);
         return answer;
     }
@@ -687,10 +688,11 @@ public final class ExchangeHelper {
      * @return <tt>true</tt> if enabled, <tt>false</tt> otherwise
      */
     public static boolean isStreamCachingEnabled(final Exchange exchange) {
-        if (exchange.getFromRouteId() == null) {
-            return exchange.getContext().getStreamCachingStrategy().isEnabled();
+        Route route = exchange.getContext().getRoute(exchange.getFromRouteId());
+        if (route != null) {
+            return route.getRouteContext().isStreamCaching();
         } else {
-            return exchange.getContext().getRoute(exchange.getFromRouteId()).getRouteContext().isStreamCaching();
+            return exchange.getContext().getStreamCachingStrategy().isEnabled();
         }
     }
 
@@ -955,6 +957,24 @@ public final class ExchangeHelper {
             }
         }
         return answer;
+    }
+
+    /**
+     * Resolve the component scheme (aka name) from the given endpoint uri
+     *
+     * @param uri  the endpoint uri
+     * @return     the component scheme (name), or <tt>null</tt> if not possible to resolve
+     */
+    public static String resolveScheme(String uri) {
+        String scheme = null;
+        if (uri != null) {
+            // Use the URI prefix to find the component.
+            String splitURI[] = StringHelper.splitOnCharacter(uri, ":", 2);
+            if (splitURI[1] != null) {
+                scheme = splitURI[0];
+            }
+        }
+        return scheme;
     }
 
     @SuppressWarnings("unchecked")

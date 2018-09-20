@@ -17,7 +17,6 @@
 package org.apache.camel.component.rabbitmq;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -33,11 +32,9 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
-
 import org.apache.camel.AsyncEndpoint;
 import org.apache.camel.Consumer;
 import org.apache.camel.Exchange;
-import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultEndpoint;
@@ -50,26 +47,26 @@ import org.apache.camel.spi.UriPath;
  * The rabbitmq component allows you produce and consume messages from
  * <a href="http://www.rabbitmq.com/">RabbitMQ</a> instances.
  */
-@UriEndpoint(firstVersion = "2.12.0", scheme = "rabbitmq", title = "RabbitMQ", syntax = "rabbitmq:hostname:portNumber/exchangeName", consumerClass = RabbitMQConsumer.class, label = "messaging")
+@UriEndpoint(firstVersion = "2.12.0", scheme = "rabbitmq", title = "RabbitMQ", syntax = "rabbitmq:exchangeName", consumerClass = RabbitMQConsumer.class, label = "messaging")
 public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     // header to indicate that the message body needs to be de-serialized
     public static final String SERIALIZE_HEADER = "CamelSerialize";
 
     @UriPath
     @Metadata(required = "true")
-    private String hostname;
-    @UriPath(defaultValue = "5672")
-    @Metadata(required = "true")
-    private int portNumber;
-    @UriPath
-    @Metadata(required = "true")
     private String exchangeName;
+    @UriParam(label = "common")
+    private String hostname;
+    @UriParam(label = "common")
+    private int portNumber;
     @UriParam(label = "security", defaultValue = ConnectionFactory.DEFAULT_USER, secret = true)
     private String username = ConnectionFactory.DEFAULT_USER;
     @UriParam(label = "security", defaultValue = ConnectionFactory.DEFAULT_PASS, secret = true)
     private String password = ConnectionFactory.DEFAULT_PASS;
-    @UriParam(defaultValue = ConnectionFactory.DEFAULT_VHOST)
+    @UriParam(label = "common", defaultValue = ConnectionFactory.DEFAULT_VHOST)
     private String vhost = ConnectionFactory.DEFAULT_VHOST;
+    @UriParam(label = "common")
+    private ConnectionFactory connectionFactory;
     @UriParam(label = "consumer,advanced", defaultValue = "10")
     private int threadPoolSize = 10;
     @UriParam(label = "consumer", defaultValue = "true")
@@ -78,6 +75,8 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     private boolean autoDelete = true;
     @UriParam(label = "common", defaultValue = "true")
     private boolean durable = true;
+    @UriParam(label = "consumer", defaultValue = "false")
+    private boolean exclusiveConsumer;
     @UriParam(label = "common")
     private boolean exclusive;
     @UriParam(label = "common")
@@ -96,9 +95,9 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     private boolean skipQueueBind;
     @UriParam(label = "common")
     private boolean skipExchangeDeclare;
-    @UriParam(label = "advanced")
+    @UriParam(label = "common")
     private Address[] addresses;
-    @UriParam(defaultValue = "" + ConnectionFactory.DEFAULT_CONNECTION_TIMEOUT)
+    @UriParam(label = "advanced", defaultValue = "" + ConnectionFactory.DEFAULT_CONNECTION_TIMEOUT)
     private int connectionTimeout = ConnectionFactory.DEFAULT_CONNECTION_TIMEOUT;
     @UriParam(label = "advanced", defaultValue = "" + ConnectionFactory.DEFAULT_CHANNEL_MAX)
     private int requestedChannelMax = ConnectionFactory.DEFAULT_CHANNEL_MAX;
@@ -112,8 +111,6 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     private TrustManager trustManager;
     @UriParam(label = "advanced")
     private Map<String, Object> clientProperties;
-    @UriParam(label = "advanced")
-    private ConnectionFactory connectionFactory;
     @UriParam(label = "advanced")
     private Boolean automaticRecoveryEnabled;
     @UriParam(label = "advanced", defaultValue = "5000")
@@ -130,7 +127,7 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     private boolean prefetchGlobal;
     @UriParam(label = "consumer", defaultValue = "1")
     private int concurrentConsumers = 1;
-    @UriParam(defaultValue = "true")
+    @UriParam(label = "common", defaultValue = "true")
     private boolean declare = true;
     @UriParam(label = "common")
     private String deadLetterExchange;
@@ -177,14 +174,13 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     private long publisherAcknowledgementsTimeout;
     @UriParam(label = "producer")
     private boolean guaranteedDeliveries;
-    // camel-jms supports this setting but it is not currently configurable in
-    // camel-rabbitmq
+    @UriParam(label = "producer")
+    private boolean allowNullHeaders;
+    // camel-jms supports this setting but it is not currently configurable in camel-rabbitmq
     private boolean useMessageIDAsCorrelationID = true;
-    // camel-jms supports this setting but it is not currently configurable in
-    // camel-rabbitmq
+    // camel-jms supports this setting but it is not currently configurable in camel-rabbitmq
     private String replyToType = ReplyToType.Temporary.name();
-    // camel-jms supports this setting but it is not currently configurable in
-    // camel-rabbitmq
+    // camel-jms supports this setting but it is not currently configurable in camel-rabbitmq
     private String replyTo;
 
     private final RabbitMQMessageConverter messageConverter = new RabbitMQMessageConverter();
@@ -194,11 +190,11 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     public RabbitMQEndpoint() {
     }
 
-    public RabbitMQEndpoint(String endpointUri, RabbitMQComponent component) throws URISyntaxException {
+    public RabbitMQEndpoint(String endpointUri, RabbitMQComponent component) {
         super(endpointUri, component);
     }
 
-    public RabbitMQEndpoint(String endpointUri, RabbitMQComponent component, ConnectionFactory connectionFactory) throws URISyntaxException {
+    public RabbitMQEndpoint(String endpointUri, RabbitMQComponent component, ConnectionFactory connectionFactory) {
         super(endpointUri, component);
         this.connectionFactory = connectionFactory;
     }
@@ -221,19 +217,6 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
      */
     public void publishExchangeToChannel(Exchange camelExchange, Channel channel, String routingKey) throws IOException {
         new RabbitMQMessagePublisher(camelExchange, channel, routingKey, this).publish();
-    }
-
-    /**
-     * Extracts name of the rabbitmq exchange
-     */
-    protected String getExchangeName(Message msg) {
-        String exchangeName = msg.getHeader(RabbitMQConstants.EXCHANGE_NAME, String.class);
-        // If it is BridgeEndpoint we should ignore the message header of
-        // EXCHANGE_NAME
-        if (exchangeName == null || isBridgeEndpoint()) {
-            exchangeName = getExchangeName();
-        }
-        return exchangeName;
     }
 
     @Override
@@ -446,8 +429,6 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
 
     /**
      * If true the queue will not be bound to the exchange after declaring it
-     * 
-     * @return
      */
     public boolean isSkipQueueBind() {
         return skipQueueBind;
@@ -490,6 +471,15 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
         if (addressArray.length > 0) {
             this.addresses = addressArray;
         }
+    }
+
+    /**
+     * If this option is set, camel-rabbitmq will try to create connection based
+     * on the setting of option addresses. The addresses value is a string which
+     * looks like "server1:12345, server2:12345"
+     */
+    public void setAddresses(Address[] addresses) {
+        this.addresses = addresses;
     }
 
     public Address[] getAddresses() {
@@ -569,8 +559,7 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     }
 
     /**
-     * Configure SSL trust manager, SSL should be enabled for this option to be
-     * effective
+     * Configure SSL trust manager, SSL should be enabled for this option to be effective
      */
     public void setTrustManager(TrustManager trustManager) {
         this.trustManager = trustManager;
@@ -581,8 +570,7 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     }
 
     /**
-     * Connection client properties (client info used in negotiating with the
-     * server)
+     * Connection client properties (client info used in negotiating with the server)
      */
     public void setClientProperties(Map<String, Object> clientProperties) {
         this.clientProperties = clientProperties;
@@ -862,6 +850,7 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
         return bindingArgs;
     }
 
+    @Deprecated
     public ArgsConfigurer getQueueArgsConfigurer() {
         return queueArgsConfigurer;
     }
@@ -869,12 +858,14 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     /**
      * Set the configurer for setting the queue args in Channel.queueDeclare
      *
-     * @Deprecated Use args instead e.g arg.queue.x-message-ttl=1000
+     * @deprecated Use args instead e.g arg.queue.x-message-ttl=1000
      */
+    @Deprecated
     public void setQueueArgsConfigurer(ArgsConfigurer queueArgsConfigurer) {
         this.queueArgsConfigurer = queueArgsConfigurer;
     }
 
+    @Deprecated
     public ArgsConfigurer getExchangeArgsConfigurer() {
         return exchangeArgsConfigurer;
     }
@@ -883,8 +874,9 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
      * Set the configurer for setting the exchange args in
      * Channel.exchangeDeclare
      *
-     * @Deprecated Use args instead e.g arg.exchange.x-message-ttl=1000
+     * @deprecated Use args instead e.g arg.exchange.x-message-ttl=1000
      */
+    @Deprecated
     public void setExchangeArgsConfigurer(ArgsConfigurer exchangeArgsConfigurer) {
         this.exchangeArgsConfigurer = exchangeArgsConfigurer;
     }
@@ -933,8 +925,7 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
 
     /**
      * When true, the message will be published with
-     * <a href="https://www.rabbitmq.com/confirms.html">publisher
-     * acknowledgements</a> turned on
+     * <a href="https://www.rabbitmq.com/confirms.html">publisher acknowledgements</a> turned on
      */
     public boolean isPublisherAcknowledgements() {
         return publisherAcknowledgements;
@@ -959,9 +950,9 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
     /**
      * When true, an exception will be thrown when the message cannot be
      * delivered (basic.return) and the message is marked as mandatory.
-     * PublisherAcknowledgement will also be activated in this case See also <a
-     * href=https://www.rabbitmq.com/confirms.html">publisher
-     * acknowledgements</a> - When will messages be confirmed?
+     * PublisherAcknowledgement will also be activated in this case.
+     * See also <a href=https://www.rabbitmq.com/confirms.html">publisher acknowledgements</a>
+     * - When will messages be confirmed.
      */
     public boolean isGuaranteedDeliveries() {
         return guaranteedDeliveries;
@@ -995,6 +986,29 @@ public class RabbitMQEndpoint extends DefaultEndpoint implements AsyncEndpoint {
      */
     public void setExclusive(boolean exclusive) {
         this.exclusive = exclusive;
+    }
+
+    public boolean isExclusiveConsumer() {
+        return exclusiveConsumer;
+    }
+
+    /**
+     * Request exclusive access to the queue (meaning only this consumer can access the queue). This is useful
+     * when you want a long-lived shared queue to be temporarily accessible by just one consumer.
+     */
+    public void setExclusiveConsumer(boolean exclusiveConsumer) {
+        this.exclusiveConsumer = exclusiveConsumer;
+    }
+
+    /**
+     * Allow pass null values to header
+     */
+    public boolean isAllowNullHeaders() {
+        return allowNullHeaders;
+    }
+
+    public void setAllowNullHeaders(boolean allowNullHeaders) {
+        this.allowNullHeaders = allowNullHeaders;
     }
 
     public boolean isPassive() {

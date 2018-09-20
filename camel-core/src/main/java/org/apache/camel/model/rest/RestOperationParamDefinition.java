@@ -19,6 +19,7 @@ package org.apache.camel.model.rest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -200,7 +201,7 @@ public class RestOperationParamDefinition {
             return allowableValues;
         }
 
-        return new ArrayList<String>();
+        return new ArrayList<>();
     }
 
     /**

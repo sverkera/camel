@@ -43,6 +43,7 @@ import org.apache.camel.component.salesforce.api.dto.SObjectDescription;
 import org.apache.camel.component.salesforce.api.dto.SObjectField;
 import org.apache.camel.component.salesforce.internal.client.RestClient;
 import org.apache.camel.util.IntrospectionSupport;
+import org.apache.camel.util.StringHelper;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -72,6 +73,10 @@ public class GenerateMojo extends AbstractSalesforceMojo {
 
         public String enumTypeName(final String name) {
             return (name.endsWith("__c") ? name.substring(0, name.length() - 3) : name) + "Enum";
+        }
+
+        public List<SObjectField> externalIdsOf(final String name) {
+            return descriptions.externalIdsOf(name);
         }
 
         public String getEnumConstant(final String value) {
@@ -117,13 +122,20 @@ public class GenerateMojo extends AbstractSalesforceMojo {
             } else {
                 // map field to Java type
                 final String soapType = field.getSoapType();
-                final String type = LOOKUP_MAP.get(soapType.substring(soapType.indexOf(':') + 1));
+                final String lookupType = soapType.substring(soapType.indexOf(':') + 1);
+                final String type = types.get(lookupType);
                 if (type == null) {
-                    getLog().warn(String.format("Unsupported field type %s in field %s of object %s", soapType,
+                    getLog().warn(String.format("Unsupported field type `%s` in field `%s` of object `%s`", soapType,
                         field.getName(), description.getName()));
+                    getLog().debug("Currently known types:\n " + types.entrySet().stream()
+                        .map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining("\n")));
                 }
                 return type;
             }
+        }
+
+        public String getLookupRelationshipName(final SObjectField field) {
+            return StringHelper.notEmpty(field.getRelationshipName(), "relationshipName", field.getName());
         }
 
         public List<PickListValue> getUniqueValues(final SObjectField field) {
@@ -173,6 +185,10 @@ public class GenerateMojo extends AbstractSalesforceMojo {
 
         public boolean isExternalId(final SObjectField field) {
             return field.isExternalId();
+        }
+
+        public boolean isLookup(final SObjectField field) {
+            return "reference".equals(field.getType());
         }
 
         public boolean isMultiSelectPicklist(final SObjectField field) {
@@ -242,6 +258,8 @@ public class GenerateMojo extends AbstractSalesforceMojo {
         }
     }
 
+    public static final Map<String, String> DEFAULT_TYPES = defineLookupMap();
+
     private static final Set<String> BASE_FIELDS = defineBaseFields();
 
     private static final String BASE64BINARY = "base64Binary";
@@ -252,12 +270,11 @@ public class GenerateMojo extends AbstractSalesforceMojo {
 
     // used for velocity logging, to avoid creating velocity.log
     private static final Logger LOG = Logger.getLogger(GenerateMojo.class.getName());
-
-    private static final Map<String, String> LOOKUP_MAP = defineLookupMap();
     private static final String MULTIPICKLIST = "multipicklist";
 
     private static final String PACKAGE_NAME_PATTERN = "(\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*\\.)+\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*";
     private static final String PICKLIST = "picklist";
+    private static final String SOBJECT_LOOKUP_VM = "/sobject-lookup.vm";
     private static final String SOBJECT_PICKLIST_VM = "/sobject-picklist.vm";
     private static final String SOBJECT_POJO_OPTIONAL_VM = "/sobject-pojo-optional.vm";
     private static final String SOBJECT_POJO_VM = "/sobject-pojo.vm";
@@ -267,6 +284,11 @@ public class GenerateMojo extends AbstractSalesforceMojo {
     private static final String SOBJECT_QUERY_RECORDS_VM = "/sobject-query-records.vm";
 
     private static final String UTF_8 = "UTF-8";
+
+    @Parameter
+    Map<String, String> customTypes;
+
+    ObjectDescriptions descriptions;
 
     VelocityEngine engine;
 
@@ -290,8 +312,6 @@ public class GenerateMojo extends AbstractSalesforceMojo {
     @Parameter(property = "camelSalesforce.packageName", defaultValue = "org.apache.camel.salesforce.dto")
     String packageName;
 
-    private ObjectDescriptions descriptions;
-
     /**
      * Exclude Salesforce SObjects that match pattern.
      */
@@ -310,6 +330,8 @@ public class GenerateMojo extends AbstractSalesforceMojo {
     @Parameter
     private String[] includes;
 
+    private final Map<String, String> types = new HashMap<>(DEFAULT_TYPES);
+
     @Parameter(property = "camelSalesforce.useOptionals", defaultValue = "false")
     private boolean useOptionals;
 
@@ -318,6 +340,7 @@ public class GenerateMojo extends AbstractSalesforceMojo {
 
     void processDescription(final File pkgDir, final SObjectDescription description, final GeneratorUtility utility,
         final String generatedDate) throws IOException {
+
         // generate a source file for SObject
         final VelocityContext context = new VelocityContext();
         context.put("packageName", packageName);
@@ -342,6 +365,43 @@ public class GenerateMojo extends AbstractSalesforceMojo {
                 StandardCharsets.UTF_8)) {
                 final Template optionalTemplate = engine.getTemplate(SOBJECT_POJO_OPTIONAL_VM, UTF_8);
                 optionalTemplate.merge(context, writer);
+            }
+        }
+
+        // generate ExternalIds Lookup class for all lookup fields that point to
+        // an Object that has at least one externalId
+        final Set<String> generatedLookupObjects = new HashSet<>();
+        for (final SObjectField field : description.getFields()) {
+            if (!utility.isLookup(field)) {
+                continue;
+            }
+
+            for (final String reference : field.getReferenceTo()) {
+                final List<SObjectField> externalIds = descriptions.externalIdsOf(reference);
+
+                for (final SObjectField externalId : externalIds) {
+                    final String lookupClassName = reference + "_Lookup";
+
+                    if (generatedLookupObjects.contains(lookupClassName)) {
+                        continue;
+                    }
+
+                    generatedLookupObjects.add(lookupClassName);
+                    final String lookupClassFileName = lookupClassName + JAVA_EXT;
+                    final File lookupClassFile = new File(pkgDir, lookupClassFileName);
+
+                    context.put("field", externalId);
+                    context.put("lookupRelationshipName", field.getRelationshipName());
+                    context.put("lookupType", lookupClassName);
+                    context.put("externalIdsList", externalIds);
+                    context.put("lookupClassName", lookupClassName);
+
+                    try (final Writer writer = new OutputStreamWriter(new FileOutputStream(lookupClassFile),
+                        StandardCharsets.UTF_8)) {
+                        final Template lookupClassTemplate = engine.getTemplate(SOBJECT_LOOKUP_VM, UTF_8);
+                        lookupClassTemplate.merge(context, writer);
+                    }
+                }
             }
         }
 
@@ -432,6 +492,13 @@ public class GenerateMojo extends AbstractSalesforceMojo {
         getLog().info(String.format("Successfully generated %s Java Classes", descriptions.count() * 2));
     }
 
+    @Override
+    protected void setup() {
+        if (customTypes != null) {
+            types.putAll(customTypes);
+        }
+    }
+
     static VelocityEngine createVelocityEngine() {
         // initialize velocity to load resources from class loader and use Log4J
         final Properties velocityProperties = new Properties();
@@ -468,15 +535,15 @@ public class GenerateMojo extends AbstractSalesforceMojo {
             {"double", "Double"}, //
             {"boolean", "Boolean"}, //
             {"byte", "Byte"}, //
-            {"dateTime", "java.time.ZonedDateTime"}, //
             // the blob base64Binary type is mapped to String URL for retrieving
             // the blob
             {"base64Binary", "String"}, //
             {"unsignedInt", "Long"}, //
             {"unsignedShort", "Integer"}, //
             {"unsignedByte", "Short"}, //
-            {"time", "java.time.ZonedDateTime"}, //
-            {"date", "java.time.ZonedDateTime"}, //
+            {"dateTime", "java.time.ZonedDateTime"}, //
+            {"time", "java.time.OffsetTime"}, //
+            {"date", "java.time.LocalDate"}, //
             {"g", "java.time.ZonedDateTime"}, //
             // Salesforce maps any types like string, picklist, reference, etc.
             // to string
@@ -491,7 +558,6 @@ public class GenerateMojo extends AbstractSalesforceMojo {
             lookupMap.put(entry[0], entry[1]);
         }
 
-        return lookupMap;
+        return Collections.unmodifiableMap(lookupMap);
     }
-
 }

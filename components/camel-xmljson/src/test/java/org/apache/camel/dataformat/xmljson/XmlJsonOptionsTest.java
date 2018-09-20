@@ -25,10 +25,8 @@ import org.w3c.dom.Document;
 
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
-
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-
 import org.junit.Test;
 
 /**
@@ -218,7 +216,7 @@ public class XmlJsonOptionsTest extends AbstractJsonTestSupport {
                 from("direct:unmarshal").unmarshal(format).to("mock:xml");
 
                 XmlJsonDataFormat namespacesFormat = new XmlJsonDataFormat();
-                List<XmlJsonDataFormat.NamespacesPerElementMapping> namespaces = new ArrayList<XmlJsonDataFormat.NamespacesPerElementMapping>();
+                List<XmlJsonDataFormat.NamespacesPerElementMapping> namespaces = new ArrayList<>();
                 namespaces.add(new XmlJsonDataFormat.NamespacesPerElementMapping("", "|ns1|http://camel.apache.org/test1||http://camel.apache.org/default|"));
                 namespaces.add(new XmlJsonDataFormat.NamespacesPerElementMapping("surname", "|ns2|http://camel.apache.org/personalData|ns3|http://camel.apache.org/personalData2|"));
                 namespacesFormat.setNamespaceMappings(namespaces);

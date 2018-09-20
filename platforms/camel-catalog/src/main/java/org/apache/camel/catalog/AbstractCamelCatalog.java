@@ -47,6 +47,7 @@ import static org.apache.camel.catalog.JSonSchemaHelper.isComponentLenientProper
 import static org.apache.camel.catalog.JSonSchemaHelper.isComponentProducerOnly;
 import static org.apache.camel.catalog.JSonSchemaHelper.isPropertyBoolean;
 import static org.apache.camel.catalog.JSonSchemaHelper.isPropertyConsumerOnly;
+import static org.apache.camel.catalog.JSonSchemaHelper.isPropertyDeprecated;
 import static org.apache.camel.catalog.JSonSchemaHelper.isPropertyInteger;
 import static org.apache.camel.catalog.JSonSchemaHelper.isPropertyMultiValue;
 import static org.apache.camel.catalog.JSonSchemaHelper.isPropertyNumber;
@@ -66,7 +67,7 @@ public abstract class AbstractCamelCatalog {
 
     // CHECKSTYLE:OFF
 
-    private static final Pattern SYNTAX_PATTERN = Pattern.compile("(\\w+)");
+    private static final Pattern SYNTAX_PATTERN = Pattern.compile("([\\w.]+)");
     private static final Pattern COMPONENT_SYNTAX_PARSER = Pattern.compile("([^\\w-]*)([\\w-]+)");
 
     private SuggestionStrategy suggestionStrategy;
@@ -200,6 +201,12 @@ public abstract class AbstractCamelCatalog {
                 boolean required = isPropertyRequired(rows, name);
                 if (required && isEmpty(value)) {
                     result.addRequired(name);
+                }
+
+                // is the option deprecated
+                boolean deprecated = isPropertyDeprecated(rows, name);
+                if (deprecated) {
+                    result.addDeprecated(name);
                 }
 
                 // is enum but the value is not within the enum range
@@ -432,6 +439,12 @@ public abstract class AbstractCamelCatalog {
                     result.addRequired(name);
                 }
 
+                // is the option deprecated
+                boolean deprecated = isPropertyDeprecated(rows, name);
+                if (deprecated) {
+                    result.addDeprecated(name);
+                }
+
                 // is enum but the value is not within the enum range
                 // but we can only check if the value is not a placeholder
                 String enums = getPropertyEnum(rows, name);
@@ -548,7 +561,7 @@ public abstract class AbstractCamelCatalog {
         // only if we support alternative syntax, and the uri contains the username and password in the authority
         // part of the uri, then we would need some special logic to capture that information and strip those
         // details from the uri, so we can continue parsing the uri using the normal syntax
-        Map<String, String> userInfoOptions = new LinkedHashMap<String, String>();
+        Map<String, String> userInfoOptions = new LinkedHashMap<>();
         if (alternativeSyntax != null && alternativeSyntax.contains("@")) {
             // clip the scheme from the syntax
             alternativeSyntax = after(alternativeSyntax, ":");
@@ -606,7 +619,7 @@ public abstract class AbstractCamelCatalog {
 
         // parse the syntax and find the names of each option
         Matcher matcher = SYNTAX_PATTERN.matcher(syntax);
-        List<String> word = new ArrayList<String>();
+        List<String> word = new ArrayList<>();
         while (matcher.find()) {
             String s = matcher.group(1);
             if (!scheme.equals(s)) {
@@ -617,7 +630,7 @@ public abstract class AbstractCamelCatalog {
         String[] tokens = SYNTAX_PATTERN.split(syntax);
 
         // find the position where each option start/end
-        List<String> word2 = new ArrayList<String>();
+        List<String> word2 = new ArrayList<>();
         int prev = 0;
         int prevPath = 0;
 
@@ -664,7 +677,7 @@ public abstract class AbstractCamelCatalog {
         boolean defaultValueAdded = false;
 
         // now parse the uri to know which part isw what
-        Map<String, String> options = new LinkedHashMap<String, String>();
+        Map<String, String> options = new LinkedHashMap<>();
 
         // include the username and password from the userinfo section
         if (!userInfoOptions.isEmpty()) {
@@ -712,7 +725,7 @@ public abstract class AbstractCamelCatalog {
             }
         }
 
-        Map<String, String> answer = new LinkedHashMap<String, String>();
+        Map<String, String> answer = new LinkedHashMap<>();
 
         // remove all options which are using default values and are not required
         for (Map.Entry<String, String> entry : options.entrySet()) {
@@ -832,7 +845,7 @@ public abstract class AbstractCamelCatalog {
     private String doAsEndpointUri(String scheme, String json, String ampersand, boolean encode) throws URISyntaxException {
         List<Map<String, String>> rows = JSonSchemaHelper.parseJsonSchema("properties", json, true);
 
-        Map<String, String> copy = new HashMap<String, String>();
+        Map<String, String> copy = new HashMap<>();
         for (Map<String, String> row : rows) {
             String name = row.get("name");
             String required = row.get("required");
@@ -938,11 +951,11 @@ public abstract class AbstractCamelCatalog {
             // oh darn some options is missing, so we need a complex way of building the uri
 
             // the tokens between the options in the path
-            String[] tokens = syntax.split("\\w+");
+            String[] tokens = syntax.split("[\\w.]+");
 
             // parse the syntax into each options
             Matcher matcher = SYNTAX_PATTERN.matcher(originalSyntax);
-            List<String> options = new ArrayList<String>();
+            List<String> options = new ArrayList<>();
             while (matcher.find()) {
                 String s = matcher.group(1);
                 options.add(s);
@@ -955,7 +968,7 @@ public abstract class AbstractCamelCatalog {
 
             // parse the syntax into each options
             Matcher matcher2 = SYNTAX_PATTERN.matcher(syntax);
-            List<String> options2 = new ArrayList<String>();
+            List<String> options2 = new ArrayList<>();
             while (matcher2.find()) {
                 String s = matcher2.group(1);
                 s = s.replaceAll("BEGINCAMELPLACEHOLDER", "\\{\\{");
@@ -1267,7 +1280,7 @@ public abstract class AbstractCamelCatalog {
         if ("log".equals(scheme)) {
             String showAll = options.get("showAll");
             if ("true".equals(showAll)) {
-                Map<String, String> filtered = new LinkedHashMap<String, String>();
+                Map<String, String> filtered = new LinkedHashMap<>();
                 // remove all the other showXXX options when showAll=true
                 for (Map.Entry<String, String> entry : options.entrySet()) {
                     String key = entry.getKey();

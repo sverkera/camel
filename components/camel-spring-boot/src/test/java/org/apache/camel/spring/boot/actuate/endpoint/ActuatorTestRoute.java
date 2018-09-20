@@ -16,9 +16,7 @@
  */
 package org.apache.camel.spring.boot.actuate.endpoint;
 
-import org.apache.camel.Route;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.SupervisingRouteController;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -26,9 +24,7 @@ public class ActuatorTestRoute extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-//        SupervisingRouteController src = new SupervisingRouteController();
-//        src.addFilter(route -> new SupervisingRouteController.FilterResult(true, "Catch all Filter"));
-        from("timer:foo").routeId("foo-route").to("log:foo");
+        from("timer:foo").routeId("foo-route").routeGroup("foo-route-group").to("log:foo");
     }
 
 }

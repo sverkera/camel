@@ -34,6 +34,11 @@ public class SqsComponentConfiguration
             ComponentConfigurationPropertiesCommon {
 
     /**
+     * Whether to enable auto configuration of the aws-sqs component. This is
+     * enabled by default.
+     */
+    private Boolean enabled;
+    /**
      * The AWS SQS default configuration
      */
     private SqsConfigurationNestedConfiguration configuration;
@@ -101,13 +106,6 @@ public class SqsComponentConfiguration
 
     public static class SqsConfigurationNestedConfiguration {
         public static final Class CAMEL_NESTED_CLASS = org.apache.camel.component.aws.sqs.SqsConfiguration.class;
-        /**
-         * The region with which the AWS-SQS client wants to work with. Only
-         * works if Camel creates the AWS-SQS client, i.e., if you explicitly
-         * set amazonSQSClient, then this setting will have no effect. You would
-         * have to set it on the client you create directly
-         */
-        private String amazonSQSEndpoint;
         /**
          * The hostname of the Amazon AWS cloud.
          */
@@ -214,17 +212,26 @@ public class SqsComponentConfiguration
          * queueOwnerAWSAccountId to build the service URL.
          */
         private String region;
+        /**
+         * Allows you to use multiple threads to poll the sqs queue to increase
+         * throughput
+         */
         private Integer concurrentConsumers = 1;
+        /**
+         * To define the queueUrl explicitly. All other parameters, which would
+         * influence the queueUrl, are ignored. This parameter is intended to be
+         * used, to connect to a mock implementation of SQS, for testing
+         * purposes.
+         */
+        private String queueUrl;
+        /**
+         * To define a proxy host when instantiating the SQS client
+         */
         private String proxyHost;
+        /**
+         * To define a proxy port when instantiating the SQS client
+         */
         private Integer proxyPort;
-
-        public String getAmazonSQSEndpoint() {
-            return amazonSQSEndpoint;
-        }
-
-        public void setAmazonSQSEndpoint(String amazonSQSEndpoint) {
-            this.amazonSQSEndpoint = amazonSQSEndpoint;
-        }
 
         public String getAmazonAWSHost() {
             return amazonAWSHost;
@@ -401,6 +408,14 @@ public class SqsComponentConfiguration
 
         public void setConcurrentConsumers(Integer concurrentConsumers) {
             this.concurrentConsumers = concurrentConsumers;
+        }
+
+        public String getQueueUrl() {
+            return queueUrl;
+        }
+
+        public void setQueueUrl(String queueUrl) {
+            this.queueUrl = queueUrl;
         }
 
         public String getProxyHost() {

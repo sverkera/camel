@@ -64,7 +64,7 @@ public class DefaultChannel extends CamelInternalProcessor implements ModelChann
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultChannel.class);
 
-    private final List<InterceptStrategy> interceptors = new ArrayList<InterceptStrategy>();
+    private final List<InterceptStrategy> interceptors = new ArrayList<>();
     private Processor errorHandler;
     // the next processor (non wrapped)
     private Processor nextProcessor;
@@ -99,7 +99,7 @@ public class DefaultChannel extends CamelInternalProcessor implements ModelChann
         if (!hasNext()) {
             return null;
         }
-        List<Processor> answer = new ArrayList<Processor>(1);
+        List<Processor> answer = new ArrayList<>(1);
         answer.add(nextProcessor);
         return answer;
     }
@@ -224,7 +224,7 @@ public class DefaultChannel extends CamelInternalProcessor implements ModelChann
             iis.prepareProcessor(targetOutputDef, target, instrumentationProcessor);
         }
 
-        // then wrap the output with the backlog and tracer (backlog first, as we do not want regular tracer to tracer the backlog)
+        // then wrap the output with the backlog and tracer (backlog first, as we do not want regular tracer to trace the backlog)
         InterceptStrategy tracer = getOrCreateBacklogTracer();
         camelContext.addService(tracer);
         if (tracer instanceof BacklogTracer) {
@@ -332,6 +332,8 @@ public class DefaultChannel extends CamelInternalProcessor implements ModelChann
                 if (redeliveryPossible) {
                     // okay we can redeliver then we need to change the output in the error handler
                     // to use us which we then wrap the call so we can capture before/after for redeliveries as well
+                    Processor currentOutput = ((RedeliveryErrorHandler) errorHandler).getOutput();
+                    instrumentationProcessor.setProcessor(currentOutput);
                     ((RedeliveryErrorHandler) errorHandler).changeOutput(instrumentationProcessor);
                 }
             }

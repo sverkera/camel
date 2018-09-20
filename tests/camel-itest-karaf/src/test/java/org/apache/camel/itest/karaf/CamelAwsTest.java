@@ -31,8 +31,10 @@ public class CamelAwsTest extends BaseKarafTest {
         testComponent(COMPONENT, "aws-ddb");
         testComponent(COMPONENT, "aws-ddbstream");
         testComponent(COMPONENT, "aws-ec2");
+        testComponent(COMPONENT, "aws-iam");
         testComponent(COMPONENT, "aws-kinesis");
         testComponent(COMPONENT, "aws-kinesis-firehose");
+        testComponent(COMPONENT, "aws-kms");
         testComponent(COMPONENT, "aws-lambda");
         testComponent(COMPONENT, "aws-mq");
         testComponent(COMPONENT, "aws-s3");

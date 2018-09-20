@@ -1,3 +1,4 @@
+[[dns-component]]
 == DNS Component
 
 *Available as of Camel version 2.7*
@@ -62,20 +63,39 @@ with the following path and query parameters:
 
 ==== Path Parameters (1 parameters):
 
+
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
 | Name | Description | Default | Type
 | *dnsType* | *Required* The type of the lookup. |  | DnsType
 |===
 
+
 ==== Query Parameters (1 parameters):
+
 
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
 | Name | Description | Default | Type
-| *synchronous* (advanced) | Sets whether synchronous processing should be strictly used or Camel is allowed to use asynchronous processing (if supported). | false | boolean
+| *synchronous* (advanced) | Sets whether synchronous processing should be strictly used, or Camel is allowed to use asynchronous processing (if supported). | false | boolean
 |===
 // endpoint options: END
+// spring-boot-auto-configure options: START
+=== Spring Boot Auto-Configuration
+
+
+The component supports 2 options, which are listed below.
+
+
+
+[width="100%",cols="2,5,^1,2",options="header"]
+|===
+| Name | Description | Default | Type
+| *camel.component.dns.enabled* | Enable dns component | true | Boolean
+| *camel.component.dns.resolve-property-placeholders* | Whether the component should resolve property placeholders on itself when starting. Only properties which are of String type can use property placeholders. | true | Boolean
+|===
+// spring-boot-auto-configure options: END
+
 
 
 === Headers
@@ -160,9 +180,9 @@ i.e. You may have an instance in NYC and an instance in SFO. You would configure
 		<property name="hostname" value="service.example.com" />
 		<property name="resolvesTo" value="nyc-service.example.com" />
 		<property name="ttl" value="60000" />
+		<property name="stopRoutesOnException" value="false" />
 	</bean>
 
 	<route id="routeId" autoStartup="false" routePolicyRef="dnsActivationPolicy">
 	</route>
 ----
-

@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -39,7 +40,6 @@ import org.apache.camel.component.file.remote.RemoteFileConfiguration;
 import org.apache.camel.component.file.remote.RemoteFileOperations;
 import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.ObjectHelper;
-import org.apache.camel.util.ResolverHelper;
 import org.apache.camel.util.ResourceHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -229,7 +229,7 @@ public class ScpOperations implements RemoteFileOperations<ScpFile> {
             // get from configuration
             if (ObjectHelper.isNotEmpty(config.getCiphers())) {
                 LOG.trace("Using ciphers: {}", config.getCiphers());
-                Hashtable<String, String> ciphers = new Hashtable<String, String>();
+                Hashtable<String, String> ciphers = new Hashtable<>();
                 ciphers.put("cipher.s2c", config.getCiphers());
                 ciphers.put("cipher.c2s", config.getCiphers());
                 JSch.setConfig(ciphers);
@@ -260,7 +260,7 @@ public class ScpOperations implements RemoteFileOperations<ScpFile> {
                 try {
                     jsch.addIdentity("camel-jsch", data, null, pkfp != null ? pkfp.getBytes() : null);
                 } catch (Exception e) {
-                    throw new GenericFileOperationFailedException("Cannot load private key bytes: " + config.getPrivateKeyBytes(), e);
+                    throw new GenericFileOperationFailedException("Cannot load private key bytes: " + Arrays.toString(config.getPrivateKeyBytes()), e);
                 }                
             }
 
@@ -269,7 +269,7 @@ public class ScpOperations implements RemoteFileOperations<ScpFile> {
             if (knownHostsFile == null && config.isUseUserKnownHostsFile()) {
                 if (userKnownHostFile == null) {
                     userKnownHostFile = System.getProperty("user.home") + "/.ssh/known_hosts";
-                    LOG.info("Known host file not configured, using user known host file: " + userKnownHostFile);
+                    LOG.info("Known host file not configured, using user known host file: {}", userKnownHostFile);
                 }
                 knownHostsFile = userKnownHostFile;
             }
@@ -312,7 +312,7 @@ public class ScpOperations implements RemoteFileOperations<ScpFile> {
             }
         } catch (JSchException e) {
             session = null;
-            LOG.warn("Could not create ssh session for " + config.remoteServerInformation(), e);
+            LOG.warn("Could not create ssh session for {}", config.remoteServerInformation(), e);
         }
         return session;
     }

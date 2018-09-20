@@ -22,7 +22,6 @@ import java.util.Map;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jetty.BaseJettyTest;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.junit.Test;
 
@@ -30,7 +29,7 @@ public class RestJettyPostNotMapHttpMessageHeadersTest extends BaseJettyTest {
 
     @Test
     public void testPostNotMapHttpMessageHeadersTest() throws Exception {
-        Map<String, Object> headers = new HashMap<String, Object>();
+        Map<String, Object> headers = new HashMap<>();
         headers.put(Exchange.HTTP_METHOD, "POST");
         headers.put(Exchange.CONTENT_TYPE, "application/x-www-form-urlencoded");
         String out = template.requestBodyAndHeaders("http://localhost:" + getPort() + "/rest/test", "{\"msg\": \"TEST\"}", headers, String.class);

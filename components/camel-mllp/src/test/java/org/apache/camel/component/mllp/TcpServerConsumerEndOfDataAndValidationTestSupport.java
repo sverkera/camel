@@ -33,7 +33,6 @@ import org.apache.camel.test.junit.rule.mllp.MllpClientResource;
 import org.apache.camel.test.junit.rule.mllp.MllpJUnitResourceException;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.apache.camel.test.mllp.Hl7TestMessageGenerator;
-
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -259,7 +258,7 @@ public abstract class TcpServerConsumerEndOfDataAndValidationTestSupport extends
         mllpClient.connect();
 
         log.info("Sending third message");
-        String acknowledgement = mllpClient.sendMessageAndWaitForAcknowledgement(Hl7TestMessageGenerator.generateMessage(10003));
+        mllpClient.sendMessageAndWaitForAcknowledgement(Hl7TestMessageGenerator.generateMessage(10003));
     }
 
     @Test

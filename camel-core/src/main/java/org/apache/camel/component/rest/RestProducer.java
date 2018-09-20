@@ -356,7 +356,7 @@ public class RestProducer extends DefaultAsyncProducer {
                                             DataFormat dataFormat, String prefix) throws Exception {
         if (config.getDataFormatProperties() != null && !config.getDataFormatProperties().isEmpty()) {
             // must use a copy as otherwise the options gets removed during introspection setProperties
-            Map<String, Object> copy = new HashMap<String, Object>();
+            Map<String, Object> copy = new HashMap<>();
 
             // filter keys on prefix
             // - either its a known prefix and must match the prefix parameter
@@ -406,7 +406,7 @@ public class RestProducer extends DefaultAsyncProducer {
                         }
                         String value = inMessage.getHeader(key, String.class);
                         if (value != null) {
-                            params.put(key, value);
+                            params.put(entry.getKey(), value);
                         } else if (!optional) {
                             // value is null and parameter is not optional
                             params.put(entry.getKey(), entry.getValue());

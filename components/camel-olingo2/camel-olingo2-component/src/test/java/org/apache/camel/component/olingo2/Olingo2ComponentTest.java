@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 package org.apache.camel.component.olingo2;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -92,7 +91,7 @@ public class Olingo2ComponentTest extends AbstractOlingo2TestSupport {
 
     @Test
     public void testRead() throws Exception {
-        final Map<String, Object> headers = new HashMap<String, Object>();
+        final Map<String, Object> headers = new HashMap<>();
 
         // read ServiceDocument
         final ServiceDocument document = requestBodyAndHeaders("direct://READSERVICEDOC", null, headers);
@@ -101,7 +100,7 @@ public class Olingo2ComponentTest extends AbstractOlingo2TestSupport {
         LOG.info("Service document has {} entity sets", document.getEntitySetsInfo().size());
 
         // parameter type is java.util.Map
-        final HashMap<String, String> queryParams = new HashMap<String, String>();
+        final HashMap<String, String> queryParams = new HashMap<>();
         queryParams.put(SystemQueryOption.$top.name(), "5");
         headers.put("CamelOlingo2.queryParams", queryParams);
 
@@ -119,7 +118,7 @@ public class Olingo2ComponentTest extends AbstractOlingo2TestSupport {
         assertNotNull(manufacturer);
         final Map<String, Object> properties = manufacturer.getProperties();
         assertEquals("Manufacturer Id", "1", properties.get(ID_PROPERTY));
-        LOG.info("Manufacturer: {}", properties.toString());
+        LOG.info("Manufacturer: {}", properties);
     }
 
     @Test
@@ -151,11 +150,11 @@ public class Olingo2ComponentTest extends AbstractOlingo2TestSupport {
     }
 
     private Map<String, Object> getEntityData() {
-        final Map<String, Object> data = new HashMap<String, Object>();
+        final Map<String, Object> data = new HashMap<>();
         data.put("Id", "123");
         data.put("Name", "MyCarManufacturer");
         data.put("Founded", new Date());
-        Map<String, Object> address = new HashMap<String, Object>();
+        Map<String, Object> address = new HashMap<>();
         address.put("Street", "Main");
         address.put("ZipCode", "42421");
         address.put("City", "Fairy City");
@@ -166,7 +165,7 @@ public class Olingo2ComponentTest extends AbstractOlingo2TestSupport {
 
     @Test
     public void testBatch() throws Exception {
-        final List<Olingo2BatchRequest> batchParts = new ArrayList<Olingo2BatchRequest>();
+        final List<Olingo2BatchRequest> batchParts = new ArrayList<>();
 
         // 1. Edm query
         batchParts.add(Olingo2BatchQueryRequest.resourcePath(Olingo2AppImpl.METADATA).build());
@@ -178,7 +177,7 @@ public class Olingo2ComponentTest extends AbstractOlingo2TestSupport {
         batchParts.add(Olingo2BatchQueryRequest.resourcePath(TEST_MANUFACTURER).build());
 
         // 4. read with expand
-        final HashMap<String, String> queryParams = new HashMap<String, String>();
+        final HashMap<String, String> queryParams = new HashMap<>();
         queryParams.put(SystemQueryOption.$expand.toString(), CARS);
         batchParts.add(Olingo2BatchQueryRequest.resourcePath(TEST_MANUFACTURER).queryParams(queryParams).build());
 
@@ -188,7 +187,7 @@ public class Olingo2ComponentTest extends AbstractOlingo2TestSupport {
             contentId(TEST_RESOURCE_CONTENT_ID).operation(Operation.CREATE).body(data).build());
 
         // 6. update address in created entry
-        final Map<String, Object> updateData = new HashMap<String, Object>(data);
+        final Map<String, Object> updateData = new HashMap<>(data);
         Map<String, Object> address = (Map<String, Object>) updateData.get(ADDRESS);
         address.put("Street", "Main Street");
         batchParts.add(

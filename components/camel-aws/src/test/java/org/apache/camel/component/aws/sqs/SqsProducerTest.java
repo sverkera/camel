@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
 
@@ -35,8 +36,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -90,7 +93,21 @@ public class SqsProducerTest {
         when(sqsEndpoint.getQueueUrl()).thenReturn(QUEUE_URL);
         when(sqsEndpoint.getHeaderFilterStrategy()).thenReturn(headerFilterStrategy);
     }
-    
+
+    @Test
+    public void translateAttributes() {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("key1", null);
+        headers.put("key2", "");
+        headers.put("key3", "value3");
+
+        Map<String, MessageAttributeValue> translateAttributes = underTest.translateAttributes(headers, exchange);
+
+        assertThat(translateAttributes.size(), is(1));
+        assertThat(translateAttributes.get("key3").getDataType(), is("String"));
+        assertThat(translateAttributes.get("key3").getStringValue(), is("value3"));
+    }
+
     @Test
     public void itSendsTheBodyFromAnExchange() throws Exception {
         underTest.process(exchange);
@@ -143,7 +160,7 @@ public class SqsProducerTest {
     
     @Test
     public void isAttributeMessageStringHeaderOnTheRequest() throws Exception {
-        Map<String, Object> headers = new HashMap<String, Object>();
+        Map<String, Object> headers = new HashMap<>();
         headers.put(SAMPLE_MESSAGE_HEADER_NAME_1, SAMPLE_MESSAGE_HEADER_VALUE_1);
         when(inMessage.getHeaders()).thenReturn(headers);
         underTest.process(exchange);
@@ -157,7 +174,7 @@ public class SqsProducerTest {
     
     @Test
     public void isAttributeMessageByteBufferHeaderOnTheRequest() throws Exception {
-        Map<String, Object> headers = new HashMap<String, Object>();
+        Map<String, Object> headers = new HashMap<>();
         headers.put(SAMPLE_MESSAGE_HEADER_NAME_2, SAMPLE_MESSAGE_HEADER_VALUE_2);
         when(inMessage.getHeaders()).thenReturn(headers);
         underTest.process(exchange);
@@ -171,7 +188,7 @@ public class SqsProducerTest {
     
     @Test
     public void isAllAttributeMessagesOnTheRequest() throws Exception {
-        Map<String, Object> headers = new HashMap<String, Object>();
+        Map<String, Object> headers = new HashMap<>();
         headers.put(SAMPLE_MESSAGE_HEADER_NAME_1, SAMPLE_MESSAGE_HEADER_VALUE_1);
         headers.put(SAMPLE_MESSAGE_HEADER_NAME_2, SAMPLE_MESSAGE_HEADER_VALUE_2);
         headers.put(SAMPLE_MESSAGE_HEADER_NAME_3, SAMPLE_MESSAGE_HEADER_VALUE_3);

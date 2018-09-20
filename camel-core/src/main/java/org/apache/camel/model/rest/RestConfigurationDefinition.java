@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -90,6 +91,9 @@ public class RestConfigurationDefinition {
     @XmlAttribute
     private Boolean skipBindingOnErrorCode;
 
+    @XmlAttribute
+    private Boolean clientRequestValidation;
+
     @XmlAttribute @Metadata(label = "consumer")
     private Boolean enableCORS;
 
@@ -100,22 +104,22 @@ public class RestConfigurationDefinition {
     private String xmlDataFormat;
 
     @XmlElement(name = "componentProperty")
-    private List<RestPropertyDefinition> componentProperties = new ArrayList<RestPropertyDefinition>();
+    private List<RestPropertyDefinition> componentProperties = new ArrayList<>();
 
     @XmlElement(name = "endpointProperty")
-    private List<RestPropertyDefinition> endpointProperties = new ArrayList<RestPropertyDefinition>();
+    private List<RestPropertyDefinition> endpointProperties = new ArrayList<>();
 
     @XmlElement(name = "consumerProperty") @Metadata(label = "consumer")
-    private List<RestPropertyDefinition> consumerProperties = new ArrayList<RestPropertyDefinition>();
+    private List<RestPropertyDefinition> consumerProperties = new ArrayList<>();
 
     @XmlElement(name = "dataFormatProperty")
-    private List<RestPropertyDefinition> dataFormatProperties = new ArrayList<RestPropertyDefinition>();
+    private List<RestPropertyDefinition> dataFormatProperties = new ArrayList<>();
 
     @XmlElement(name = "apiProperty") @Metadata(label = "consumer")
-    private List<RestPropertyDefinition> apiProperties = new ArrayList<RestPropertyDefinition>();
+    private List<RestPropertyDefinition> apiProperties = new ArrayList<>();
 
     @XmlElement(name = "corsHeaders") @Metadata(label = "consumer")
-    private List<RestPropertyDefinition> corsHeaders = new ArrayList<RestPropertyDefinition>();
+    private List<RestPropertyDefinition> corsHeaders = new ArrayList<>();
 
     public String getComponent() {
         return component;
@@ -345,6 +349,22 @@ public class RestConfigurationDefinition {
      */
     public void setSkipBindingOnErrorCode(Boolean skipBindingOnErrorCode) {
         this.skipBindingOnErrorCode = skipBindingOnErrorCode;
+    }
+
+    public Boolean getClientRequestValidation() {
+        return clientRequestValidation;
+    }
+
+    /**
+     * Whether to enable validation of the client request to check whether the Content-Type and Accept headers from
+     * the client is supported by the Rest-DSL configuration of its consumes/produces settings.
+     * <p/>
+     * This can be turned on, to enable this check. In case of validation error, then HTTP Status codes 415 or 406 is returned.
+     * <p/>
+     * The default value is false.
+     */
+    public void setClientRequestValidation(Boolean clientRequestValidation) {
+        this.clientRequestValidation = clientRequestValidation;
     }
 
     public Boolean getEnableCORS() {
@@ -631,6 +651,15 @@ public class RestConfigurationDefinition {
     }
 
     /**
+     * Whether to enable validation of the client request to check whether the Content-Type and Accept headers from
+     * the client is supported by the Rest-DSL configuration of its consumes/produces settings.
+     */
+    public RestConfigurationDefinition clientRequestValidation(boolean clientRequestValidation) {
+        setClientRequestValidation(clientRequestValidation);
+        return this;
+    }
+
+    /**
      * To specify whether to enable CORS which means Camel will automatic include CORS in the HTTP headers in the response.
      */
     public RestConfigurationDefinition enableCORS(boolean enableCORS) {
@@ -812,6 +841,9 @@ public class RestConfigurationDefinition {
         if (skipBindingOnErrorCode != null) {
             answer.setSkipBindingOnErrorCode(skipBindingOnErrorCode);
         }
+        if (clientRequestValidation != null) {
+            answer.setClientRequestValidation(clientRequestValidation);
+        }
         if (enableCORS != null) {
             answer.setEnableCORS(enableCORS);
         }
@@ -822,7 +854,7 @@ public class RestConfigurationDefinition {
             answer.setXmlDataFormat(xmlDataFormat);
         }
         if (!componentProperties.isEmpty()) {
-            Map<String, Object> props = new HashMap<String, Object>();
+            Map<String, Object> props = new HashMap<>();
             for (RestPropertyDefinition prop : componentProperties) {
                 String key = prop.getKey();
                 String value = CamelContextHelper.parseText(context, prop.getValue());
@@ -831,7 +863,7 @@ public class RestConfigurationDefinition {
             answer.setComponentProperties(props);
         }
         if (!endpointProperties.isEmpty()) {
-            Map<String, Object> props = new HashMap<String, Object>();
+            Map<String, Object> props = new HashMap<>();
             for (RestPropertyDefinition prop : endpointProperties) {
                 String key = prop.getKey();
                 String value = CamelContextHelper.parseText(context, prop.getValue());
@@ -840,7 +872,7 @@ public class RestConfigurationDefinition {
             answer.setEndpointProperties(props);
         }
         if (!consumerProperties.isEmpty()) {
-            Map<String, Object> props = new HashMap<String, Object>();
+            Map<String, Object> props = new HashMap<>();
             for (RestPropertyDefinition prop : consumerProperties) {
                 String key = prop.getKey();
                 String value = CamelContextHelper.parseText(context, prop.getValue());
@@ -849,7 +881,7 @@ public class RestConfigurationDefinition {
             answer.setConsumerProperties(props);
         }
         if (!dataFormatProperties.isEmpty()) {
-            Map<String, Object> props = new HashMap<String, Object>();
+            Map<String, Object> props = new HashMap<>();
             for (RestPropertyDefinition prop : dataFormatProperties) {
                 String key = prop.getKey();
                 String value = CamelContextHelper.parseText(context, prop.getValue());
@@ -858,7 +890,7 @@ public class RestConfigurationDefinition {
             answer.setDataFormatProperties(props);
         }
         if (!apiProperties.isEmpty()) {
-            Map<String, Object> props = new HashMap<String, Object>();
+            Map<String, Object> props = new HashMap<>();
             for (RestPropertyDefinition prop : apiProperties) {
                 String key = prop.getKey();
                 String value = CamelContextHelper.parseText(context, prop.getValue());
@@ -867,7 +899,7 @@ public class RestConfigurationDefinition {
             answer.setApiProperties(props);
         }
         if (!corsHeaders.isEmpty()) {
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props = new HashMap<>();
             for (RestPropertyDefinition prop : corsHeaders) {
                 String key = prop.getKey();
                 String value = CamelContextHelper.parseText(context, prop.getValue());

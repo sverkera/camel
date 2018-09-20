@@ -20,7 +20,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.spi.ExceptionHandler;
 import org.apache.camel.spi.Synchronization;
 import org.apache.camel.support.LoggingExceptionHandler;
-import org.apache.camel.util.ObjectHelper;
+import org.apache.camel.util.StringHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,14 +37,16 @@ public class GenericFileOnCompletion<T> implements Synchronization {
     private final Logger log = LoggerFactory.getLogger(GenericFileOnCompletion.class);
     private GenericFileEndpoint<T> endpoint;
     private GenericFileOperations<T> operations;
+    private GenericFileProcessStrategy<T> processStrategy;
     private ExceptionHandler exceptionHandler;
     private GenericFile<T> file;
     private String absoluteFileName;
 
-    public GenericFileOnCompletion(GenericFileEndpoint<T> endpoint, GenericFileOperations<T> operations,
+    public GenericFileOnCompletion(GenericFileEndpoint<T> endpoint, GenericFileOperations<T> operations, GenericFileProcessStrategy processStrategy,
                                    GenericFile<T> file, String absoluteFileName) {
         this.endpoint = endpoint;
         this.operations = operations;
+        this.processStrategy = processStrategy;
         this.file = file;
         this.absoluteFileName = absoluteFileName;
         this.exceptionHandler = endpoint.getOnCompletionExceptionHandler();
@@ -70,8 +72,6 @@ public class GenericFileOnCompletion<T> implements Synchronization {
     }
 
     protected void onCompletion(Exchange exchange) {
-        GenericFileProcessStrategy<T> processStrategy = endpoint.getGenericFileProcessStrategy();
-
         log.debug("Done processing file: {} using exchange: {}", file, exchange);
 
         // commit or rollback
@@ -164,7 +164,7 @@ public class GenericFileOnCompletion<T> implements Synchronization {
         if (endpoint.getDoneFileName() != null && !endpoint.isNoop()) {
             // done file must be in same path as the original input file
             String doneFileName = endpoint.createDoneFileName(absoluteFileName);
-            ObjectHelper.notEmpty(doneFileName, "doneFileName", endpoint);
+            StringHelper.notEmpty(doneFileName, "doneFileName", endpoint);
             // we should delete the dynamic done file
             if (endpoint.getDoneFileName().indexOf("{file:name") > 0 || complete) {
                 try {

@@ -34,6 +34,11 @@ public class SesComponentConfiguration
             ComponentConfigurationPropertiesCommon {
 
     /**
+     * Whether to enable auto configuration of the aws-ses component. This is
+     * enabled by default.
+     */
+    private Boolean enabled;
+    /**
      * The AWS SES default configuration
      */
     private SesConfigurationNestedConfiguration configuration;
@@ -137,11 +142,16 @@ public class SesComponentConfiguration
          */
         private List replyToAddresses;
         /**
-         * The region with which the AWS-SES client wants to work with.
+         * To define a proxy host when instantiating the SES client
          */
-        private String amazonSESEndpoint;
         private String proxyHost;
+        /**
+         * To define a proxy port when instantiating the SES client
+         */
         private Integer proxyPort;
+        /**
+         * The region in which SES client needs to work
+         */
         private String region;
 
         public String getAccessKey() {
@@ -206,14 +216,6 @@ public class SesComponentConfiguration
 
         public void setReplyToAddresses(List replyToAddresses) {
             this.replyToAddresses = replyToAddresses;
-        }
-
-        public String getAmazonSESEndpoint() {
-            return amazonSESEndpoint;
-        }
-
-        public void setAmazonSESEndpoint(String amazonSESEndpoint) {
-            this.amazonSESEndpoint = amazonSESEndpoint;
         }
 
         public String getProxyHost() {

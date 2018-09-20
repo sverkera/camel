@@ -33,8 +33,6 @@ public class LambdaConfiguration implements Cloneable {
     @UriParam
     @Metadata(required = "true")
     private LambdaOperations operation;
-    @UriParam
-    private String awsLambdaEndpoint;
     @UriParam(label = "security", secret = true)
     private String accessKey;
     @UriParam(label = "security", secret = true)
@@ -103,17 +101,6 @@ public class LambdaConfiguration implements Cloneable {
         this.region = region;
     }
 
-    public String getAwsLambdaEndpoint() {
-        return awsLambdaEndpoint;
-    }
-
-    /**
-     * The AWS-Lambda client to use.
-     */
-    public void setAwsLambdaEndpoint(String awsLambdaEndpoint) {
-        this.awsLambdaEndpoint = awsLambdaEndpoint;
-    }
-
     public LambdaOperations getOperation() {
         return operation;
     }
@@ -125,24 +112,24 @@ public class LambdaConfiguration implements Cloneable {
         this.operation = operation;
     }
 
-    /**
-     * To define a proxy host when instantiating the Lambda client
-     */
     public String getProxyHost() {
         return proxyHost;
     }
 
+    /**
+     * To define a proxy host when instantiating the Lambda client
+     */
     public void setProxyHost(String proxyHost) {
         this.proxyHost = proxyHost;
+    }
+
+    public Integer getProxyPort() {
+        return proxyPort;
     }
 
     /**
      * To define a proxy port when instantiating the Lambda client
      */
-    public Integer getProxyPort() {
-        return proxyPort;
-    }
-
     public void setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
     }

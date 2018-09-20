@@ -1,3 +1,4 @@
+[[thrift-component]]
 == Thrift Component
 
 *Available as of Camel version 2.20*
@@ -28,7 +29,7 @@ thrift://service[?options]
 ### Endpoint Options
 
 // component options: START
-The Thrift component supports 2 options which are listed below.
+The Thrift component supports 2 options, which are listed below.
 
 
 
@@ -51,6 +52,7 @@ with the following path and query parameters:
 
 ==== Path Parameters (3 parameters):
 
+
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
 | Name | Description | Default | Type
@@ -59,25 +61,48 @@ with the following path and query parameters:
 | *service* | *Required* Fully qualified service name from the thrift descriptor file (package dot service definition name) |  | String
 |===
 
+
 ==== Query Parameters (12 parameters):
+
 
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
 | Name | Description | Default | Type
 | *compressionType* (common) | Protocol compression mechanism type | NONE | ThriftCompressionType
 | *exchangeProtocol* (common) | Exchange protocol serialization type | BINARY | ThriftExchangeProtocol
-| *bridgeErrorHandler* (consumer) | Allows for bridging the consumer to the Camel routing Error Handler which mean any exceptions occurred while the consumer is trying to pickup incoming messages or the likes will now be processed as a message and handled by the routing Error Handler. By default the consumer will use the org.apache.camel.spi.ExceptionHandler to deal with exceptions that will be logged at WARN or ERROR level and ignored. | false | boolean
+| *bridgeErrorHandler* (consumer) | Allows for bridging the consumer to the Camel routing Error Handler, which mean any exceptions occurred while the consumer is trying to pickup incoming messages, or the likes, will now be processed as a message and handled by the routing Error Handler. By default the consumer will use the org.apache.camel.spi.ExceptionHandler to deal with exceptions, that will be logged at WARN or ERROR level and ignored. | false | boolean
 | *clientTimeout* (consumer) | Client timeout for consumers |  | int
 | *maxPoolSize* (consumer) | The Thrift server consumer max thread pool size | 10 | int
 | *poolSize* (consumer) | The Thrift server consumer initial thread pool size | 1 | int
-| *exceptionHandler* (consumer) | To let the consumer use a custom ExceptionHandler. Notice if the option bridgeErrorHandler is enabled then this options is not in use. By default the consumer will deal with exceptions that will be logged at WARN or ERROR level and ignored. |  | ExceptionHandler
+| *exceptionHandler* (consumer) | To let the consumer use a custom ExceptionHandler. Notice if the option bridgeErrorHandler is enabled then this options is not in use. By default the consumer will deal with exceptions, that will be logged at WARN or ERROR level and ignored. |  | ExceptionHandler
 | *exchangePattern* (consumer) | Sets the exchange pattern when the consumer creates an exchange. |  | ExchangePattern
 | *method* (producer) | The Thrift invoked method name |  | String
-| *synchronous* (advanced) | Sets whether synchronous processing should be strictly used or Camel is allowed to use asynchronous processing (if supported). | false | boolean
+| *synchronous* (advanced) | Sets whether synchronous processing should be strictly used, or Camel is allowed to use asynchronous processing (if supported). | false | boolean
 | *negotiationType* (security) | Security negotiation type | PLAINTEXT | ThriftNegotiationType
 | *sslParameters* (security) | Configuration parameters for SSL/TLS security negotiation |  | SSLContextParameters
 |===
 // endpoint options: END
+// spring-boot-auto-configure options: START
+=== Spring Boot Auto-Configuration
+
+
+The component supports 7 options, which are listed below.
+
+
+
+[width="100%",cols="2,5,^1,2",options="header"]
+|===
+| Name | Description | Default | Type
+| *camel.component.thrift.enabled* | Whether to enable auto configuration of the thrift component. This is enabled by default. |  | Boolean
+| *camel.component.thrift.resolve-property-placeholders* | Whether the component should resolve property placeholders on itself when starting. Only properties which are of String type can use property placeholders. | true | Boolean
+| *camel.component.thrift.use-global-ssl-context-parameters* | Determine if the thrift component is using global SSL context parameters | false | Boolean
+| *camel.dataformat.thrift.content-type-format* | Defines a content type format in which thrift message will be serialized/deserialized from(to) the Java been. The format can either be native or json for either native binary thrift, json or simple json fields representation. The default value is binary. | binary | String
+| *camel.dataformat.thrift.content-type-header* | Whether the data format should set the Content-Type header with the type from the data format if the data format is capable of doing so. For example application/xml for data formats marshalling to XML, or application/json for data formats marshalling to JSon etc. | false | Boolean
+| *camel.dataformat.thrift.enabled* | Whether to enable auto configuration of the thrift data format. This is enabled by default. |  | Boolean
+| *camel.dataformat.thrift.instance-class* | Name of class to use when unarmshalling |  | String
+|===
+// spring-boot-auto-configure options: END
+
 
 ### Thrift method parameters mapping
 
@@ -154,7 +179,7 @@ https://thrift.apache.org/tutorial/java [Apache Thrift Java tutorial]
 
 ### See Also
 
-* link:getting-started.html[Getting Started]
-* link:configuring-camel.html[Configuring Camel]
-* link:component.html[Component]
-* link:endpoint.html[Endpoint]
+* Getting Started
+* Configuring Camel
+* Component
+* Endpoint

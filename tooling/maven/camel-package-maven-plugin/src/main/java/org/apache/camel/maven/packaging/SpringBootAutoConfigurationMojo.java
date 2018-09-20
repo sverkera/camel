@@ -40,6 +40,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Generated;
+import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.camel.maven.packaging.model.ComponentModel;
 import org.apache.camel.maven.packaging.model.ComponentOptionModel;
@@ -50,6 +51,7 @@ import org.apache.camel.maven.packaging.model.LanguageModel;
 import org.apache.camel.maven.packaging.model.LanguageOptionModel;
 import org.apache.camel.maven.packaging.model.OtherModel;
 import org.apache.camel.maven.packaging.model.OtherOptionModel;
+import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
 import org.apache.commons.io.FileUtils;
@@ -71,27 +73,22 @@ import org.jboss.forge.roaster.model.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionMessage;
-import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
-import org.springframework.boot.bind.RelaxedPropertyResolver;
 import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
-import org.springframework.core.type.AnnotatedTypeMetadata;
 
 import static org.apache.camel.maven.packaging.JSonSchemaHelper.getPropertyDefaultValue;
+import static org.apache.camel.maven.packaging.JSonSchemaHelper.getPropertyDescriptionValue;
 import static org.apache.camel.maven.packaging.JSonSchemaHelper.getPropertyJavaType;
 import static org.apache.camel.maven.packaging.JSonSchemaHelper.getPropertyType;
 import static org.apache.camel.maven.packaging.JSonSchemaHelper.getSafeValue;
@@ -119,9 +116,16 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
     private static final String INNER_TYPE_SUFFIX = "NestedConfiguration";
 
     /**
-     * Classes to exclude when adding {@link NestedConfigurationProperty} annotations.
+     * Classes to include when adding {@link NestedConfigurationProperty} annotations.
      */
-    private static final Pattern EXCLUDE_INNER_PATTERN = Pattern.compile("^((java\\.)|(javax\\.)|(org\\.springframework\\.context\\.ApplicationContext)|(freemarker\\.template\\.Configuration)).*");
+    private static final Pattern INCLUDE_INNER_PATTERN = Pattern.compile("org\\.apache\\.camel\\..*");
+
+    /**
+     * Whether to enable adding @NestedConfigurationProperty annotations to options.
+     * This is disabled as the generated options likely is not configurable as plain POJOs
+     * and there is also no documentation for each of the generated options.
+     */
+    private static final boolean ADD_NESTED_CONFIGURATION_PROPERTY = false;
 
     private static final Map<String, String> PRIMITIVEMAP;
 
@@ -420,6 +424,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 type = "java.util.Map<java.lang.String, java.lang.Object>";
             }
 
+            // to avoid ugly names such as c-o-r-s
             if ("enableCORS".equalsIgnoreCase(name)) {
                 name = "enableCors";
             }
@@ -555,7 +560,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         // find the component names
         List<String> componentNames = findComponentNames();
 
-        final Set<File> jsonFiles = new TreeSet<File>();
+        final Set<File> jsonFiles = new TreeSet<>();
         PackageHelper.findJsonFiles(buildDir, jsonFiles, new PackageHelper.CamelComponentsModelFilter());
 
         // create auto configuration for the components
@@ -603,7 +608,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         // find the data format names
         List<String> dataFormatNames = findDataFormatNames();
 
-        final Set<File> jsonFiles = new TreeSet<File>();
+        final Set<File> jsonFiles = new TreeSet<>();
         // we can reuse the component model filter
         PackageHelper.findJsonFiles(buildDir, jsonFiles, new PackageHelper.CamelComponentsModelFilter());
 
@@ -649,7 +654,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         // find the language names
         List<String> languageNames = findLanguageNames();
 
-        final Set<File> jsonFiles = new TreeSet<File>();
+        final Set<File> jsonFiles = new TreeSet<>();
         // we can reuse the component model filter
         PackageHelper.findJsonFiles(buildDir, jsonFiles, new PackageHelper.CamelComponentsModelFilter());
 
@@ -701,6 +706,13 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         javaClass.extendSuperType(Roaster.create(JavaClassSource.class).setName("ComponentConfigurationPropertiesCommon"));
         javaClass.addImport("org.apache.camel.spring.boot.ComponentConfigurationPropertiesCommon");
 
+        // add bogus field for enabled so spring boot tooling can get the javadoc as description in its metadata
+        PropertySource<JavaClassSource> bogus = javaClass.addProperty("java.lang.Boolean", "enabled");
+        String scheme = overrideComponentName != null ? overrideComponentName : model.getScheme();
+        bogus.getField().getJavaDoc().setText("Whether to enable auto configuration of the " + scheme + " component. This is enabled by default.");
+        bogus.removeAccessor();
+        bogus.removeMutator();
+
         String doc = "Generated by camel-package-maven-plugin - do not edit this file!";
         if (!Strings.isBlank(model.getDescription())) {
             doc = model.getDescription() + "\n\n" + doc;
@@ -726,18 +738,32 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
             // generate inner class for non-primitive options
             type = getSimpleJavaType(type);
             JavaClassSource javaClassSource = readJavaType(type);
-            if (isNestedProperty(nestedTypes, javaClassSource)) {
+            boolean isNestedProperty = isNestedProperty(nestedTypes, javaClassSource);
+            if (isNestedProperty) {
                 type = option.getShortJavaType() + INNER_TYPE_SUFFIX;
             }
 
+            // spring-boot auto configuration does not support complex types (unless they are enum, nested)
+            // and if so then we should use a String type so spring-boot and its tooling support that
+            // as Camel will be able to convert the string value into a lookup of the bean in the registry anyway
+            // and therefore there is no problem, eg camel.component.jdbc.data-source = myDataSource
+            // where the type would have been javax.sql.DataSource
+            boolean complex = isComplexType(option) && !isNestedProperty && Strings.isBlank(option.getEnums());
+            if (complex) {
+                // force to use a string type
+                type = "java.lang.String";
+            }
+
             PropertySource<JavaClassSource> prop = javaClass.addProperty(type, option.getName());
-            if (!type.endsWith(INNER_TYPE_SUFFIX)
-                && type.indexOf('[') == -1
-                && !EXCLUDE_INNER_PATTERN.matcher(type).matches()
-                && Strings.isBlank(option.getEnums())
-                && (javaClassSource == null || (javaClassSource.isClass() && !javaClassSource.isAbstract()))) {
-                // add nested configuration annotation for complex properties
-                prop.getField().addAnnotation(NestedConfigurationProperty.class);
+            if (ADD_NESTED_CONFIGURATION_PROPERTY) {
+                if (!type.endsWith(INNER_TYPE_SUFFIX)
+                    && type.indexOf('[') == -1
+                    && INCLUDE_INNER_PATTERN.matcher(type).matches()
+                    && Strings.isBlank(option.getEnums())
+                    && (javaClassSource == null || (javaClassSource.isClass() && !javaClassSource.isAbstract()))) {
+                    // add nested configuration annotation for complex properties
+                    prop.getField().addAnnotation(NestedConfigurationProperty.class);
+                }
             }
             if ("true".equals(option.getDeprecated())) {
                 prop.getField().addAnnotation(Deprecated.class);
@@ -747,7 +773,14 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 prop.getAccessor().addAnnotation(DeprecatedConfigurationProperty.class);
             }
             if (!Strings.isBlank(option.getDescription())) {
-                prop.getField().getJavaDoc().setFullText(option.getDescription());
+                String desc = option.getDescription();
+                if (complex) {
+                    if (!desc.endsWith(".")) {
+                        desc = desc + ".";
+                    }
+                    desc = desc + " The option is a " + option.getJavaType() + " type.";
+                }
+                prop.getField().getJavaDoc().setFullText(desc);
             }
             if (!Strings.isBlank(option.getDefaultValue())) {
                 if ("java.lang.String".equals(option.getJavaType())) {
@@ -766,6 +799,16 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
             }
         }
 
+        createComponentConfigurationSourceInnerClass(javaClass, nestedTypes, model);
+
+        sortImports(javaClass);
+
+        String fileName = packageName.replaceAll("\\.", "\\/") + "/" + name + ".java";
+
+        writeSourceIfChanged(javaClass, fileName);
+    }
+
+    private void createComponentConfigurationSourceInnerClass(JavaClassSource javaClass, Set<JavaClassSource> nestedTypes, ComponentModel model) throws MojoFailureException {
         // add inner classes for nested AutoConfiguration options
         ClassLoader projectClassLoader = getProjectClassLoader();
         for (JavaClassSource nestedType : nestedTypes) {
@@ -787,10 +830,17 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 PropertySource<JavaClassSource> sourceProp = resolvedProperty.propertySource;
 
                 Type<JavaClassSource> propType = sourceProp.getType();
+
+                // skip these types
+                boolean ignore = sourceProp.getAnnotation(XmlTransient.class) != null;
+                if (ignore || propType.isType("CamelContext")) {
+                    continue;
+                }
+
                 final PropertySource<JavaClassSource> prop = innerClass.addProperty(optionType, sourceProp.getName());
 
                 boolean anEnum;
-                Class optionClass;
+                Class<?> optionClass;
                 if (!propType.isArray()) {
                     optionClass = loadClass(projectClassLoader, optionType);
                     anEnum = optionClass.isEnum();
@@ -800,14 +850,16 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 }
 
                 // add nested configuration annotation for complex properties
-                if (!EXCLUDE_INNER_PATTERN.matcher(optionType).matches()
-                    && !propType.isArray()
-                    && !anEnum
-                    && optionClass != null
-                    && !optionClass.isInterface()
-                    && !optionClass.isAnnotation()
-                    && !Modifier.isAbstract(optionClass.getModifiers())) {
-                    prop.getField().addAnnotation(NestedConfigurationProperty.class);
+                if (ADD_NESTED_CONFIGURATION_PROPERTY) {
+                    if (INCLUDE_INNER_PATTERN.matcher(optionType).matches()
+                        && !propType.isArray()
+                        && !anEnum
+                        && optionClass != null
+                        && !optionClass.isInterface()
+                        && !optionClass.isAnnotation()
+                        && !Modifier.isAbstract(optionClass.getModifiers())) {
+                        prop.getField().addAnnotation(NestedConfigurationProperty.class);
+                    }
                 }
                 if (sourceProp.hasAnnotation(Deprecated.class)) {
                     prop.getField().addAnnotation(Deprecated.class);
@@ -817,12 +869,22 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                     prop.getAccessor().addAnnotation(DeprecatedConfigurationProperty.class);
                 }
 
+                // find description for the nested type on its field/setter javadoc or via Camel annotations
                 String description = null;
                 final MethodSource<JavaClassSource> mutator = sourceProp.getMutator();
                 if (mutator.hasJavaDoc()) {
                     description = mutator.getJavaDoc().getFullText();
                 } else if (sourceProp.hasField()) {
                     description = sourceProp.getField().getJavaDoc().getFullText();
+                }
+                if (Strings.isBlank(description) && sourceProp.hasAnnotation(UriPath.class)) {
+                    description = sourceProp.getAnnotation(UriPath.class).getStringValue("description");
+                }
+                if (Strings.isBlank(description) && sourceProp.hasAnnotation(UriParam.class)) {
+                    description = sourceProp.getAnnotation(UriParam.class).getStringValue("description");
+                }
+                if (Strings.isBlank(description) && sourceProp.hasAnnotation(Metadata.class)) {
+                    description = sourceProp.getAnnotation(Metadata.class).getStringValue("description");
                 }
                 if (!Strings.isBlank(description)) {
                     prop.getField().getJavaDoc().setFullText(description);
@@ -860,6 +922,11 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                                 javaType = getPropertyJavaType(rows, optionName);
                                 type = getPropertyType(rows, optionName);
                                 defaultValue = getPropertyDefaultValue(rows, optionName);
+                                // favour description from the model
+                                description = getPropertyDescriptionValue(rows, optionName);
+                                if (description != null) {
+                                    prop.getField().getJavaDoc().setFullText(description);
+                                }
                             }
                         } catch (IOException e) {
                             // ignore
@@ -893,12 +960,21 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 }
             }
         }
+    }
 
-        sortImports(javaClass);
+    private boolean isComplexType(ComponentOptionModel option) {
+        // all the object types are complex
+        return "object".equals(option.getType());
+    }
 
-        String fileName = packageName.replaceAll("\\.", "\\/") + "/" + name + ".java";
+    private boolean isComplexType(DataFormatOptionModel option) {
+        // all the object types are complex
+        return "object".equals(option.getType());
+    }
 
-        writeSourceIfChanged(javaClass, fileName);
+    private boolean isComplexType(LanguageOptionModel option) {
+        // all the object types are complex
+        return "object".equals(option.getType());
     }
 
     // resolved property type name and property source, Roaster doesn't resolve inner classes correctly
@@ -930,8 +1006,8 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
     }
 
     // try loading class, looking for inner classes if needed
-    private Class loadClass(ClassLoader projectClassLoader, String loadClassName) throws MojoFailureException {
-        Class optionClass;
+    private Class<?> loadClass(ClassLoader projectClassLoader, String loadClassName) throws MojoFailureException {
+        Class<?> optionClass;
         while (true) {
             try {
                 optionClass = projectClassLoader.loadClass(loadClassName);
@@ -962,7 +1038,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
     }
 
     protected ClassLoader getProjectClassLoader() throws MojoFailureException {
-        final List classpathElements;
+        final List<?> classpathElements;
         try {
             classpathElements = project.getTestClasspathElements();
         } catch (org.apache.maven.artifact.DependencyResolutionRequiredException e) {
@@ -970,7 +1046,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         }
         final URL[] urls = new URL[classpathElements.size()];
         int i = 0;
-        for (Iterator it = classpathElements.iterator(); it.hasNext(); i++) {
+        for (Iterator<?> it = classpathElements.iterator(); it.hasNext(); i++) {
             try {
                 urls[i] = new File((String) it.next()).toURI().toURL();
             } catch (MalformedURLException e) {
@@ -1055,6 +1131,12 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         javaClass.extendSuperType(Roaster.create(JavaClassSource.class).setName("DataFormatConfigurationPropertiesCommon"));
         javaClass.addImport("org.apache.camel.spring.boot.DataFormatConfigurationPropertiesCommon");
 
+        // add bogus field for enabled so spring boot tooling can get the javadoc as description in its metadata
+        PropertySource<JavaClassSource> bogus = javaClass.addProperty("java.lang.Boolean", "enabled");
+        bogus.getField().getJavaDoc().setText("Whether to enable auto configuration of the " + model.getName() + " data format. This is enabled by default.");
+        bogus.removeAccessor();
+        bogus.removeMutator();
+
         String doc = "Generated by camel-package-maven-plugin - do not edit this file!";
         if (!Strings.isBlank(model.getDescription())) {
             doc = model.getDescription() + "\n\n" + doc;
@@ -1075,6 +1157,17 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
             String type = option.getJavaType();
             type = getSimpleJavaType(type);
 
+            // spring-boot auto configuration does not support complex types (unless they are enum, nested)
+            // and if so then we should use a String type so spring-boot and its tooling support that
+            // as Camel will be able to convert the string value into a lookup of the bean in the registry anyway
+            // and therefore there is no problem, eg camel.component.jdbc.data-source = myDataSource
+            // where the type would have been javax.sql.DataSource
+            boolean complex = isComplexType(option) && Strings.isBlank(option.getEnumValues());
+            if (complex) {
+                // force to use a string type
+                type = "java.lang.String";
+            }
+
             PropertySource<JavaClassSource> prop = javaClass.addProperty(type, option.getName());
             if ("true".equals(option.getDeprecated())) {
                 prop.getField().addAnnotation(Deprecated.class);
@@ -1084,7 +1177,14 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 prop.getAccessor().addAnnotation(DeprecatedConfigurationProperty.class);
             }
             if (!Strings.isBlank(option.getDescription())) {
-                prop.getField().getJavaDoc().setFullText(option.getDescription());
+                String desc = option.getDescription();
+                if (complex) {
+                    if (!desc.endsWith(".")) {
+                        desc = desc + ".";
+                    }
+                    desc = desc + " The option is a " + option.getJavaType() + " type.";
+                }
+                prop.getField().getJavaDoc().setFullText(desc);
             }
             if (!Strings.isBlank(option.getDefaultValue())) {
                 if ("java.lang.String".equals(option.getJavaType())) {
@@ -1119,6 +1219,12 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         javaClass.setPackage(packageName).setName(name);
         javaClass.extendSuperType(Roaster.create(JavaClassSource.class).setName("LanguageConfigurationPropertiesCommon"));
         javaClass.addImport("org.apache.camel.spring.boot.LanguageConfigurationPropertiesCommon");
+
+        // add bogus field for enabled so spring boot tooling can get the javadoc as description in its metadata
+        PropertySource<JavaClassSource> bogus = javaClass.addProperty("java.lang.Boolean", "enabled");
+        bogus.getField().getJavaDoc().setText("Whether to enable auto configuration of the " + model.getName() + " language. This is enabled by default.");
+        bogus.removeAccessor();
+        bogus.removeMutator();
 
         String doc = "Generated by camel-package-maven-plugin - do not edit this file!";
         if (!Strings.isBlank(model.getDescription())) {
@@ -1170,6 +1276,17 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
             String type = option.getJavaType();
             type = getSimpleJavaType(type);
 
+            // spring-boot auto configuration does not support complex types (unless they are enum, nested)
+            // and if so then we should use a String type so spring-boot and its tooling support that
+            // as Camel will be able to convert the string value into a lookup of the bean in the registry anyway
+            // and therefore there is no problem, eg camel.component.jdbc.data-source = myDataSource
+            // where the type would have been javax.sql.DataSource
+            boolean complex = isComplexType(option) && Strings.isBlank(option.getEnumValues());
+            if (complex) {
+                // force to use a string type
+                type = "java.lang.String";
+            }
+
             PropertySource<JavaClassSource> prop = javaClass.addProperty(type, option.getName());
             if ("true".equals(option.getDeprecated())) {
                 prop.getField().addAnnotation(Deprecated.class);
@@ -1179,7 +1296,14 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 prop.getAccessor().addAnnotation(DeprecatedConfigurationProperty.class);
             }
             if (!Strings.isBlank(option.getDescription())) {
-                prop.getField().getJavaDoc().setFullText(option.getDescription());
+                String desc = option.getDescription();
+                if (complex) {
+                    if (!desc.endsWith(".")) {
+                        desc = desc + ".";
+                    }
+                    desc = desc + " The option is a " + option.getJavaType() + " type.";
+                }
+                prop.getField().getJavaDoc().setFullText(desc);
             }
             if (!Strings.isBlank(option.getDefaultValue())) {
                 if ("java.lang.String".equals(option.getJavaType())) {
@@ -1702,7 +1826,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         return sb.toString();
     }
 
-    private static void sortImports(Importer importer) {
+    private static void sortImports(Importer<JavaClassSource> importer) {
         // sort imports
         List<Import> imports = importer.getImports();
 
@@ -1983,7 +2107,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
     }
 
     private List<String> findComponentNames() {
-        List<String> componentNames = new ArrayList<String>();
+        List<String> componentNames = new ArrayList<>();
         for (Resource r : project.getBuild().getResources()) {
             File f = new File(r.getDirectory());
             if (!f.exists()) {
@@ -2011,7 +2135,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
     }
 
     private List<String> findDataFormatNames() {
-        List<String> dataFormatNames = new ArrayList<String>();
+        List<String> dataFormatNames = new ArrayList<>();
         for (Resource r : project.getBuild().getResources()) {
             File f = new File(r.getDirectory());
             if (!f.exists()) {
@@ -2039,7 +2163,7 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
     }
 
     private List<String> findLanguageNames() {
-        List<String> languageNames = new ArrayList<String>();
+        List<String> languageNames = new ArrayList<>();
         for (Resource r : project.getBuild().getResources()) {
             File f = new File(r.getDirectory());
             if (!f.exists()) {
@@ -2174,54 +2298,6 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
         }
     }
 
-    /*
-    private void writeAdditionalSpringMetaData(String prefix, String type, String name) throws MojoFailureException {
-        String fullQualifiedName = prefix + "." + type + "." + name + "." + "enabled";
-        String fileName = "META-INF/additional-spring-configuration-metadata.json";
-        File target = new File(SpringBootHelper.starterResourceDir(baseDir, project.getArtifactId()), fileName);
-
-        deleteFileOnMainArtifact(target);
-
-        try {
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            Map<String, Object> map = null;
-            List<Map<String, Object>> properties = null;
-
-            if (target.exists()) {
-                BufferedReader br = new BufferedReader(new FileReader(target));
-                map = gson.fromJson(br, Map.class);
-
-                properties = (List<Map<String, Object>>)map.get("properties");
-                if (properties != null && properties.stream().anyMatch(m -> fullQualifiedName.equals(m.get("name")))) {
-                    getLog().debug("No changes to existing file: " + target);
-                    return;
-                }
-            }
-
-            Map<String, Object> meta = new HashMap();
-            meta.put("name", fullQualifiedName);
-            meta.put("type", "java.lang.Boolean");
-            meta.put("defaultValue", true);
-            meta.put("description", "Enable " + name + " " + type);
-
-            if (properties == null) {
-                properties = new ArrayList<>(1);
-            }
-
-            if (map == null) {
-                map = new HashMap();
-            }
-
-            properties.add(meta);
-            map.put("properties", properties);
-
-            FileUtils.write(target, gson.toJson(map));
-        } catch (Exception e) {
-            throw new MojoFailureException("IOError with file " + target, e);
-        }
-    }
-    */
-
     private void deleteFileOnMainArtifact(File starterFile) {
         if (!DELETE_FILES_ON_MAIN_ARTIFACTS) {
             return;
@@ -2235,51 +2311,6 @@ public class SpringBootAutoConfigurationMojo extends AbstractMojo {
                 throw new IllegalStateException("Cannot delete file " + mainArtifactFile);
             }
         }
-    }
-
-    private JavaClassSource createConditionType(JavaClassSource parentClass, String prefix, String type) {
-        parentClass.addImport(ConditionMessage.class);
-        parentClass.addImport(ConditionContext.class);
-        parentClass.addImport(ConditionOutcome.class);
-        parentClass.addImport(RelaxedPropertyResolver.class);
-        parentClass.addImport(AnnotatedTypeMetadata.class);
-        parentClass.addImport(SpringBootCondition.class);
-
-        JavaClassSource condition = Roaster.create(JavaClassSource.class);
-        condition.setName("Condition");
-        condition.extendSuperType(SpringBootCondition.class);
-        condition.setPublic();
-        condition.setStatic(true);
-
-        condition.addAnnotation(Generated.class).setStringValue("value", SpringBootAutoConfigurationMojo.class.getName());
-
-        String fullQualifiedType = prefix.endsWith(".") ? prefix +  type : prefix + "." + type;
-
-        MethodSource<JavaClassSource> isEnabled = condition.addMethod();
-        isEnabled.setName("isEnabled");
-        isEnabled.setPrivate();
-        isEnabled.addParameter(ConditionContext.class, "context");
-        isEnabled.addParameter(String.class, "prefix");
-        isEnabled.addParameter(boolean.class, "defaultValue");
-        isEnabled.setReturnType(boolean.class);
-        isEnabled.setBody(new StringBuilder()
-            .append("RelaxedPropertyResolver resolver = new RelaxedPropertyResolver(context.getEnvironment(), prefix);\n")
-            .append("return resolver.getProperty(\"enabled\", Boolean.class, defaultValue);")
-            .toString()
-        );
-
-        MethodSource<JavaClassSource> matchMethod = condition.getMethod("getMatchOutcome", ConditionContext.class, AnnotatedTypeMetadata.class);
-        matchMethod.setBody(new StringBuilder()
-            .append("boolean groupEnabled = isEnabled(conditionContext, \"").append(prefix).append(".\", true);\n")
-            .append("ConditionMessage.Builder message = ConditionMessage.forCondition(\"").append(fullQualifiedType).append("\");\n")
-            .append("if (isEnabled(conditionContext, \"").append(fullQualifiedType).append(".\", groupEnabled)) {\n")
-            .append("    return ConditionOutcome.match(message.because(\"enabled\"));\n")
-            .append("}\n")
-            .append("return ConditionOutcome.noMatch(message.because(\"not enabled\"));\n")
-            .toString()
-        );
-
-        return condition;
     }
 
 }

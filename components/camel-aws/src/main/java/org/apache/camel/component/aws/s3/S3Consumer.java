@@ -105,7 +105,7 @@ public class S3Consumer extends ScheduledBatchPollingConsumer {
     }
     
     protected Queue<Exchange> createExchanges(S3Object s3Object) {
-        Queue<Exchange> answer = new LinkedList<Exchange>();
+        Queue<Exchange> answer = new LinkedList<>();
         Exchange exchange = getEndpoint().createExchange(s3Object);
         answer.add(exchange);
         return answer;
@@ -117,7 +117,7 @@ public class S3Consumer extends ScheduledBatchPollingConsumer {
         }
 
         Collection<S3Object> s3Objects = new ArrayList<>();
-        Queue<Exchange> answer = new LinkedList<Exchange>();
+        Queue<Exchange> answer = new LinkedList<>();
         try {
             for (S3ObjectSummary s3ObjectSummary : s3ObjectSummaries) {
                 S3Object s3Object = getAmazonS3Client().getObject(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey());
@@ -127,7 +127,7 @@ public class S3Consumer extends ScheduledBatchPollingConsumer {
                 answer.add(exchange);
             }
         } catch (Throwable e) {
-            LOG.warn("Error getting S3Object due: " + e.getMessage(), e);
+            LOG.warn("Error getting S3Object due: {}", e.getMessage(), e);
             // ensure all previous gathered s3 objects are closed
             // if there was an exception creating the exchanges in this batch
             s3Objects.forEach(IOHelper::close);
@@ -209,7 +209,7 @@ public class S3Consumer extends ScheduledBatchPollingConsumer {
     protected void processRollback(Exchange exchange) {
         Exception cause = exchange.getException();
         if (cause != null) {
-            LOG.warn("Exchange failed, so rolling back message status: " + exchange, cause);
+            LOG.warn("Exchange failed, so rolling back message status: {}", exchange, cause);
         } else {
             LOG.warn("Exchange failed, so rolling back message status: {}", exchange);
         }

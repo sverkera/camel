@@ -25,12 +25,14 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
+import org.junit.Test;
 
 /**
  * @version 
  */
 public class ProxyReturnFutureListTest extends ContextTestSupport {
 
+    @Test
     public void testFutureList() throws Exception {
         Users service = ProxyHelper.createProxy(context.getEndpoint("direct:echo"), Users.class);
 
@@ -44,6 +46,7 @@ public class ProxyReturnFutureListTest extends ContextTestSupport {
         assertEquals("Jonathan", users.get(1));
     }
 
+    @Test
     public void testFutureListCallTwoTimes() throws Exception {
         Users service = ProxyHelper.createProxy(context.getEndpoint("direct:echo"), Users.class);
 
@@ -75,7 +78,7 @@ public class ProxyReturnFutureListTest extends ContextTestSupport {
                     .delay(50)
                     .process(new Processor() {
                         public void process(Exchange exchange) throws Exception {
-                            List<String> users = new ArrayList<String>();
+                            List<String> users = new ArrayList<>();
                             users.add("Claus");
                             users.add("Jonathan");
                             exchange.getIn().setBody(users);

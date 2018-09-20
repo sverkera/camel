@@ -19,16 +19,17 @@ package org.apache.camel.processor;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.model.OnExceptionDefinition;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class ErrorHandlerSupportTest extends TestCase {
+public class ErrorHandlerSupportTest extends Assert {
 
+    @Test
     public void testOnePolicyChildFirst() {
-        List<Class<? extends Throwable>> exceptions = new ArrayList<Class<? extends Throwable>>();
+        List<Class<? extends Throwable>> exceptions = new ArrayList<>();
         exceptions.add(ChildException.class);
         exceptions.add(ParentException.class);
 
@@ -39,8 +40,9 @@ public class ErrorHandlerSupportTest extends TestCase {
         assertEquals(ParentException.class, getExceptionPolicyFor(support, new ParentException(), 1));
     }
 
+    @Test
     public void testOnePolicyChildLast() {
-        List<Class<? extends Throwable>> exceptions = new ArrayList<Class<? extends Throwable>>();
+        List<Class<? extends Throwable>> exceptions = new ArrayList<>();
         exceptions.add(ParentException.class);
         exceptions.add(ChildException.class);
 
@@ -51,6 +53,7 @@ public class ErrorHandlerSupportTest extends TestCase {
         assertEquals(ParentException.class, getExceptionPolicyFor(support, new ParentException(), 0));
     }
 
+    @Test
     public void testTwoPolicyChildFirst() {
         ErrorHandlerSupport support = new ShuntErrorHandlerSupport();
         support.addExceptionPolicy(null, new OnExceptionDefinition(ChildException.class));
@@ -60,6 +63,7 @@ public class ErrorHandlerSupportTest extends TestCase {
         assertEquals(ParentException.class, getExceptionPolicyFor(support, new ParentException(), 0));
     }
 
+    @Test
     public void testTwoPolicyChildLast() {
         ErrorHandlerSupport support = new ShuntErrorHandlerSupport();
         support.addExceptionPolicy(null, new OnExceptionDefinition(ParentException.class));

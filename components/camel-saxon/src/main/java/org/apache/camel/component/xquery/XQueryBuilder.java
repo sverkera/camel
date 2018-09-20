@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMResult;
@@ -57,6 +58,7 @@ import net.sf.saxon.value.BooleanValue;
 import net.sf.saxon.value.DoubleValue;
 import net.sf.saxon.value.FloatValue;
 import net.sf.saxon.value.Int64Value;
+import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.ObjectValue;
 import net.sf.saxon.value.StringValue;
 import net.sf.saxon.value.Whitespace;
@@ -88,11 +90,11 @@ import org.slf4j.LoggerFactory;
 public abstract class XQueryBuilder implements Expression, Predicate, NamespaceAware, Processor {
     private static final Logger LOG = LoggerFactory.getLogger(XQueryBuilder.class);
     private Configuration configuration;
-    private Map<String, Object> configurationProperties = new HashMap<String, Object>();
+    private Map<String, Object> configurationProperties = new HashMap<>();
     private XQueryExpression expression;
     private StaticQueryContext staticQueryContext;
-    private Map<String, Object> parameters = new HashMap<String, Object>();
-    private Map<String, String> namespacePrefixes = new HashMap<String, String>();
+    private Map<String, Object> parameters = new HashMap<>();
+    private Map<String, String> namespacePrefixes = new HashMap<>();
     private ResultFormat resultsFormat = ResultFormat.DOM;
     private Properties properties = new Properties();
     private Class<?> resultType;
@@ -674,7 +676,7 @@ public abstract class XQueryBuilder implements Expression, Predicate, NamespaceA
         } else if (value instanceof Long) {
             return Int64Value.makeIntegerValue((Long) value);
         } else if (value instanceof BigInteger) {
-            return Int64Value.makeIntegerValue((BigInteger) value);
+            return IntegerValue.makeIntegerValue((BigInteger) value);
         } else if (value instanceof Double) {
             return DoubleValue.makeDoubleValue((double) value);
         } else if (value instanceof Float) {

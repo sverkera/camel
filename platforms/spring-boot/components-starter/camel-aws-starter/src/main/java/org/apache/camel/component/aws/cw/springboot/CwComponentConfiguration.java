@@ -34,6 +34,11 @@ public class CwComponentConfiguration
             ComponentConfigurationPropertiesCommon {
 
     /**
+     * Whether to enable auto configuration of the aws-cw component. This is
+     * enabled by default.
+     */
+    private Boolean enabled;
+    /**
      * The AWS CW default configuration
      */
     private CwConfigurationNestedConfiguration configuration;
@@ -101,10 +106,6 @@ public class CwComponentConfiguration
     public static class CwConfigurationNestedConfiguration {
         public static final Class CAMEL_NESTED_CLASS = org.apache.camel.component.aws.cw.CwConfiguration.class;
         /**
-         * The endpoint with which the AWS-CW client wants to work with.
-         */
-        private String amazonCwEndpoint;
-        /**
          * Amazon AWS Access Key
          */
         private String accessKey;
@@ -136,17 +137,18 @@ public class CwComponentConfiguration
          * To use the AmazonCloudWatch as the client
          */
         private AmazonCloudWatch amazonCwClient;
+        /**
+         * To define a proxy host when instantiating the CW client
+         */
         private String proxyHost;
+        /**
+         * To define a proxy port when instantiating the CW client
+         */
         private Integer proxyPort;
+        /**
+         * The region in which CW client needs to work
+         */
         private String region;
-
-        public String getAmazonCwEndpoint() {
-            return amazonCwEndpoint;
-        }
-
-        public void setAmazonCwEndpoint(String amazonCwEndpoint) {
-            this.amazonCwEndpoint = amazonCwEndpoint;
-        }
 
         public String getAccessKey() {
             return accessKey;

@@ -72,7 +72,7 @@ public class Jt400PgmProducer extends DefaultProducer {
         boolean result = pgmCall.run();
 
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Executed PGM '{}' in host '{}'. Success? {}", new Object[]{commandStr, iSeries.getSystemName(), result});
+            LOG.trace("Executed PGM '{}' in host '{}'. Success? {}", commandStr, iSeries.getSystemName(), result);
         }
 
         if (result) {
@@ -151,7 +151,7 @@ public class Jt400PgmProducer extends DefaultProducer {
         Object body = exchange.getIn().getMandatoryBody();
         Object[] params = (Object[]) body;
 
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
 
         int i = 1;
         for (ProgramParameter pgmParam : pgmCall.getParameterList()) {

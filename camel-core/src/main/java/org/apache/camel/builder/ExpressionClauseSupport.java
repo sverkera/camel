@@ -79,7 +79,10 @@ public class ExpressionClauseSupport<T> {
     }
 
     /**
-     * Specify the constant expression value
+     * Specify the constant expression value.
+     *
+     * <b>Important:</b> this is a fixed constant value that is only set once during starting up the route,
+     * do not use this if you want dynamic values during routing.
      */
     public T constant(Object value) {
         if (value instanceof String) {
@@ -835,7 +838,7 @@ public class ExpressionClauseSupport<T> {
     /**
      * Evaluates a token pair expression on the message body with XML content
      *
-     * @param tagName the the tag name of the child nodes to tokenize
+     * @param tagName the tag name of the child nodes to tokenize
      * @param inheritNamespaceTagName  optional parent or root tag name that contains namespace(s) to inherit
      * @param group to group by the given number
      * @return the builder to continue processing the DSL
@@ -847,7 +850,7 @@ public class ExpressionClauseSupport<T> {
     /**
      * Evaluates a token pair expression on the message body with XML content
      *
-     * @param tagName the the tag name of the child nodes to tokenize
+     * @param tagName the tag name of the child nodes to tokenize
      * @param inheritNamespaceTagName  optional parent or root tag name that contains namespace(s) to inherit
      * @param group to group by the given number
      * @return the builder to continue processing the DSL

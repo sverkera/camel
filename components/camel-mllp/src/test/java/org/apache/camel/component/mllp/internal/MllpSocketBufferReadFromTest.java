@@ -21,12 +21,9 @@ import java.net.SocketTimeoutException;
 
 import org.apache.camel.test.stub.tcp.SocketInputStreamStub;
 import org.apache.camel.test.stub.tcp.SocketStub;
-
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
@@ -83,7 +80,7 @@ public class MllpSocketBufferReadFromTest extends SocketBufferTestSupport {
             instance.readFrom(socketStub);
             fail("Should have thrown and exception");
         } catch (SocketTimeoutException expectedEx) {
-            assertArrayEquals("FOOBAR".getBytes(), instance.toByteArray());
+            assertNull(instance.toByteArray());
         }
     }
 }

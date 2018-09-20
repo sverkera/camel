@@ -83,7 +83,7 @@ import org.slf4j.LoggerFactory;
 public class CamelInternalProcessor extends DelegateAsyncProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(CamelInternalProcessor.class);
-    private final List<CamelInternalProcessorAdvice> advices = new ArrayList<CamelInternalProcessorAdvice>();
+    private final List<CamelInternalProcessorAdvice> advices = new ArrayList<>();
 
     public CamelInternalProcessor() {
     }
@@ -362,7 +362,7 @@ public class CamelInternalProcessor extends DelegateAsyncProcessor {
 
         protected void recordTime(Exchange exchange, long duration) {
             if (LOG.isTraceEnabled()) {
-                LOG.trace("{}Recording duration: {} millis for exchange: {}", new Object[]{type != null ? type + ": " : "", duration, exchange});
+                LOG.trace("{}Recording duration: {} millis for exchange: {}", type != null ? type + ": " : "", duration, exchange);
             }
 
             if (!exchange.isFailed() && exchange.getException() == null) {

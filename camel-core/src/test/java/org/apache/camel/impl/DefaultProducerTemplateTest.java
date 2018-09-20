@@ -28,12 +28,14 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.Test;
 
 /**
  * Unit test for DefaultProducerTemplate
  */
 public class DefaultProducerTemplateTest extends ContextTestSupport {
 
+    @Test
     public void testIn() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Bye World");
@@ -47,6 +49,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertSame(context, template.getCamelContext());
     }
 
+    @Test
     public void testInOut() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Bye Bye World");
@@ -58,6 +61,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertEquals("Bye Bye World", result);
     }
 
+    @Test
     public void testFault() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
@@ -69,6 +73,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertEquals("Faulty World", result);
     }
 
+    @Test
     public void testExceptionUsingBody() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
@@ -84,6 +89,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Test
     public void testExceptionOnRequestBodyWithResponseType() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
@@ -99,6 +105,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Test
     public void testExceptionUsingProcessor() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
@@ -116,6 +123,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Test
     public void testExceptionUsingExchange() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
@@ -130,6 +138,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Test
     public void testRequestExceptionUsingBody() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
@@ -145,6 +154,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Test
     public void testRequestExceptionUsingProcessor() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
@@ -162,6 +172,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Test
     public void testRequestExceptionUsingExchange() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
@@ -176,6 +187,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Test
     public void testRequestBody() throws Exception {
         // with endpoint as string uri
         Integer out = template.requestBody("direct:inout", "Hello", Integer.class);
@@ -184,7 +196,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         out = template.requestBodyAndHeader("direct:inout", "Hello", "foo", "bar", Integer.class);
         assertEquals(new Integer(123), out);
 
-        Map<String, Object> headers = new HashMap<String, Object>();
+        Map<String, Object> headers = new HashMap<>();
         out = template.requestBodyAndHeaders("direct:inout", "Hello", headers, Integer.class);
         assertEquals(new Integer(123), out);
 
@@ -196,11 +208,12 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         out = template.requestBodyAndHeader(endpoint, "Hello", "foo", "bar", Integer.class);
         assertEquals(new Integer(123), out);
 
-        headers = new HashMap<String, Object>();
+        headers = new HashMap<>();
         out = template.requestBodyAndHeaders(endpoint, "Hello", headers, Integer.class);
         assertEquals(new Integer(123), out);
     }
 
+    @Test
     public void testRequestUsingDefaultEndpoint() throws Exception {
         ProducerTemplate producer = new DefaultProducerTemplate(context, context.getEndpoint("direct:out"));
         producer.start();
@@ -211,7 +224,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         out = producer.requestBodyAndHeader("Hello", "foo", 123);
         assertEquals("Bye Bye World", out);
 
-        Map<String, Object> headers = new HashMap<String, Object>();
+        Map<String, Object> headers = new HashMap<>();
         out = producer.requestBodyAndHeaders("Hello", headers);
         assertEquals("Bye Bye World", out);
 
@@ -221,6 +234,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         producer.stop();
     }
 
+    @Test
     public void testSendUsingDefaultEndpoint() throws Exception {
         ProducerTemplate producer = new DefaultProducerTemplate(context, context.getEndpoint("direct:in"));
         producer.start();
@@ -229,7 +243,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
 
         producer.sendBody("Hello");
         producer.sendBodyAndHeader("Hello", "foo", 123);
-        Map<String, Object> headers = new HashMap<String, Object>();
+        Map<String, Object> headers = new HashMap<>();
         producer.sendBodyAndHeaders("Hello", headers);
 
         assertMockEndpointsSatisfied();
@@ -279,6 +293,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         };
     }
 
+    @Test
     public void testCacheProducers() throws Exception {
         ProducerTemplate template = new DefaultProducerTemplate(context);
         template.setMaximumCacheSize(500);
@@ -302,6 +317,7 @@ public class DefaultProducerTemplateTest extends ContextTestSupport {
         assertEquals("Size should be 0", 0, template.getCurrentCacheSize());
     }
 
+    @Test
     public void testCacheProducersFromContext() throws Exception {
         ProducerTemplate template = context.createProducerTemplate(500);
 

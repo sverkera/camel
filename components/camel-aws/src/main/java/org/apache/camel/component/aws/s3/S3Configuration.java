@@ -49,8 +49,6 @@ public class S3Configuration implements Cloneable {
     @UriParam(label = "producer", defaultValue = "" + 25 * 1024 * 1024)
     private long partSize = 25 * 1024 * 1024;
     @UriParam
-    private String amazonS3Endpoint;
-    @UriParam
     private String policy;
     @UriParam(label = "producer")
     private String storageClass;
@@ -86,6 +84,8 @@ public class S3Configuration implements Cloneable {
     private boolean useAwsKMS;
     @UriParam(label = "producer,advanced")
     private String awsKMSKeyId;
+    @UriParam(defaultValue = "false")
+    private boolean useIAMCredentials;
 
     public long getPartSize() {
         return partSize;
@@ -109,17 +109,6 @@ public class S3Configuration implements Cloneable {
      */
     public void setMultiPartUpload(boolean multiPartUpload) {
         this.multiPartUpload = multiPartUpload;
-    }
-
-    /**
-     * The region with which the AWS-S3 client wants to work with.
-     */
-    public void setAmazonS3Endpoint(String amazonS3Endpoint) {
-        this.amazonS3Endpoint = amazonS3Endpoint;
-    }
-
-    public String getAmazonS3Endpoint() {
-        return amazonS3Endpoint;
     }
 
     public String getAccessKey() {
@@ -197,8 +186,7 @@ public class S3Configuration implements Cloneable {
     }
 
     /**
-     * The region where the bucket is located. This option is used in the
-     * `com.amazonaws.services.s3.model.CreateBucketRequest`.
+     * The region in which S3 client needs to work
      */
     public void setRegion(String region) {
         this.region = region;
@@ -417,7 +405,7 @@ public class S3Configuration implements Cloneable {
     public boolean isDualstackEnabled() {
         return dualstackEnabled;
     }
-    
+
     /**
      * Define if Dualstack enabled is true or false
      */
@@ -447,7 +435,19 @@ public class S3Configuration implements Cloneable {
         this.forceGlobalBucketAccessEnabled = forceGlobalBucketAccessEnabled;
     }
 
-    boolean hasProxyConfiguration() {
+    /**
+     * Set whether the S3 client should expect to load credentials on an EC2 instance or to
+     * expect static credentials to be passed in.
+     */
+    public void setUseIAMCredentials(Boolean useIAMCredentials) {
+        this.useIAMCredentials = useIAMCredentials;
+    }
+
+    public Boolean isUseIAMCredentials() {
+        return useIAMCredentials;
+    }
+
+    public boolean hasProxyConfiguration() {
         return ObjectHelper.isNotEmpty(getProxyHost()) && ObjectHelper.isNotEmpty(getProxyPort());
     }
     

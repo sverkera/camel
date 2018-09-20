@@ -19,8 +19,8 @@ package org.apache.camel.builder;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
 import java.util.function.Supplier;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
 import org.apache.camel.Message;
@@ -39,11 +39,11 @@ public class ExpressionClause<T> extends ExpressionDefinition {
     private ExpressionClauseSupport<T> delegate;
 
     public ExpressionClause(T result) {
-        this.delegate = new ExpressionClauseSupport<T>(result);
+        this.delegate = new ExpressionClauseSupport<>(result);
     }
 
     public static <T extends ExpressionNode> ExpressionClause<T> createAndSetExpression(T result) {
-        ExpressionClause<T> clause = new ExpressionClause<T>(result);
+        ExpressionClause<T> clause = new ExpressionClause<>(result);
         result.setExpression(clause);
         return clause;
     }
@@ -59,7 +59,10 @@ public class ExpressionClause<T> extends ExpressionDefinition {
     }
 
     /**
-     * Specify the constant expression value
+     * Specify the constant expression value.
+     *
+     * <b>Important:</b> this is a fixed constant value that is only set once during starting up the route,
+     * do not use this if you want dynamic values during routing.
      */
     public T constant(Object value) {
         return delegate.constant(value);
@@ -851,7 +854,7 @@ public class ExpressionClause<T> extends ExpressionDefinition {
     /**
      * Evaluates a XML token expression on the message body with XML content
      *
-     * @param tagName the the tag name of the child nodes to tokenize
+     * @param tagName the tag name of the child nodes to tokenize
      * @return the builder to continue processing the DSL
      */
     public T tokenizeXML(String tagName) {
@@ -861,7 +864,7 @@ public class ExpressionClause<T> extends ExpressionDefinition {
     /**
      * Evaluates a XML token expression on the message body with XML content
      *
-     * @param tagName the the tag name of the child nodes to tokenize
+     * @param tagName the tag name of the child nodes to tokenize
      * @param group to group by the given number
      * @return the builder to continue processing the DSL
      */
@@ -872,7 +875,7 @@ public class ExpressionClause<T> extends ExpressionDefinition {
     /**
      * Evaluates a token pair expression on the message body with XML content
      *
-     * @param tagName the the tag name of the child nodes to tokenize
+     * @param tagName the tag name of the child nodes to tokenize
      * @param inheritNamespaceTagName  parent or root tag name that contains namespace(s) to inherit
      * @return the builder to continue processing the DSL
      */
@@ -883,7 +886,7 @@ public class ExpressionClause<T> extends ExpressionDefinition {
     /**
      * Evaluates a token pair expression on the message body with XML content
      *
-     * @param tagName the the tag name of the child nodes to tokenize
+     * @param tagName the tag name of the child nodes to tokenize
      * @param inheritNamespaceTagName  parent or root tag name that contains namespace(s) to inherit
      * @param group to group by the given number
      * @return the builder to continue processing the DSL

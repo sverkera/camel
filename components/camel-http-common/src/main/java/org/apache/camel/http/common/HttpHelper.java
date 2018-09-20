@@ -90,10 +90,8 @@ public final class HttpHelper {
     @SuppressWarnings("deprecation")
     public static void setCharsetFromContentType(String contentType, Exchange exchange) {
         if (contentType != null) {
-            // find the charset and set it to the Exchange
-            int index = contentType.indexOf("charset=");
-            if (index > 0) {
-                String charset = contentType.substring(index + 8);
+            String charset = getCharsetFromContentType(contentType);
+            if (charset != null) {
                 exchange.setProperty(Exchange.CHARSET_NAME, IOConverter.normalizeCharset(charset));
             }
         }
@@ -107,7 +105,7 @@ public final class HttpHelper {
                 String charset = contentType.substring(index + 8);
                 // there may be another parameter after a semi colon, so skip that
                 if (charset.contains(";")) {
-                    charset = ObjectHelper.before(charset, ";");
+                    charset = StringHelper.before(charset, ";");
                 }
                 return IOHelper.normalizeCharset(charset);
             }
@@ -357,7 +355,7 @@ public final class HttpHelper {
             if (existing instanceof List) {
                 list = (List<Object>) existing;
             } else {
-                list = new ArrayList<Object>();
+                list = new ArrayList<>();
                 list.add(existing);
             }
             list.add(value);
@@ -390,7 +388,7 @@ public final class HttpHelper {
         if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
             // remove the [ ] markers
             trimmed = trimmed.substring(1, trimmed.length() - 1);
-            List<String> list = new ArrayList<String>();
+            List<String> list = new ArrayList<>();
             String[] values = trimmed.split(",");
             for (String s : values) {
                 list.add(s.trim());
@@ -421,7 +419,7 @@ public final class HttpHelper {
             relativeUrl = endpoint.getHttpUri().toASCIIString();
             // strip query parameters from relative url
             if (relativeUrl.contains("?")) {
-                relativeUrl = ObjectHelper.before(relativeUrl, "?");
+                relativeUrl = StringHelper.before(relativeUrl, "?");
             }
             if (url.startsWith(relativeUrl)) {
                 baseUrl = url.substring(0, relativeUrl.length());

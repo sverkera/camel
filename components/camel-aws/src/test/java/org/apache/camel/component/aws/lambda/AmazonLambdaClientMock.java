@@ -22,8 +22,8 @@ import java.util.*;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.ResponseMetadata;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.lambda.AWSLambdaClient;
+import com.amazonaws.regions.Region;
+import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.model.AddPermissionRequest;
 import com.amazonaws.services.lambda.model.AddPermissionResult;
 import com.amazonaws.services.lambda.model.CreateAliasRequest;
@@ -36,6 +36,8 @@ import com.amazonaws.services.lambda.model.DeleteAliasRequest;
 import com.amazonaws.services.lambda.model.DeleteAliasResult;
 import com.amazonaws.services.lambda.model.DeleteEventSourceMappingRequest;
 import com.amazonaws.services.lambda.model.DeleteEventSourceMappingResult;
+import com.amazonaws.services.lambda.model.DeleteFunctionConcurrencyRequest;
+import com.amazonaws.services.lambda.model.DeleteFunctionConcurrencyResult;
 import com.amazonaws.services.lambda.model.DeleteFunctionRequest;
 import com.amazonaws.services.lambda.model.DeleteFunctionResult;
 import com.amazonaws.services.lambda.model.FunctionConfiguration;
@@ -67,6 +69,8 @@ import com.amazonaws.services.lambda.model.ListVersionsByFunctionRequest;
 import com.amazonaws.services.lambda.model.ListVersionsByFunctionResult;
 import com.amazonaws.services.lambda.model.PublishVersionRequest;
 import com.amazonaws.services.lambda.model.PublishVersionResult;
+import com.amazonaws.services.lambda.model.PutFunctionConcurrencyRequest;
+import com.amazonaws.services.lambda.model.PutFunctionConcurrencyResult;
 import com.amazonaws.services.lambda.model.RemovePermissionRequest;
 import com.amazonaws.services.lambda.model.RemovePermissionResult;
 import com.amazonaws.services.lambda.model.Runtime;
@@ -88,10 +92,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.joda.time.DateTime;
 
-public class AmazonLambdaClientMock extends AWSLambdaClient {
+public class AmazonLambdaClientMock implements AWSLambda {
 
     public AmazonLambdaClientMock() {
-        super(new BasicAWSCredentials("user", "secret"));
+        super();
     }
 
 
@@ -206,7 +210,7 @@ public class AmazonLambdaClientMock extends AWSLambdaClient {
     public InvokeResult invoke(InvokeRequest invokeRequest) {
         InvokeResult result = new InvokeResult();
 
-        Map<String, Object> payload = new HashMap<String, Object>();
+        Map<String, Object> payload = new HashMap<>();
         try {
             ObjectMapper mapper = new ObjectMapper();
             payload = mapper.readValue(StandardCharsets.UTF_8.decode(invokeRequest.getPayload()).toString(), new TypeReference<Map<String, String>>() {
@@ -217,11 +221,6 @@ public class AmazonLambdaClientMock extends AWSLambdaClient {
         String responsePayload = "{\"Hello\":\"" + payload.get("name") + "\"}";
         result.setPayload(ByteBuffer.wrap(responsePayload.getBytes()));
         return result;
-    }
-
-    @Override
-    public InvokeAsyncResult invokeAsync(InvokeAsyncRequest invokeAsyncRequest) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -248,7 +247,7 @@ public class AmazonLambdaClientMock extends AWSLambdaClient {
     public ListFunctionsResult listFunctions() {
 
         ListFunctionsResult result = new ListFunctionsResult();
-        Collection<FunctionConfiguration> listFunctions = new ArrayList<FunctionConfiguration>();
+        Collection<FunctionConfiguration> listFunctions = new ArrayList<>();
         FunctionConfiguration configuration = new FunctionConfiguration();
         configuration.setFunctionName("GetHelloWithName");
         configuration.setFunctionArn("arn:aws:lambda:eu-central-1:643534317684:function:GetHelloWithName");
@@ -328,9 +327,36 @@ public class AmazonLambdaClientMock extends AWSLambdaClient {
         throw new UnsupportedOperationException();
     }
 
-
     @Override
     public ResponseMetadata getCachedResponseMetadata(AmazonWebServiceRequest amazonWebServiceRequest) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setEndpoint(String endpoint) {   
+    }
+
+    @Override
+    public void setRegion(Region region) {
+    }
+
+    @Override
+    public DeleteFunctionConcurrencyResult deleteFunctionConcurrency(DeleteFunctionConcurrencyRequest deleteFunctionConcurrencyRequest) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public InvokeAsyncResult invokeAsync(InvokeAsyncRequest invokeAsyncRequest) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PutFunctionConcurrencyResult putFunctionConcurrency(PutFunctionConcurrencyRequest putFunctionConcurrencyRequest) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void shutdown() {
+        throw new UnsupportedOperationException();        
     }
 }

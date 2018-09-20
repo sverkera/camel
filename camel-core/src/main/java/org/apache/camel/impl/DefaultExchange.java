@@ -18,12 +18,12 @@ package org.apache.camel.impl;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
@@ -494,7 +494,7 @@ public final class DefaultExchange implements Exchange {
             // unit of work not yet registered so we store the on completion temporary
             // until the unit of work is assigned to this exchange by the unit of work
             if (onCompletions == null) {
-                onCompletions = new ArrayList<Synchronization>();
+                onCompletions = new ArrayList<>();
             }
             onCompletions.add(onCompletion);
         } else {
@@ -529,7 +529,7 @@ public final class DefaultExchange implements Exchange {
     public List<Synchronization> handoverCompletions() {
         List<Synchronization> answer = null;
         if (onCompletions != null) {
-            answer = new ArrayList<Synchronization>(onCompletions);
+            answer = new ArrayList<>(onCompletions);
             onCompletions.clear();
             onCompletions = null;
         }
@@ -560,11 +560,11 @@ public final class DefaultExchange implements Exchange {
     }
 
     protected Map<String, Object> createProperties() {
-        return new HashMap<>();
+        return new ConcurrentHashMap<>();
     }
 
     protected Map<String, Object> createProperties(Map<String, Object> properties) {
-        return new HashMap<>(properties);
+        return new ConcurrentHashMap<>(properties);
     }
 
     private static boolean isExcludePatternMatch(String key, String... excludePatterns) {

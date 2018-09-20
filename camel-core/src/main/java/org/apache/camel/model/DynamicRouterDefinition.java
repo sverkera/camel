@@ -18,6 +18,7 @@ package org.apache.camel.model;
 
 import java.util.Collections;
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -25,16 +26,12 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.camel.AsyncProcessor;
 import org.apache.camel.ErrorHandlerFactory;
-import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
 import org.apache.camel.Processor;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.processor.DynamicRouter;
-import org.apache.camel.processor.SendDynamicProcessor;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.RouteContext;
-
-import static org.apache.camel.builder.ExpressionBuilder.headerExpression;
 
 /**
  * Routes messages based on dynamic rules
@@ -65,6 +62,11 @@ public class DynamicRouterDefinition<Type extends ProcessorDefinition<Type>> ext
         return "DynamicRouter[" + getExpression() + "]";
     }
     
+    @Override
+    public String getShortName() {
+        return "dynamicRouter";
+    }
+
     @Override
     public String getLabel() {
         return "dynamicRouter[" + getExpression() + "]";

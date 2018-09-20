@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import javax.xml.bind.Binder;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -76,11 +77,11 @@ public class CamelNamespaceHandler extends NamespaceHandlerSupport {
     private static final Logger LOG = LoggerFactory.getLogger(CamelNamespaceHandler.class);
     protected BeanDefinitionParser endpointParser = new EndpointDefinitionParser();
     protected BeanDefinitionParser beanPostProcessorParser = new BeanDefinitionParser(CamelBeanPostProcessor.class, false);
-    protected Set<String> parserElementNames = new HashSet<String>();
-    protected Map<String, BeanDefinitionParser> parserMap = new HashMap<String, BeanDefinitionParser>();
+    protected Set<String> parserElementNames = new HashSet<>();
+    protected Map<String, BeanDefinitionParser> parserMap = new HashMap<>();
     
     private JAXBContext jaxbContext;
-    private Map<String, BeanDefinition> autoRegisterMap = new HashMap<String, BeanDefinition>();
+    private Map<String, BeanDefinition> autoRegisterMap = new HashMap<>();
 
     /**
      * Prepares the nodes before parsing.
@@ -170,7 +171,7 @@ public class CamelNamespaceHandler extends NamespaceHandlerSupport {
             }
         } catch (Throwable t) {
             // not running with camel-core-osgi so we fallback to the regular factory bean
-            LOG.trace("Cannot find class so assuming not running in OSGi container: " + t.getMessage());
+            LOG.trace("Cannot find class so assuming not running in OSGi container: {}", t.getMessage());
         }
         if (osgi) {
             LOG.info("OSGi environment detected.");
@@ -677,7 +678,7 @@ public class CamelNamespaceHandler extends NamespaceHandlerSupport {
             autoRegisterMap.put(id, definition);
             parserContext.registerComponent(new BeanComponentDefinition(definition, id));
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Registered default: {} with id: {} on camel context: {}", new Object[]{definition.getBeanClassName(), id, contextId});
+                LOG.debug("Registered default: {} with id: {} on camel context: {}", definition.getBeanClassName(), id, contextId);
             }
         } else {
             // ups we have already registered it before with same id, but on another camel context

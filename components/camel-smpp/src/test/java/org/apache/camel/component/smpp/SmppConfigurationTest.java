@@ -18,9 +18,9 @@ package org.apache.camel.component.smpp;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import java.util.HashMap;
 import java.util.Map;
+
 import org.jsmpp.bean.NumberingPlanIndicator;
 import org.jsmpp.bean.SMSCDeliveryReceipt;
 import org.jsmpp.bean.TypeOfNumber;
@@ -238,7 +238,7 @@ public class SmppConfigurationTest {
             public void onStateChange(SessionState arg0, SessionState arg1, Session arg2) {
             }
         });
-        Map<String, String> proxyHeaders = new HashMap<String, String>();
+        Map<String, String> proxyHeaders = new HashMap<>();
         proxyHeaders.put("X-Proxy-Header", "1");
         config.setProxyHeaders(proxyHeaders);
     }

@@ -19,6 +19,7 @@ package org.apache.camel.component.aws.xray;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.builder.NotifyBuilder;
 import org.apache.camel.component.aws.xray.TestDataBuilder.TestTrace;
 import org.apache.camel.test.spring.CamelSpringTestSupport;
@@ -26,6 +27,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 
 public class SpringAwsXRaySimpleRouteTest extends CamelSpringTestSupport {
 
@@ -45,7 +49,8 @@ public class SpringAwsXRaySimpleRouteTest extends CamelSpringTestSupport {
             template.sendBody("seda:dude", "Hello World");
         }
 
-        assertTrue(notify.matches(30, TimeUnit.SECONDS));
+        assertThat("Not all exchanges were fully processed",
+                notify.matches(30, TimeUnit.SECONDS), is(equalTo(true)));
 
         List<TestTrace> testData = Arrays.asList(
         TestDataBuilder.createTrace()

@@ -19,6 +19,7 @@ package org.apache.camel.spring;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -190,11 +191,11 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Spr
     @XmlElement(name = "hystrixConfiguration", type = HystrixConfigurationDefinition.class)
     private List<HystrixConfigurationDefinition> hystrixConfigurations;
     @XmlElement(name = "routeBuilder")
-    private List<RouteBuilderDefinition> builderRefs = new ArrayList<RouteBuilderDefinition>();
+    private List<RouteBuilderDefinition> builderRefs = new ArrayList<>();
     @XmlElement(name = "routeContextRef")
-    private List<RouteContextRefDefinition> routeRefs = new ArrayList<RouteContextRefDefinition>();
+    private List<RouteContextRefDefinition> routeRefs = new ArrayList<>();
     @XmlElement(name = "restContextRef")
-    private List<RestContextRefDefinition> restRefs = new ArrayList<RestContextRefDefinition>();
+    private List<RestContextRefDefinition> restRefs = new ArrayList<>();
     @XmlElement(name = "threadPoolProfile")
     private List<ThreadPoolProfileDefinition> threadPoolProfiles;
     @XmlElement(name = "threadPool")
@@ -210,21 +211,21 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Spr
     @XmlElement(name = "redeliveryPolicyProfile")
     private List<CamelRedeliveryPolicyFactoryBean> redeliveryPolicies;
     @XmlElement(name = "onException")
-    private List<OnExceptionDefinition> onExceptions = new ArrayList<OnExceptionDefinition>();
+    private List<OnExceptionDefinition> onExceptions = new ArrayList<>();
     @XmlElement(name = "onCompletion")
-    private List<OnCompletionDefinition> onCompletions = new ArrayList<OnCompletionDefinition>();
+    private List<OnCompletionDefinition> onCompletions = new ArrayList<>();
     @XmlElement(name = "intercept")
-    private List<InterceptDefinition> intercepts = new ArrayList<InterceptDefinition>();
+    private List<InterceptDefinition> intercepts = new ArrayList<>();
     @XmlElement(name = "interceptFrom")
-    private List<InterceptFromDefinition> interceptFroms = new ArrayList<InterceptFromDefinition>();
+    private List<InterceptFromDefinition> interceptFroms = new ArrayList<>();
     @XmlElement(name = "interceptSendToEndpoint")
-    private List<InterceptSendToEndpointDefinition> interceptSendToEndpoints = new ArrayList<InterceptSendToEndpointDefinition>();
+    private List<InterceptSendToEndpointDefinition> interceptSendToEndpoints = new ArrayList<>();
     @XmlElement(name = "restConfiguration")
     private RestConfigurationDefinition restConfiguration;
     @XmlElement(name = "rest")
-    private List<RestDefinition> rests = new ArrayList<RestDefinition>();
+    private List<RestDefinition> rests = new ArrayList<>();
     @XmlElement(name = "route")
-    private List<RouteDefinition> routes = new ArrayList<RouteDefinition>();
+    private List<RouteDefinition> routes = new ArrayList<>();
     @XmlTransient
     private SpringCamelContext context;
     @XmlTransient
@@ -304,7 +305,7 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Spr
 
         Boolean shutdownEager = CamelContextHelper.parseBoolean(getContext(), getShutdownEager());
         if (shutdownEager != null) {
-            LOG.debug("Using shutdownEager: " + shutdownEager);
+            LOG.debug("Using shutdownEager: {}", shutdownEager);
             getContext().setShutdownEager(shutdownEager);
         }
 
@@ -314,7 +315,7 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Spr
     protected void initCustomRegistry(SpringCamelContext context) {
         Registry registry = getBeanForType(Registry.class);
         if (registry != null) {
-            LOG.info("Using custom Registry: " + registry);
+            LOG.info("Using custom Registry: {}", registry);
             context.setRegistry(registry);
         }
     }
@@ -328,7 +329,7 @@ public class CamelContextFactoryBean extends AbstractCamelContextFactoryBean<Spr
             // setup properties component that uses this beans
             BridgePropertyPlaceholderConfigurer configurer = beans.values().iterator().next();
             String id = beans.keySet().iterator().next();
-            LOG.info("Bridging Camel and Spring property placeholder configurer with id: " + id);
+            LOG.info("Bridging Camel and Spring property placeholder configurer with id: {}", id);
 
             // get properties component
             PropertiesComponent pc = (PropertiesComponent) getContext().getComponent("properties", false);

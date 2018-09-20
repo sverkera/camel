@@ -42,7 +42,8 @@ import org.apache.commons.net.ftp.FTPFile;
  */
 @UriEndpoint(firstVersion = "1.1.0", scheme = "ftp", extendsScheme = "file", title = "FTP",
         syntax = "ftp:host:port/directoryName", alternativeSyntax = "ftp:username:password@host:port/directoryName",
-        consumerClass = FtpConsumer.class, label = "file")
+        consumerClass = FtpConsumer.class, label = "file",
+        excludeProperties = "readLockIdempotentReleaseAsync,readLockIdempotentReleaseAsyncPoolSize,readLockIdempotentReleaseDelay,readLockIdempotentReleaseExecutorService")
 @ManagedResource(description = "Managed FtpEndpoint")
 public class FtpEndpoint<T extends FTPFile> extends RemoteFileEndpoint<FTPFile> {
     protected int soTimeout;
@@ -94,7 +95,7 @@ public class FtpEndpoint<T extends FTPFile> extends RemoteFileEndpoint<FTPFile> 
     @Override
     protected RemoteFileConsumer<FTPFile> buildConsumer(Processor processor) {
         try {
-            return new FtpConsumer(this, processor, createRemoteFileOperations());
+            return new FtpConsumer(this, processor, createRemoteFileOperations(), createGenericFileStrategy());
         } catch (Exception e) {
             throw new FailedToCreateConsumerException(this, e);
         }
@@ -102,7 +103,7 @@ public class FtpEndpoint<T extends FTPFile> extends RemoteFileEndpoint<FTPFile> 
 
     protected GenericFileProducer<FTPFile> buildProducer() {
         try {
-            return new RemoteFileProducer<FTPFile>(this, createRemoteFileOperations());
+            return new RemoteFileProducer<>(this, createRemoteFileOperations());
         } catch (Exception e) {
             throw new FailedToCreateProducerException(this, e);
         }
@@ -144,7 +145,7 @@ public class FtpEndpoint<T extends FTPFile> extends RemoteFileEndpoint<FTPFile> 
 
         // then lookup ftp client parameters and set those
         if (ftpClientParameters != null) {
-            Map<String, Object> localParameters = new HashMap<String, Object>(ftpClientParameters);
+            Map<String, Object> localParameters = new HashMap<>(ftpClientParameters);
             // setting soTimeout has to be done later on FTPClient (after it has connected)
             Object timeout = localParameters.remove("soTimeout");
             if (timeout != null) {
@@ -153,7 +154,7 @@ public class FtpEndpoint<T extends FTPFile> extends RemoteFileEndpoint<FTPFile> 
             // and we want to keep data timeout so we can log it later
             timeout = localParameters.remove("dataTimeout");
             if (timeout != null) {
-                dataTimeout = getCamelContext().getTypeConverter().convertTo(int.class, dataTimeout);
+                dataTimeout = getCamelContext().getTypeConverter().convertTo(int.class, timeout);
             }
             setProperties(client, localParameters);
         }
@@ -163,7 +164,7 @@ public class FtpEndpoint<T extends FTPFile> extends RemoteFileEndpoint<FTPFile> 
             if (ftpClientConfig == null) {
                 ftpClientConfig = new FTPClientConfig();
             }
-            Map<String, Object> localConfigParameters = new HashMap<String, Object>(ftpClientConfigParameters);
+            Map<String, Object> localConfigParameters = new HashMap<>(ftpClientConfigParameters);
             setProperties(ftpClientConfig, localConfigParameters);
         }
 
@@ -251,7 +252,7 @@ public class FtpEndpoint<T extends FTPFile> extends RemoteFileEndpoint<FTPFile> 
      * Used by FtpComponent to provide additional parameters for the FTPClientConfig
      */
     void setFtpClientConfigParameters(Map<String, Object> ftpClientConfigParameters) {
-        this.ftpClientConfigParameters = new HashMap<String, Object>(ftpClientConfigParameters);
+        this.ftpClientConfigParameters = new HashMap<>(ftpClientConfigParameters);
     }
 
     public int getSoTimeout() {

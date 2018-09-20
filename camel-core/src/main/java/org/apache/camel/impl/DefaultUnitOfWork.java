@@ -187,7 +187,7 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
 
     public synchronized void addSynchronization(Synchronization synchronization) {
         if (synchronizations == null) {
-            synchronizations = new ArrayList<Synchronization>();
+            synchronizations = new ArrayList<>();
         }
         log.trace("Adding synchronization {}", synchronization);
         synchronizations.add(synchronization);
@@ -274,7 +274,7 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
     @Override
     public void beforeRoute(Exchange exchange, Route route) {
         if (log.isTraceEnabled()) {
-            log.trace("UnitOfWork beforeRoute: {} for ExchangeId: {} with {}", new Object[]{route.getId(), exchange.getExchangeId(), exchange});
+            log.trace("UnitOfWork beforeRoute: {} for ExchangeId: {} with {}", route.getId(), exchange.getExchangeId(), exchange);
         }
         UnitOfWorkHelper.beforeRouteSynchronizations(route, exchange, synchronizations, log);
     }
@@ -282,7 +282,7 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
     @Override
     public void afterRoute(Exchange exchange, Route route) {
         if (log.isTraceEnabled()) {
-            log.trace("UnitOfWork afterRoute: {} for ExchangeId: {} with {}", new Object[]{route.getId(), exchange.getExchangeId(), exchange});
+            log.trace("UnitOfWork afterRoute: {} for ExchangeId: {} with {}", route.getId(), exchange.getExchangeId(), exchange);
         }
         UnitOfWorkHelper.afterRouteSynchronizations(route, exchange, synchronizations, log);
     }
@@ -417,7 +417,7 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
 
     private Set<Object> getTransactedBy() {
         if (transactedBy == null) {
-            transactedBy = new LinkedHashSet<Object>();
+            transactedBy = new LinkedHashSet<>();
         }
         return transactedBy;
     }

@@ -132,7 +132,7 @@ public final class ArquillianPackager {
         }
         if (version == null) {
             // It is missing when launching from IDE
-            List<MavenResolvedArtifact> resolved = Arrays.asList(resolver(config).loadPomFromFile("pom.xml").importRuntimeDependencies().resolve().withoutTransitivity().asResolvedArtifact());
+            List<MavenResolvedArtifact> resolved = Arrays.asList(resolver(config).loadPomFromFile("pom.xml").importCompileAndRuntimeDependencies().resolve().withoutTransitivity().asResolvedArtifact());
             for (MavenResolvedArtifact dep : resolved) {
                 if (dep.getCoordinate().getGroupId().equals("org.apache.camel")) {
                     version = dep.getCoordinate().getVersion();
@@ -300,28 +300,41 @@ public final class ArquillianPackager {
         ignore.add("com.github.jnr");
         ignore.add("com.sun.xml.bind:jaxb-xjc");
         ignore.add("commons-beanutils:commons-beanutils");
+        ignore.add("io.dropwizard.metrics:metrics-json"); // PR to spring-boot
+        ignore.add("io.dropwizard.metrics:metrics-jvm"); // PR to spring-boot
         ignore.add("io.fabric8:kubernetes-");
         ignore.add("io.netty:netty:jar"); // an old version
         ignore.add("io.netty:netty-tcnative-boringssl-static");
         ignore.add("io.swagger:swagger-parser");
+        ignore.add("io.opentracing.contrib:opentracing-");
         ignore.add("org.apache.commons");
         ignore.add("org.apache.curator");
         ignore.add("org.apache.cxf:cxf-api");
         ignore.add("org.apache.geronimo.specs");
+        ignore.add("org.apache.flink:flink-shaded-asm");
+        ignore.add("org.apache.flink:flink-shaded-guava");
+        ignore.add("org.apache.flink:flink-shaded-jackson");
+        ignore.add("org.apache.flink:flink-shaded-netty");
+        ignore.add("org.apache.logging.log4j:log4j-jcl");
         ignore.add("org.apache.maven");
         ignore.add("org.apache.parquet");
+        ignore.add("org.apache.solr:solr-solrj"); // PR to spring-boot
         ignore.add("org.apache.velocity");
         ignore.add("org.apache.qpid:qpid-jms-client");
         ignore.add("org.opensaml");
         ignore.add("org.ow2.asm"); // No problem
         ignore.add("org.codehaus.plexus");
+        ignore.add("org.eclipse.jetty.websocket:websocket-api"); // PR to spring-boot
         ignore.add("org.jboss.arquillian.container");
         ignore.add("org.jboss:");
         ignore.add("org.hibernate:hibernate-validator"); // does not match with hibernate-core
         ignore.add("org.mortbay.jetty:servlet-api-2.5");
         ignore.add("org.scala-lang:scala-compiler");
+        ignore.add("org.slf4j:slf4j-ext"); // PR to spring-boot
         ignore.add("org.easytesting");
+        ignore.add("net.java.dev.jna:jna-platform"); // PR to spring-boot
         ignore.add("net.openhft");
+        ignore.add("org.scala-lang.modules:scala-java8-compat_2.11");
         ignore.add("net.sourceforge.htmlunit:htmlunit-core-js"); // v 2.21 does not exist
         ignore.add("org.springframework.cloud"); // too many different versions
         ignore.add("org.springframework.data");
@@ -331,7 +344,6 @@ public final class ArquillianPackager {
         ignore.add("org.webjars"); // No problem
         ignore.add("stax:stax-api");
         ignore.add("xml-apis:xml-apis-ext");
-        ignore.add("org.infinispan");
         ignore.add("org.jboss.logging");
         ignore.add("org.jboss.marshalling");
 
@@ -543,10 +555,6 @@ public final class ArquillianPackager {
 
     private static String enforceExclusions(ITestConfig config, String dependencyXml, List<MavenDependencyExclusion> exclusions) {
 
-        if (dependencyXml.contains("<groupId>org.springframework.boot</groupId>") && dependencyXml.contains("<artifactId>spring-boot-starter")) {
-            return dependencyXml;
-        }
-
         if (!dependencyXml.contains("<exclusions>")) {
             dependencyXml = dependencyXml.replace("</dependency>", "<exclusions></exclusions></dependency>");
         }
@@ -588,6 +596,10 @@ public final class ArquillianPackager {
         if (version == null) {
             boolean testsLib = dependencyXml.contains("<classifier>tests");
             stripVersion = !testsLib && BOMResolver.getInstance(config).getBOMVersion(groupId, artifactId) != null;
+            // skip if its org.infinispan as we need explict version to work-around a problem when using test-jar dependencies
+            if ("org.infinispan".equals(groupId)) {
+                stripVersion = false;
+            }
         }
 
         if (version != null) {
@@ -655,10 +667,10 @@ public final class ArquillianPackager {
 
                 final URLPackageScanner.Callback callback = new URLPackageScanner.Callback() {
                     @Override
-                    public void classFound(String className) {
+                    public void classFound(String className, Asset asset) {
                         ArchivePath classNamePath = AssetUtil.getFullPathForClassResource(className);
 
-                        Asset asset = new ClassLoaderAsset(classNamePath.get().substring(1), classLoader);
+                        asset = new ClassLoaderAsset(classNamePath.get().substring(1), classLoader);
                         ArchivePath location = new BasicPath(CLASSES_FOLDER + "/", classNamePath);
                         ark.add(asset, location);
                     }

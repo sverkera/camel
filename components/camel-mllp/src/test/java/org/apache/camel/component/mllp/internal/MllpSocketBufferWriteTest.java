@@ -20,7 +20,6 @@ package org.apache.camel.component.mllp.internal;
 import java.net.SocketTimeoutException;
 
 import org.apache.camel.component.mllp.MllpProtocolConstants;
-
 import org.apache.camel.test.stub.tcp.SocketStub;
 import org.junit.Test;
 
@@ -228,7 +227,7 @@ public class MllpSocketBufferWriteTest extends SocketBufferTestSupport {
             instance.write(payload, -5, payload.length);
             fail("Exception should have been thrown");
         } catch (IndexOutOfBoundsException expectedEx) {
-            assertEquals("offset <-5> is less than zero", expectedEx.getMessage());
+            assertEquals("write(byte[4], offset[-5], writeCount[4]) - offset is less than zero", expectedEx.getMessage());
         }
     }
 
@@ -245,7 +244,7 @@ public class MllpSocketBufferWriteTest extends SocketBufferTestSupport {
             instance.write(payload, payload.length + 1, payload.length);
             fail("Exception should have been thrown");
         } catch (IndexOutOfBoundsException expectedEx) {
-            assertEquals("offset <5> is greater than write count <4>", expectedEx.getMessage());
+            assertEquals("write(byte[4], offset[5], writeCount[4]) - offset is greater than write count", expectedEx.getMessage());
         }
     }
 
@@ -261,7 +260,7 @@ public class MllpSocketBufferWriteTest extends SocketBufferTestSupport {
             instance.write("BLAH".getBytes(), 0, -5);
             fail("Exception should have been thrown");
         } catch (IndexOutOfBoundsException expectedEx) {
-            assertEquals("write count <-5> is less than zero", expectedEx.getMessage());
+            assertEquals("write(byte[4], offset[0], writeCount[-5]) - write count is less than zero", expectedEx.getMessage());
         }
     }
 
@@ -278,21 +277,21 @@ public class MllpSocketBufferWriteTest extends SocketBufferTestSupport {
             instance.write(payload, 0, payload.length + 1);
             fail("Exception should have been thrown");
         } catch (IndexOutOfBoundsException expectedEx) {
-            assertEquals("write count <5> is greater than length of the source byte[] <4>", expectedEx.getMessage());
+            assertEquals("write(byte[4], offset[0], writeCount[5]) - write count is greater than length of the source byte[]", expectedEx.getMessage());
         }
 
         try {
             instance.write("BLAH".getBytes(), 1, payload.length);
             fail("Exception should have been thrown");
         } catch (IndexOutOfBoundsException expectedEx) {
-            assertEquals("offset <1> plus write count <4> is <5> is greater than length <4> of the source byte[]", expectedEx.getMessage());
+            assertEquals("write(byte[4], offset[1], writeCount[4]) - offset plus write count <5> is greater than length of the source byte[]", expectedEx.getMessage());
         }
 
         try {
             instance.write("BLAH".getBytes(), 2, payload.length - 1);
             fail("Exception should have been thrown");
         } catch (IndexOutOfBoundsException expectedEx) {
-            assertEquals("offset <2> plus write count <3> is <5> is greater than length <4> of the source byte[]", expectedEx.getMessage());
+            assertEquals("write(byte[4], offset[2], writeCount[3]) - offset plus write count <5> is greater than length of the source byte[]", expectedEx.getMessage());
         }
     }
 
@@ -303,11 +302,11 @@ public class MllpSocketBufferWriteTest extends SocketBufferTestSupport {
      */
     @Test
     public void testEnsureCapacityWithNegativeRequiredAvailability() throws Exception {
-        assertEquals(instance.MIN_BUFFER_SIZE, instance.capacity());
+        assertEquals(MllpSocketBuffer.MIN_BUFFER_SIZE, instance.capacity());
 
         instance.ensureCapacity(-1);
 
-        assertEquals(instance.MIN_BUFFER_SIZE, instance.capacity());
+        assertEquals(MllpSocketBuffer.MIN_BUFFER_SIZE, instance.capacity());
     }
 
     /**
@@ -317,7 +316,7 @@ public class MllpSocketBufferWriteTest extends SocketBufferTestSupport {
      */
     @Test
     public void testEnsureCapacityWithOutOfRangeRequiredAvailability() throws Exception {
-        assertEquals(instance.MIN_BUFFER_SIZE, instance.capacity());
+        assertEquals(MllpSocketBuffer.MIN_BUFFER_SIZE, instance.capacity());
 
         try {
             instance.ensureCapacity(Integer.MAX_VALUE);
@@ -329,7 +328,7 @@ public class MllpSocketBufferWriteTest extends SocketBufferTestSupport {
         }
 
         try {
-            instance.ensureCapacity(instance.MAX_BUFFER_SIZE + 1);
+            instance.ensureCapacity(MllpSocketBuffer.MAX_BUFFER_SIZE + 1);
             fail("Should have thrown an exception");
         } catch (IllegalStateException expectedEx) {
             String expectedMessage = "Cannot increase the buffer size <2048> in order to increase the available capacity from <2048> to <1073741825>"
@@ -339,7 +338,7 @@ public class MllpSocketBufferWriteTest extends SocketBufferTestSupport {
 
         try {
             instance.write("BLAH".getBytes());
-            instance.ensureCapacity(instance.MAX_BUFFER_SIZE);
+            instance.ensureCapacity(MllpSocketBuffer.MAX_BUFFER_SIZE);
             fail("Should have thrown an exception");
         } catch (IllegalStateException expectedEx) {
             String expectedMessage = "Cannot increase the buffer size <2048> in order to increase the available capacity from <2044> to <1073741824>"
@@ -355,12 +354,12 @@ public class MllpSocketBufferWriteTest extends SocketBufferTestSupport {
      */
     @Test
     public void testEnsureCapacityWithAlreadyAllocateMaxBufferSize() throws Exception {
-        assertEquals(instance.MIN_BUFFER_SIZE, instance.capacity());
+        assertEquals(MllpSocketBuffer.MIN_BUFFER_SIZE, instance.capacity());
 
-        instance.ensureCapacity(instance.MAX_BUFFER_SIZE);
+        instance.ensureCapacity(MllpSocketBuffer.MAX_BUFFER_SIZE);
 
         try {
-            instance.ensureCapacity(instance.MAX_BUFFER_SIZE + 1);
+            instance.ensureCapacity(MllpSocketBuffer.MAX_BUFFER_SIZE + 1);
             fail("Should have thrown an exception");
         } catch (IllegalStateException expectedEx) {
             String expectedMessage = "Cannot increase the buffer size from <1073741824> to <1073741825> in order to increase the available capacity"

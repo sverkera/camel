@@ -18,30 +18,15 @@
 package org.apache.camel.component.mllp.internal;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.apache.camel.Exchange;
-import org.apache.camel.ExchangePattern;
-import org.apache.camel.Message;
 import org.apache.camel.Route;
-import org.apache.camel.component.mllp.MllpAcknowledgementDeliveryException;
-import org.apache.camel.component.mllp.MllpConstants;
-import org.apache.camel.component.mllp.MllpInvalidAcknowledgementException;
 import org.apache.camel.component.mllp.MllpInvalidMessageException;
-import org.apache.camel.component.mllp.MllpProtocolConstants;
-import org.apache.camel.component.mllp.MllpReceiveException;
 import org.apache.camel.component.mllp.MllpSocketException;
 import org.apache.camel.component.mllp.MllpTcpServerConsumer;
-import org.apache.camel.converter.IOConverter;
 import org.apache.camel.impl.MDCUnitOfWork;
-import org.apache.camel.processor.mllp.Hl7AcknowledgementGenerationException;
-import org.apache.camel.util.IOHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -166,9 +151,11 @@ public class TcpSocketConsumerRunnable implements Runnable {
                     mllpBuffer.readFrom(clientSocket);
                     if (mllpBuffer.hasCompleteEnvelope()) {
                         hl7MessageBytes = mllpBuffer.toMllpPayload();
-                        log.debug("Received {} byte message {}", hl7MessageBytes.length, Hl7Util.convertToPrintFriendlyString(hl7MessageBytes));
+                        if (log.isDebugEnabled()) {
+                            log.debug("Received {} byte message {}", hl7MessageBytes.length, Hl7Util.convertToPrintFriendlyString(hl7MessageBytes));
+                        }
                         if (mllpBuffer.hasLeadingOutOfBandData()) {
-                            // TODO:  Move the convertion utilities to the MllpSocketBuffer to avoid a byte[] copy
+                            // TODO:  Move the conversion utilities to the MllpSocketBuffer to avoid a byte[] copy
                             log.warn("Ignoring leading out-of-band data: {}", Hl7Util.convertToPrintFriendlyString(mllpBuffer.getLeadingOutOfBandData()));
                         }
                         if (mllpBuffer.hasTrailingOutOfBandData()) {
@@ -192,7 +179,8 @@ public class TcpSocketConsumerRunnable implements Runnable {
                             long lastReceivedMessageTicks = consumer.getConsumerRunnables().get(this);
                             long idleTime = currentTicks - lastReceivedMessageTicks;
                             if (idleTime >= consumer.getConfiguration().getIdleTimeout()) {
-                                consumer.getEndpoint().doConnectionClose(clientSocket, true, log);
+                                String resetMessage = String.format("Connection idle time %d exceeded idleTimeout %d", idleTime, consumer.getConfiguration().getIdleTimeout());
+                                mllpBuffer.resetSocket(clientSocket, resetMessage);
                             }
                         }
                         log.debug("No data received - ignoring timeout");
@@ -206,7 +194,7 @@ public class TcpSocketConsumerRunnable implements Runnable {
                     if (!mllpBuffer.isEmpty()) {
                         consumer.handleMessageException("Exception encountered reading payload", mllpBuffer.toByteArrayAndReset(), mllpSocketEx);
                     } else {
-                        log.warn("Ignoring exception encountered checking for data", mllpSocketEx);
+                        log.debug("Ignoring exception encountered checking for data", mllpSocketEx);
                     }
                 }
             }

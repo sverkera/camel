@@ -17,33 +17,67 @@
 
 package org.apache.camel.component.mllp.internal;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.camel.component.mllp.MllpAcknowledgementGenerationException;
 import org.apache.camel.component.mllp.MllpComponent;
 import org.apache.camel.component.mllp.MllpProtocolConstants;
-import org.apache.camel.processor.mllp.Hl7AcknowledgementGenerationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class Hl7Util {
-    public static final String START_OF_BLOCK_REPLACEMENT_VALUE = "<VT>";      // VT (vertical tab)        - decimal 11, octal 013
-    public static final String END_OF_BLOCK_REPLACEMENT_VALUE = "<FS>";        // FS (file separator)      - decimal 28, octal 034
-    public static final String SEGMENT_DELIMITER_REPLACEMENT_VALUE = "<CR>";   // CR (carriage return)     - decimal 13, octal 015
-    public static final String MESSAGE_TERMINATOR_REPLACEMENT_VALUE = "<LF>";  // LF (line feed, new line) - decimal 10, octal 012
-    // Some other non-printable characters
-    public static final String TAB_REPLACEMENT_VALUE = "<TAB>";      // TAB (tab)        - decimal 9, octal 011
-    public static final String BACKSPACE_REPLACEMENT_VALUE = "<BS>";      // BS (backspace)        - decimal 8, octal 010
-    public static final String FORMFEED_REPLACEMENT_VALUE = "<FF>";      // FF (tab)        - decimal 12, octal 014
-
     public static final String NULL_REPLACEMENT_VALUE = "<null>";
     public static final String EMPTY_REPLACEMENT_VALUE = "<>";
+
+    public static final Map<Character, String> CHARACTER_REPLACEMENTS;
+
+    public static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMddHHmmssSSSZZZZ");
 
     static final int STRING_BUFFER_PAD_SIZE = 100;
 
     static final Logger LOG = LoggerFactory.getLogger(Hl7Util.class);
+
+    static {
+        CHARACTER_REPLACEMENTS = new HashMap<>();
+        CHARACTER_REPLACEMENTS.put((char)0x00, "<0x00 NUL>");
+        CHARACTER_REPLACEMENTS.put((char)0x01, "<0x01 SOH>");
+        CHARACTER_REPLACEMENTS.put((char)0x02, "<0x02 STX>");
+        CHARACTER_REPLACEMENTS.put((char)0x03, "<0x03 ETX>");
+        CHARACTER_REPLACEMENTS.put((char)0x04, "<0x04 EOT>");
+        CHARACTER_REPLACEMENTS.put((char)0x05, "<0x05 ENQ>");
+        CHARACTER_REPLACEMENTS.put((char)0x06, "<0x06 ACK>");
+        CHARACTER_REPLACEMENTS.put((char)0x07, "<0x07 BEL>");
+        CHARACTER_REPLACEMENTS.put((char)0x08, "<0x08 BS>");
+        CHARACTER_REPLACEMENTS.put((char)0x09, "<0x09 TAB>");
+        CHARACTER_REPLACEMENTS.put((char)0x0A, "<0x0A LF>");
+        CHARACTER_REPLACEMENTS.put((char)0x0B, "<0x0B VT>");
+        CHARACTER_REPLACEMENTS.put((char)0x0C, "<0x0C FF>");
+        CHARACTER_REPLACEMENTS.put((char)0x0D, "<0x0D CR>");
+        CHARACTER_REPLACEMENTS.put((char)0x0E, "<0x0E SO>");
+        CHARACTER_REPLACEMENTS.put((char)0x0F, "<0x0F SI>");
+        CHARACTER_REPLACEMENTS.put((char)0x10, "<0x10 DLE>");
+        CHARACTER_REPLACEMENTS.put((char)0x11, "<0x11 DC1>");
+        CHARACTER_REPLACEMENTS.put((char)0x12, "<0x12 DC2>");
+        CHARACTER_REPLACEMENTS.put((char)0x13, "<0x13 DC3>");
+        CHARACTER_REPLACEMENTS.put((char)0x14, "<0x14 DC4>");
+        CHARACTER_REPLACEMENTS.put((char)0x15, "<0x15 NAK>");
+        CHARACTER_REPLACEMENTS.put((char)0x16, "<0x16 SYN>");
+        CHARACTER_REPLACEMENTS.put((char)0x17, "<0x17 ETB>");
+        CHARACTER_REPLACEMENTS.put((char)0x18, "<0x18 CAN>");
+        CHARACTER_REPLACEMENTS.put((char)0x19, "<0x19 EM>");
+        CHARACTER_REPLACEMENTS.put((char)0x1A, "<0x1A SUB>");
+        CHARACTER_REPLACEMENTS.put((char)0x1B, "<0x1B ESC>");
+        CHARACTER_REPLACEMENTS.put((char)0x1C, "<0x1C FS>");
+        CHARACTER_REPLACEMENTS.put((char)0x1D, "<0x1D GS>");
+        CHARACTER_REPLACEMENTS.put((char)0x1E, "<0x1E RS>");
+        CHARACTER_REPLACEMENTS.put((char)0x1F, "<0x1F US>");
+        CHARACTER_REPLACEMENTS.put((char)0x7F, "<0x7F DEL>");
+    }
 
     private Hl7Util() {
         //utility class, never constructed
@@ -133,11 +167,11 @@ public final class Hl7Util {
     }
 
     /**
-     * Find the String value of MSH-19 (Character set).
+     * Find the String value of MSH-18 (Character set).
      *
      * @param hl7Message the HL7 binary data to search
      *
-     * @return the String value of MSH-19, or an empty String if not found.
+     * @return the String value of MSH-18, or an empty String if not found.
      */
     public static String findMsh18(byte[] hl7Message) {
         String answer = "";
@@ -146,12 +180,12 @@ public final class Hl7Util {
 
             List<Integer> fieldSeparatorIndexes = findFieldSeparatorIndicesInSegment(hl7Message, 0);
 
-            if (fieldSeparatorIndexes.size() > 18) {
-                int startOfMsh19 = fieldSeparatorIndexes.get(17) + 1;
-                int length = fieldSeparatorIndexes.get(18) - fieldSeparatorIndexes.get(17) - 1;
+            if (fieldSeparatorIndexes.size() > 17) {
+                int startOfMsh19 = fieldSeparatorIndexes.get(16) + 1;
+                int length = fieldSeparatorIndexes.get(17) - fieldSeparatorIndexes.get(16) - 1;
 
                 if (length > 0) {
-                    answer = new String(hl7Message, startOfMsh19, length, StandardCharsets.US_ASCII);
+                    answer = new String(hl7Message, startOfMsh19, length, MllpComponent.getDefaultCharset());
                 }
             }
         }
@@ -160,22 +194,30 @@ public final class Hl7Util {
     }
 
 
-    public static void generateAcknowledgementPayload(MllpSocketBuffer mllpSocketBuffer, byte[] hl7MessageBytes, String acknowledgementCode) throws Hl7AcknowledgementGenerationException {
+    public static void generateAcknowledgementPayload(MllpSocketBuffer mllpSocketBuffer, byte[] hl7MessageBytes, String acknowledgementCode)
+        throws MllpAcknowledgementGenerationException {
+        generateAcknowledgementPayload(mllpSocketBuffer, hl7MessageBytes, acknowledgementCode, null);
+    }
+
+    public static void generateAcknowledgementPayload(MllpSocketBuffer mllpSocketBuffer, byte[] hl7MessageBytes, String acknowledgementCode, String msa3)
+        throws MllpAcknowledgementGenerationException {
         if (hl7MessageBytes == null) {
-            throw new Hl7AcknowledgementGenerationException("Null HL7 message received for parsing operation");
+            throw new MllpAcknowledgementGenerationException("Null HL7 message received for parsing operation");
         }
 
         List<Integer> fieldSeparatorIndexes = findFieldSeparatorIndicesInSegment(hl7MessageBytes, 0);
 
         if (fieldSeparatorIndexes.isEmpty()) {
-            throw new Hl7AcknowledgementGenerationException("Failed to find the end of the MSH Segment while attempting to generate response", hl7MessageBytes);
+            throw new MllpAcknowledgementGenerationException("Failed to find the end of the MSH Segment while attempting to generate response", hl7MessageBytes);
         }
 
         if (fieldSeparatorIndexes.size() < 8) {
-            String exceptionMessage = String.format("Insufficient number of fields in MSH-2 in MSH to generate a response - 10 are required but %d were found", fieldSeparatorIndexes.size() - 1);
+            String exceptionMessage = String.format("Insufficient number of fields found in MSH to generate a response - 10 are required but %d were found", fieldSeparatorIndexes.size() - 1);
 
-            throw new Hl7AcknowledgementGenerationException(exceptionMessage, hl7MessageBytes);
+            throw new MllpAcknowledgementGenerationException(exceptionMessage, hl7MessageBytes);
         }
+
+        final byte fieldSeparator = hl7MessageBytes[3];
 
         // Start building the MLLP Envelope
         mllpSocketBuffer.openMllpEnvelope();
@@ -186,10 +228,13 @@ public final class Hl7Util {
         writeFieldToBuffer(4, mllpSocketBuffer, hl7MessageBytes, fieldSeparatorIndexes); // MSH-6
         writeFieldToBuffer(1, mllpSocketBuffer, hl7MessageBytes, fieldSeparatorIndexes); // MSH-3
         writeFieldToBuffer(2, mllpSocketBuffer, hl7MessageBytes, fieldSeparatorIndexes); // MSH-4
-        writeFieldToBuffer(5, mllpSocketBuffer, hl7MessageBytes, fieldSeparatorIndexes); // MSH-7
-        writeFieldToBuffer(6, mllpSocketBuffer, hl7MessageBytes, fieldSeparatorIndexes); // MSH-8
 
-        final byte fieldSeparator = hl7MessageBytes[3];
+        // MSH-7
+        mllpSocketBuffer.write(fieldSeparator);
+        mllpSocketBuffer.write(TIMESTAMP_FORMAT.format(new Date()).getBytes());
+
+        // Don't copy MSH-8
+        mllpSocketBuffer.write(fieldSeparator);
 
         // Need to generate the correct MSH-9
         mllpSocketBuffer.write(fieldSeparator);
@@ -210,8 +255,14 @@ public final class Hl7Util {
             mllpSocketBuffer.write(hl7MessageBytes, msh92start, fieldSeparatorIndexes.get(8) - msh92start);
         }
 
+        // MSH-10 - use the original control ID, but add an "A" as a suffix
+        writeFieldToBuffer(8, mllpSocketBuffer, hl7MessageBytes, fieldSeparatorIndexes);
+        if (fieldSeparatorIndexes.get(9) - fieldSeparatorIndexes.get(8) > 1) {
+            mllpSocketBuffer.write('A');
+        }
+
         // MSH-10 through the end of the MSH
-        mllpSocketBuffer.write(hl7MessageBytes, fieldSeparatorIndexes.get(8), fieldSeparatorIndexes.get(fieldSeparatorIndexes.size() - 1) - fieldSeparatorIndexes.get(8));
+        mllpSocketBuffer.write(hl7MessageBytes, fieldSeparatorIndexes.get(9), fieldSeparatorIndexes.get(fieldSeparatorIndexes.size() - 1) - fieldSeparatorIndexes.get(9));
 
         mllpSocketBuffer.write(MllpProtocolConstants.SEGMENT_DELIMITER);
 
@@ -219,7 +270,13 @@ public final class Hl7Util {
         mllpSocketBuffer.write("MSA".getBytes(), 0, 3);
         mllpSocketBuffer.write(fieldSeparator);
         mllpSocketBuffer.write(acknowledgementCode.getBytes(), 0, 2);
-        writeFieldToBuffer(8, mllpSocketBuffer, hl7MessageBytes, fieldSeparatorIndexes); // MSH-10
+        writeFieldToBuffer(8, mllpSocketBuffer, hl7MessageBytes, fieldSeparatorIndexes); // MSH-10 => MSA-2
+
+        if (msa3 != null && !msa3.isEmpty()) {
+            mllpSocketBuffer.write(fieldSeparator);
+            mllpSocketBuffer.write(msa3.getBytes());
+        }
+
         mllpSocketBuffer.write(MllpProtocolConstants.SEGMENT_DELIMITER);
 
         // Close the MLLP Envelope
@@ -348,43 +405,19 @@ public final class Hl7Util {
     }
 
     static void appendCharacterAsPrintFriendlyString(StringBuilder builder, char c) {
-        switch (c) {
-        case MllpProtocolConstants.START_OF_BLOCK:
-            builder.append(START_OF_BLOCK_REPLACEMENT_VALUE);
-            break;
-        case MllpProtocolConstants.END_OF_BLOCK:
-            builder.append(END_OF_BLOCK_REPLACEMENT_VALUE);
-            break;
-        case MllpProtocolConstants.SEGMENT_DELIMITER:
-            builder.append(SEGMENT_DELIMITER_REPLACEMENT_VALUE);
-            break;
-        case MllpProtocolConstants.MESSAGE_TERMINATOR:
-            builder.append(MESSAGE_TERMINATOR_REPLACEMENT_VALUE);
-            break;
-        default:
+        if (CHARACTER_REPLACEMENTS.containsKey(c)) {
+            builder.append(CHARACTER_REPLACEMENTS.get(c));
+        } else {
             builder.append(c);
         }
     }
 
     public static String getCharacterAsPrintFriendlyString(char c) {
-        switch (c) {
-        case MllpProtocolConstants.START_OF_BLOCK:
-            return START_OF_BLOCK_REPLACEMENT_VALUE;
-        case MllpProtocolConstants.END_OF_BLOCK:
-            return END_OF_BLOCK_REPLACEMENT_VALUE;
-        case MllpProtocolConstants.SEGMENT_DELIMITER:
-            return SEGMENT_DELIMITER_REPLACEMENT_VALUE;
-        case MllpProtocolConstants.MESSAGE_TERMINATOR:
-            return MESSAGE_TERMINATOR_REPLACEMENT_VALUE;
-        case '\t':
-            return TAB_REPLACEMENT_VALUE;
-        case '\b':
-            return BACKSPACE_REPLACEMENT_VALUE;
-        case '\f':
-            return FORMFEED_REPLACEMENT_VALUE;
-        default:
-            return String.valueOf(c);
+        if (CHARACTER_REPLACEMENTS.containsKey(c)) {
+            return CHARACTER_REPLACEMENTS.get(c);
         }
+
+        return String.valueOf(c);
     }
 
     /**

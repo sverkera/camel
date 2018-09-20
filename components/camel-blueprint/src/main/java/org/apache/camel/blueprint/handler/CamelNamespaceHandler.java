@@ -182,7 +182,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
 
     @SuppressWarnings({"rawtypes"})
     public Set<Class> getManagedClasses() {
-        return new HashSet<Class>(Arrays.asList(BlueprintCamelContext.class));
+        return new HashSet<>(Arrays.asList(BlueprintCamelContext.class));
     }
 
     public Metadata parse(Element element, ParserContext context) {
@@ -257,7 +257,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
 
         MutablePassThroughMetadata factory = context.createMetadata(MutablePassThroughMetadata.class);
         factory.setId(".camelBlueprint.passThrough." + contextId);
-        factory.setObject(new PassThroughCallable<Object>(value));
+        factory.setObject(new PassThroughCallable<>(value));
 
         MutableBeanMetadata factory2 = context.createMetadata(MutableBeanMetadata.class);
         factory2.setId(".camelBlueprint.factory." + contextId);
@@ -904,7 +904,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
             Class<?>[] parameterTypes = method.getParameterTypes();
             if (parameterTypes != null) {
                 if (parameterTypes.length != 1) {
-                    LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: " + method);
+                    LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: {}", method);
                 } else {
                     String propertyName = ObjectHelper.getPropertyName(method);
                     Object value = getInjectionPropertyValue(parameterTypes[0], propertyValue, propertyDefaultValue, propertyName, bean, beanName);
@@ -917,7 +917,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
             Class<?>[] parameterTypes = method.getParameterTypes();
             if (parameterTypes != null) {
                 if (parameterTypes.length != 1) {
-                    LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: " + method);
+                    LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: {}", method);
                 } else {
                     Object value = getInjectionBeanValue(parameterTypes[0], name);
                     ObjectHelper.invokeMethod(method, bean, value);
@@ -929,7 +929,7 @@ public class CamelNamespaceHandler implements NamespaceHandler {
             Class<?>[] parameterTypes = method.getParameterTypes();
             if (parameterTypes != null) {
                 if (parameterTypes.length != 1) {
-                    LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: " + method);
+                    LOG.warn("Ignoring badly annotated method for injection due to incorrect number of parameters: {}", method);
                 } else {
                     String propertyName = ObjectHelper.getPropertyName(method);
                     Object value = getInjectionValue(parameterTypes[0], endpointUri, endpointRef, endpointProperty, propertyName, bean, beanName);
@@ -1053,7 +1053,8 @@ public class CamelNamespaceHandler implements NamespaceHandler {
             // because the factory has already been instantiated
             try {
                 for (String component : components) {
-                    if (camelContext.getComponent(component) == null) {
+                    if (camelContext.getComponent(component, false) == null) {
+                        // component not already in camel-context so resolve an OSGi reference to it
                         getComponentResolverReference(context, component);
                     } else {
                         LOG.debug("Not creating a service reference for component {} because a component already exists in the Camel Context", component);

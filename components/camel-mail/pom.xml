@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.camel</groupId>
         <artifactId>components</artifactId>
-        <version>2.21.0-SNAPSHOT</version>
+        <version>2.23.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>camel-mail</artifactId>
@@ -119,6 +119,12 @@
           <artifactId>camel-quartz2</artifactId>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>org.assertj</groupId>
+          <artifactId>assertj-core</artifactId>
+          <version>${assertj-version}</version>
+          <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -136,9 +142,9 @@
 
     <profiles>
         <profile>
-            <id>jdk9-build</id>
+            <id>jdk9+-build</id>
             <activation>
-                <jdk>9</jdk>
+                <jdk>[9,)</jdk>
             </activation>
             <build>
                 <plugins>

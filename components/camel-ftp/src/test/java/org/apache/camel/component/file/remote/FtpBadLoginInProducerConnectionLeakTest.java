@@ -22,6 +22,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.net.SocketFactory;
 
 import org.apache.camel.impl.JndiRegistry;
@@ -32,7 +33,7 @@ public class FtpBadLoginInProducerConnectionLeakTest extends FtpServerTestSuppor
     /**
      * Mapping of socket hashcode to two element tab ([connect() called, close() called])
      */
-    private Map<Integer, boolean[]> socketAudits = new HashMap<Integer, boolean[]>();
+    private Map<Integer, boolean[]> socketAudits = new HashMap<>();
 
     private String getFtpUrl() {
         return "ftp://dummy@localhost:" + getPort() + "/badlogin?password=cantremeber&maximumReconnectAttempts=3"

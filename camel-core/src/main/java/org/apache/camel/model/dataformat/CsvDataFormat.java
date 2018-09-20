@@ -17,6 +17,7 @@
 package org.apache.camel.model.dataformat;
 
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -90,6 +91,8 @@ public class CsvDataFormat extends DataFormatDefinition {
     private Boolean lazyLoad;
     @XmlAttribute
     private Boolean useMaps;
+    @XmlAttribute
+    private Boolean useOrderedMaps;
     @XmlAttribute
     private String recordConverterRef;
 
@@ -186,6 +189,9 @@ public class CsvDataFormat extends DataFormatDefinition {
         }
         if (useMaps != null) {
             setProperty(camelContext, dataFormat, "useMaps", useMaps);
+        }
+        if (useOrderedMaps != null) {
+            setProperty(camelContext, dataFormat, "useOrderedMaps", useOrderedMaps);
         }
         if (ObjectHelper.isNotEmpty(recordConverterRef)) {
             Object recordConverter = CamelContextHelper.mandatoryLookup(camelContext, recordConverterRef);
@@ -438,10 +444,21 @@ public class CsvDataFormat extends DataFormatDefinition {
     }
 
     /**
-     * Whether the unmarshalling should produce maps for the lines values instead of lists. It requires to have header (either defined or collected).
+     * Whether the unmarshalling should produce maps (HashMap)for the lines values instead of lists. It requires to have header (either defined or collected).
      */
     public void setUseMaps(Boolean useMaps) {
         this.useMaps = useMaps;
+    }
+
+    public Boolean getUseOrderedMaps() {
+        return useOrderedMaps;
+    }
+
+    /**
+     * Whether the unmarshalling should produce ordered maps (LinkedHashMap) for the lines values instead of lists. It requires to have header (either defined or collected).
+     */
+    public void setUseOrderedMaps(Boolean useOrderedMaps) {
+        this.useOrderedMaps = useOrderedMaps;
     }
 
     public String getRecordConverterRef() {

@@ -19,7 +19,6 @@ package org.apache.camel.parser.helper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.camel.parser.ParserResult;
 import org.apache.camel.parser.RouteBuilderParser;
@@ -33,8 +32,6 @@ import org.jboss.forge.roaster._shade.org.eclipse.jdt.core.dom.ClassInstanceCrea
 import org.jboss.forge.roaster._shade.org.eclipse.jdt.core.dom.Expression;
 import org.jboss.forge.roaster._shade.org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.jboss.forge.roaster._shade.org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.jboss.forge.roaster._shade.org.eclipse.jdt.core.dom.IAnnotationBinding;
-import org.jboss.forge.roaster._shade.org.eclipse.jdt.core.dom.ITypeBinding;
 import org.jboss.forge.roaster._shade.org.eclipse.jdt.core.dom.InfixExpression;
 import org.jboss.forge.roaster._shade.org.eclipse.jdt.core.dom.MemberValuePair;
 import org.jboss.forge.roaster._shade.org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -183,7 +180,7 @@ public final class CamelJavaParserHelper {
     private static List<ParserResult> doParseCamelUris(MethodSource<JavaClassSource> method, boolean consumers, boolean producers,
                                                        boolean strings, boolean fields, boolean routeIdsOnly) {
 
-        List<ParserResult> answer = new ArrayList<ParserResult>();
+        List<ParserResult> answer = new ArrayList<>();
 
         if (method != null) {
             MethodDeclaration md = (MethodDeclaration) method.getInternal();
@@ -195,7 +192,7 @@ public final class CamelJavaParserHelper {
                         ExpressionStatement es = (ExpressionStatement) statement;
                         Expression exp = es.getExpression();
 
-                        List<ParserResult> uris = new ArrayList<ParserResult>();
+                        List<ParserResult> uris = new ArrayList<>();
                         parseExpression(method.getOrigin(), block, exp, uris, consumers, producers, strings, fields, routeIdsOnly);
                         if (!uris.isEmpty()) {
                             // reverse the order as we will grab them from last->first
@@ -238,7 +235,8 @@ public final class CamelJavaParserHelper {
                             String routeId = getLiteralValue(clazz, block, (Expression) arg);
                             if (!Strings.isBlank(routeId)) {
                                 int position = ((Expression) arg).getStartPosition();
-                                uris.add(new ParserResult(name, position, routeId));
+                                int len = ((Expression) arg).getLength();
+                                uris.add(new ParserResult(name, position, len, routeId));
                             }
                         }
                     }
@@ -347,6 +345,7 @@ public final class CamelJavaParserHelper {
             String uri = getLiteralValue(clazz, block, (Expression) arg);
             if (!Strings.isBlank(uri)) {
                 int position = ((Expression) arg).getStartPosition();
+                int len = ((Expression) arg).getLength();
 
                 // if the node is fromF or toF, then replace all %X with {{%X}} as we cannot parse that value
                 if ("fromF".equals(node) || "toF".equals(node)) {
@@ -355,7 +354,7 @@ public final class CamelJavaParserHelper {
                     uri = uri.replaceAll("\\%b", "\\{\\{\\%b\\}\\}");
                 }
 
-                uris.add(new ParserResult(node, position, uri));
+                uris.add(new ParserResult(node, position, len, uri));
                 return;
             }
         }
@@ -384,7 +383,8 @@ public final class CamelJavaParserHelper {
                     String uri = CamelJavaParserHelper.getLiteralValue(clazz, block, exp);
                     if (!Strings.isBlank(uri)) {
                         int position = ((SimpleName) arg).getStartPosition();
-                        uris.add(new ParserResult(node, position, uri));
+                        int len = ((SimpleName) arg).getLength();
+                        uris.add(new ParserResult(node, position, len, uri));
                     }
                 } else {
                     // the field may be initialized using variables, so we need to evaluate those expressions
@@ -395,7 +395,8 @@ public final class CamelJavaParserHelper {
                         if (!Strings.isBlank(uri)) {
                             // we want the position of the field, and not in the route
                             int position = ((VariableDeclaration) fi).getStartPosition();
-                            uris.add(new ParserResult(node, position, uri));
+                            int len = ((VariableDeclaration) fi).getLength();
+                            uris.add(new ParserResult(node, position, len, uri));
                         }
                     }
                 }
@@ -403,11 +404,11 @@ public final class CamelJavaParserHelper {
         }
 
         // cannot parse it so add a failure
-        uris.add(new ParserResult(node, -1, arg.toString(), false));
+        uris.add(new ParserResult(node, -1, -1, arg.toString(), false));
     }
 
     public static List<ParserResult> parseCamelSimpleExpressions(MethodSource<JavaClassSource> method) {
-        List<ParserResult> answer = new ArrayList<ParserResult>();
+        List<ParserResult> answer = new ArrayList<>();
 
         MethodDeclaration md = (MethodDeclaration) method.getInternal();
         Block block = md.getBody();
@@ -418,7 +419,7 @@ public final class CamelJavaParserHelper {
                     ExpressionStatement es = (ExpressionStatement) statement;
                     Expression exp = es.getExpression();
 
-                    List<ParserResult> expressions = new ArrayList<ParserResult>();
+                    List<ParserResult> expressions = new ArrayList<>();
                     parseExpression(null, method.getOrigin(), block, exp, expressions);
                     if (!expressions.isEmpty()) {
                         // reverse the order as we will grab them from last->first
@@ -484,7 +485,8 @@ public final class CamelJavaParserHelper {
                     }
 
                     int position = ((Expression) arg).getStartPosition();
-                    ParserResult result = new ParserResult(node, position, simple);
+                    int len = ((Expression) arg).getLength();
+                    ParserResult result = new ParserResult(node, position, len, simple);
                     result.setPredicate(predicate);
                     expressions.add(result);
                 }

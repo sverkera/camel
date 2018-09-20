@@ -50,6 +50,7 @@ import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
 import org.xml.sax.SAXException;
 
 import org.apache.camel.Exchange;
@@ -410,7 +411,7 @@ public class XAdESSignaturePropertiesTest extends CamelTestSupport {
 
         Document doc = testEnveloping();
 
-        Map<String, String> prefix2Namespace = new TreeMap<String, String>();
+        Map<String, String> prefix2Namespace = new TreeMap<>();
         prefix2Namespace.put("ds", XMLSignature.XMLNS);
         prefix2Namespace.put("etsi", XAdESSignatureProperties.HTTP_URI_ETSI_ORG_01903_V1_1_1);
 
@@ -424,7 +425,7 @@ public class XAdESSignaturePropertiesTest extends CamelTestSupport {
 
     @Test
     public void headers() throws Exception {
-        Map<String, Object> header = new TreeMap<String, Object>();
+        Map<String, Object> header = new TreeMap<>();
 
         header.put(XmlSignatureConstants.HEADER_XADES_PREFIX, "ns1");
         header.put(XmlSignatureConstants.HEADER_XADES_NAMESPACE, XAdESSignatureProperties.HTTP_URI_ETSI_ORG_01903_V1_2_2);
@@ -443,7 +444,7 @@ public class XAdESSignaturePropertiesTest extends CamelTestSupport {
 
         Document doc = testEnveloping("direct:enveloping", header);
 
-        Map<String, String> prefix2Namespace = new TreeMap<String, String>();
+        Map<String, String> prefix2Namespace = new TreeMap<>();
         prefix2Namespace.put("ds", XMLSignature.XMLNS);
         prefix2Namespace.put("etsi", XAdESSignatureProperties.HTTP_URI_ETSI_ORG_01903_V1_2_2);
 
@@ -732,7 +733,7 @@ public class XAdESSignaturePropertiesTest extends CamelTestSupport {
     }
 
     static Map<String, String> getPrefix2NamespaceMap() {
-        Map<String, String> prefix2Namespace = new TreeMap<String, String>();
+        Map<String, String> prefix2Namespace = new TreeMap<>();
         prefix2Namespace.put("ds", XMLSignature.XMLNS);
         prefix2Namespace.put("etsi", XAdESSignatureProperties.HTTP_URI_ETSI_ORG_01903_V1_3_2);
         return prefix2Namespace;
@@ -838,7 +839,7 @@ public class XAdESSignaturePropertiesTest extends CamelTestSupport {
         checkXpath(doc, xpathString, prefix2Namespace, expectedResult, false);
     }
         
-   static void checkXpath(Document doc, String xpathString, final Map<String, String> prefix2Namespace, String expectedResult, boolean startsWith)
+    static void checkXpath(Document doc, String xpathString, final Map<String, String> prefix2Namespace, String expectedResult, boolean startsWith)
             throws XPathExpressionException {
 
         XPathExpression expr = getXpath(xpathString, prefix2Namespace);

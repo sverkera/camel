@@ -1,3 +1,4 @@
+[[exchangeProperty-language]]
 == ExchangeProperty Language
 
 *Available as of Camel version 2.0*
@@ -8,7 +9,7 @@ named exchange properties.
 === Exchange Property Options
 
 // language options: START
-The ExchangeProperty language supports 1 options which are listed below.
+The ExchangeProperty language supports 1 options, which are listed below.
 
 
 

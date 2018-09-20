@@ -17,10 +17,6 @@
 
 package org.apache.camel.component.mllp;
 
-import java.lang.ref.WeakReference;
-
-import org.apache.camel.component.mllp.internal.Hl7Util;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -176,7 +172,7 @@ public class MllpExceptionTest extends MllpExceptionTestSupport {
             expectedMessageBuilder.append("\n\t{hl7Message [")
                 .append(hl7Message.length())
                 .append("] = ")
-                .append(hl7Message.replaceAll("\r", "<CR>").replaceAll("\n", "<LF>"))
+                .append(hl7Message.replaceAll("\r", "<0x0D CR>").replaceAll("\n", "<0x0A LF>"))
                 .append("}");
         }
 
@@ -184,7 +180,7 @@ public class MllpExceptionTest extends MllpExceptionTestSupport {
             expectedMessageBuilder.append("\n\t{hl7Acknowledgement [")
                 .append(hl7Acknowledgment.length())
                 .append("] = ")
-                .append(hl7Acknowledgment.replaceAll("\r", "<CR>").replaceAll("\n", "<LF>"))
+                .append(hl7Acknowledgment.replaceAll("\r", "<0x0D CR>").replaceAll("\n", "<0x0A LF>"))
                 .append("}");
         }
 

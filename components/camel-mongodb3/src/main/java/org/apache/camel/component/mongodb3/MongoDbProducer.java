@@ -24,16 +24,18 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
-
 import org.apache.camel.Exchange;
 import org.apache.camel.InvalidPayloadException;
 import org.apache.camel.Processor;
@@ -77,6 +79,7 @@ public class MongoDbProducer extends DefaultProducer {
 
     {
         bind(MongoDbOperation.aggregate, createDoAggregate());
+        bind(MongoDbOperation.bulkWrite, createDoBulkWrite());
         bind(MongoDbOperation.command, createDoCommand());
         bind(MongoDbOperation.count, createDoCount());
         bind(MongoDbOperation.findDistinct, createDoDistinct());
@@ -516,7 +519,7 @@ public class MongoDbProducer extends DefaultProducer {
                 // @see http://docs.mongodb.org/manual/core/aggregation/
                 List<Bson> queryList;
                 if (query != null) {
-                    queryList = query.stream().map(o -> (Bson)o).collect(Collectors.toList());
+                    queryList = query.stream().collect(Collectors.toList());
                 } else {
                     queryList = Arrays.asList(Bson.class.cast(exchange.getIn().getMandatoryBody(Bson.class)));
                 }
@@ -530,8 +533,11 @@ public class MongoDbProducer extends DefaultProducer {
                 if (batchSize != null) {
                     aggregationResult.batchSize(batchSize);
                 }
-                
-                Iterable<Document> result;                
+
+                Boolean allowDiskUse  = exchange.getIn().getHeader(MongoDbConstants.ALLOW_DISK_USE, Boolean.FALSE, Boolean.class);
+                aggregationResult.allowDiskUse(allowDiskUse);
+
+                Iterable<Document> result;
                 if (!MongoDbOutputType.MongoIterable.equals(endpoint.getOutputType())) {
                     try {
                         result = new ArrayList<>();
@@ -605,6 +611,26 @@ public class MongoDbProducer extends DefaultProducer {
                 return result;
             } catch (InvalidPayloadException e) {
                 throw new CamelMongoDbException("Body incorrect type for save", e);
+            }
+        };
+    }
+    
+    private Function<Exchange, Object> createDoBulkWrite() {
+        return exchange -> {
+            try {
+                MongoCollection<Document> dbCol = calculateCollection(exchange);
+
+                Boolean ordered = exchange.getIn().getHeader(MongoDbConstants.BULK_ORDERED, Boolean.TRUE, Boolean.class);
+                BulkWriteOptions options = new BulkWriteOptions().ordered(ordered);
+
+                @SuppressWarnings("unchecked")
+                List<WriteModel<Document>> requests = exchange.getIn().getMandatoryBody((Class<List<WriteModel<Document>>>)Class.class.cast(List.class));
+
+                BulkWriteResult result = dbCol.bulkWrite(requests, options);
+                return result;
+
+            } catch (InvalidPayloadException e) {
+                throw new CamelMongoDbException("Invalid payload for bulk write", e);
             }
         };
     }

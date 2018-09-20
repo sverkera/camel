@@ -50,7 +50,7 @@ import org.apache.commons.pool.impl.GenericObjectPool;
  */
 public class InOutProducer extends SjmsProducer {
 
-    private static final Map<String, Exchanger<Object>> EXCHANGERS = new ConcurrentHashMap<String, Exchanger<Object>>();
+    private static final Map<String, Exchanger<Object>> EXCHANGERS = new ConcurrentHashMap<>();
 
     private static final String GENERATED_CORRELATION_ID_PREFIX = "Camel-";
     private UuidGenerator uuidGenerator;
@@ -94,7 +94,6 @@ public class InOutProducer extends SjmsProducer {
                 }
                 MessageConsumer messageConsumer = getEndpoint().getJmsObjectFactory().createMessageConsumer(session, replyToDestination, null, isTopic(), null, true, false, false);
                 messageConsumer.setMessageListener(new MessageListener() {
-
                     @Override
                     public void onMessage(final Message message) {
                         log.debug("Message Received in the Consumer Pool");
@@ -103,14 +102,13 @@ public class InOutProducer extends SjmsProducer {
                             Exchanger<Object> exchanger = EXCHANGERS.get(message.getJMSCorrelationID());
                             exchanger.exchange(message, getResponseTimeOut(), TimeUnit.MILLISECONDS);
                         } catch (Exception e) {
-                            log.error("Unable to exchange message: {}", message, e);
+                            log.warn("Unable to exchange message: {}. This exception is ignored.", message, e);
                         }
-
                     }
                 });
                 answer = new MessageConsumerResources(session, messageConsumer, replyToDestination);
             } catch (Exception e) {
-                log.error("Unable to create the MessageConsumerResource: " + e.getLocalizedMessage());
+                log.error("Unable to create the MessageConsumerResource: {}", e.getLocalizedMessage());
                 throw new CamelException(e);
             } finally {
                 connectionResource.returnConnection(conn);
@@ -141,11 +139,11 @@ public class InOutProducer extends SjmsProducer {
     protected void doStart() throws Exception {
 
         if (isEndpointTransacted()) {
-            throw new IllegalArgumentException("InOut exchange pattern is incompatible with transacted=true as it cuases a deadlock. Please use transacted=false or InOnly exchange pattern.");
+            throw new IllegalArgumentException("InOut exchange pattern is incompatible with transacted=true as it cause a deadlock. Please use transacted=false or InOnly exchange pattern.");
         }
 
         if (ObjectHelper.isEmpty(getNamedReplyTo())) {
-            log.debug("No reply to destination is defined.  Using temporary destinations.");
+            log.debug("No reply to destination is defined. Using temporary destinations.");
         } else {
             log.debug("Using {} as the reply to destination.", getNamedReplyTo());
         }
@@ -154,7 +152,7 @@ public class InOutProducer extends SjmsProducer {
             uuidGenerator = getEndpoint().getCamelContext().getUuidGenerator();
         }
         if (consumers == null) {
-            consumers = new GenericObjectPool<MessageConsumerResources>(new MessageConsumerResourcesFactory());
+            consumers = new GenericObjectPool<>(new MessageConsumerResourcesFactory());
             consumers.setMaxActive(getConsumerCount());
             consumers.setMaxIdle(getConsumerCount());
             while (consumers.getNumIdle() < consumers.getMaxIdle()) {
@@ -188,7 +186,7 @@ public class InOutProducer extends SjmsProducer {
         }
 
         Object responseObject = null;
-        Exchanger<Object> messageExchanger = new Exchanger<Object>();
+        Exchanger<Object> messageExchanger = new Exchanger<>();
         JmsMessageHelper.setCorrelationId(request, correlationId);
         EXCHANGERS.put(correlationId, messageExchanger);
 

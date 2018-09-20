@@ -1,3 +1,4 @@
+[[aws-lambda-component]]
 == AWS Lambda Component
 
 *Available as of Camel version 2.20*
@@ -31,7 +32,7 @@ You can append query options to the URI in the following format,
 
 
 // component options: START
-The AWS Lambda component supports 5 options which are listed below.
+The AWS Lambda component supports 5 options, which are listed below.
 
 
 
@@ -60,35 +61,64 @@ with the following path and query parameters:
 
 ==== Path Parameters (1 parameters):
 
+
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
 | Name | Description | Default | Type
 | *function* | *Required* Name of the Lambda function. |  | String
 |===
 
-==== Query Parameters (9 parameters):
+
+==== Query Parameters (8 parameters):
+
 
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
 | Name | Description | Default | Type
-| *awsLambdaEndpoint* (producer) | The AWS-Lambda client to use. |  | String
-| *operation* (producer) | *Required* The operation to perform. It can be listFunctions getFunction createFunction deleteFunction or invokeFunction |  | LambdaOperations
+| *operation* (producer) | *Required* The operation to perform. It can be listFunctions, getFunction, createFunction, deleteFunction or invokeFunction |  | LambdaOperations
 | *region* (producer) | Amazon AWS Region |  | String
 | *awsLambdaClient* (advanced) | To use a existing configured AwsLambdaClient as client |  | AWSLambda
-| *synchronous* (advanced) | Sets whether synchronous processing should be strictly used or Camel is allowed to use asynchronous processing (if supported). | false | boolean
+| *synchronous* (advanced) | Sets whether synchronous processing should be strictly used, or Camel is allowed to use asynchronous processing (if supported). | false | boolean
 | *proxyHost* (proxy) | To define a proxy host when instantiating the Lambda client |  | String
 | *proxyPort* (proxy) | To define a proxy port when instantiating the Lambda client |  | Integer
 | *accessKey* (security) | Amazon AWS Access Key |  | String
 | *secretKey* (security) | Amazon AWS Secret Key |  | String
 |===
 // endpoint options: END
+// spring-boot-auto-configure options: START
+=== Spring Boot Auto-Configuration
+
+
+The component supports 13 options, which are listed below.
+
+
+
+[width="100%",cols="2,5,^1,2",options="header"]
+|===
+| Name | Description | Default | Type
+| *camel.component.aws-lambda.access-key* | Amazon AWS Access Key |  | String
+| *camel.component.aws-lambda.configuration.access-key* | Amazon AWS Access Key |  | String
+| *camel.component.aws-lambda.configuration.aws-lambda-client* | To use a existing configured AwsLambdaClient as client |  | AWSLambda
+| *camel.component.aws-lambda.configuration.function* | Name of the Lambda function. |  | String
+| *camel.component.aws-lambda.configuration.operation* | The operation to perform. It can be listFunctions, getFunction, createFunction, deleteFunction or invokeFunction |  | LambdaOperations
+| *camel.component.aws-lambda.configuration.proxy-host* | To define a proxy host when instantiating the Lambda client |  | String
+| *camel.component.aws-lambda.configuration.proxy-port* | To define a proxy port when instantiating the Lambda client |  | Integer
+| *camel.component.aws-lambda.configuration.region* | Amazon AWS Region |  | String
+| *camel.component.aws-lambda.configuration.secret-key* | Amazon AWS Secret Key |  | String
+| *camel.component.aws-lambda.enabled* | Whether to enable auto configuration of the aws-lambda component. This is enabled by default. |  | Boolean
+| *camel.component.aws-lambda.region* | Amazon AWS Region |  | String
+| *camel.component.aws-lambda.resolve-property-placeholders* | Whether the component should resolve property placeholders on itself when starting. Only properties which are of String type can use property placeholders. | true | Boolean
+| *camel.component.aws-lambda.secret-key* | Amazon AWS Secret Key |  | String
+|===
+// spring-boot-auto-configure options: END
+
 
 
 
 Required Lambda component options
 
 You have to provide the awsLambdaClient in the
-link:registry.html[Registry] or your accessKey and secretKey to access
+Registry or your accessKey and secretKey to access
 the https://aws.amazon.com/lambda/[Amazon Lambda] service.
 
 ### Usage
@@ -172,9 +202,9 @@ where `${camel-version`} must be replaced by the actual version of Camel
 
 ### See Also
 
-* link:configuring-camel.html[Configuring Camel]
-* link:component.html[Component]
-* link:endpoint.html[Endpoint]
-* link:getting-started.html[Getting Started]
+* Configuring Camel
+* Component
+* Endpoint
+* Getting Started
 
-* link:aws.html[AWS Component]
+* AWS Component

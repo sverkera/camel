@@ -79,6 +79,16 @@ public class DdbStreamEndpoint extends ScheduledPollEndpoint {
         ddbStreamClient = configuration.getAmazonDynamoDbStreamsClient() != null ? configuration.getAmazonDynamoDbStreamsClient()
             : createDdbStreamClient();
     }
+    
+    @Override
+    public void doStop() throws Exception {
+        if (ObjectHelper.isEmpty(configuration.getAmazonDynamoDbStreamsClient())) {
+            if (ddbStreamClient != null) {
+                ddbStreamClient.shutdown();
+            }
+        }
+        super.doStop();
+    }
 
     @Override
     public boolean isSingleton() {

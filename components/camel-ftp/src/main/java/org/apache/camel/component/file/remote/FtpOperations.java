@@ -184,7 +184,7 @@ public class FtpOperations implements RemoteFileOperations<FTPFile> {
             boolean login;
             if (username != null) {
                 if (account != null) {
-                    log.trace("Attempting to login user: {} using password: ******** and account: {}", new Object[]{username, account});
+                    log.trace("Attempting to login user: {} using password: ******** and account: {}", username, account);
                     login = client.login(username, configuration.getPassword(), account);
                 } else {
                     log.trace("Attempting to login user: {} using password: ********", username);
@@ -898,7 +898,7 @@ public class FtpOperations implements RemoteFileOperations<FTPFile> {
         log.trace("listFiles()");
         clientActivityListener.onScanningForFiles(endpoint.remoteServerInformation(), null);
         try {
-            final List<FTPFile> list = new ArrayList<FTPFile>();
+            final List<FTPFile> list = new ArrayList<>();
             FTPFile[] files = client.listFiles();
             // can return either null or an empty list depending on FTP servers
             if (files != null) {
@@ -921,7 +921,7 @@ public class FtpOperations implements RemoteFileOperations<FTPFile> {
         }
 
         try {
-            final List<FTPFile> list = new ArrayList<FTPFile>();
+            final List<FTPFile> list = new ArrayList<>();
             FTPFile[] files = client.listFiles(path);
             // can return either null or an empty list depending on FTP servers
             if (files != null) {

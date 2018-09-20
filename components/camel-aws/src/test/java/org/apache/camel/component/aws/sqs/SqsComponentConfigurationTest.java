@@ -41,7 +41,6 @@ public class SqsComponentConfigurationTest extends CamelTestSupport {
         assertNull(endpoint.getConfiguration().getMessageAttributeNames());
         assertNull(endpoint.getConfiguration().getDefaultVisibilityTimeout());
         assertNull(endpoint.getConfiguration().getVisibilityTimeout());
-        assertNull(endpoint.getConfiguration().getAmazonSQSEndpoint());
         assertNull(endpoint.getConfiguration().getMaximumMessageSize());
         assertNull(endpoint.getConfiguration().getMessageRetentionPeriod());
         assertNull(endpoint.getConfiguration().getPolicy());
@@ -61,7 +60,6 @@ public class SqsComponentConfigurationTest extends CamelTestSupport {
         assertNull(endpoint.getConfiguration().getMessageAttributeNames());
         assertNull(endpoint.getConfiguration().getDefaultVisibilityTimeout());
         assertNull(endpoint.getConfiguration().getVisibilityTimeout());
-        assertNull(endpoint.getConfiguration().getAmazonSQSEndpoint());
         assertNull(endpoint.getConfiguration().getMaximumMessageSize());
         assertNull(endpoint.getConfiguration().getMessageRetentionPeriod());
         assertNull(endpoint.getConfiguration().getPolicy());
@@ -70,14 +68,34 @@ public class SqsComponentConfigurationTest extends CamelTestSupport {
     }
     
     @Test
+    public void createEndpointWithOnlyAccessKeyAndSecretKeyAndRegion() throws Exception {
+        SqsComponent component = new SqsComponent(context);
+        SqsEndpoint endpoint = (SqsEndpoint) component.createEndpoint("aws-sqs://MyQueue?accessKey=xxx&secretKey=yyy&region=US_WEST_1");
+
+        assertEquals("MyQueue", endpoint.getConfiguration().getQueueName());
+        assertEquals("xxx", endpoint.getConfiguration().getAccessKey());
+        assertEquals("yyy", endpoint.getConfiguration().getSecretKey());
+        assertEquals("US_WEST_1", endpoint.getConfiguration().getRegion());
+        assertNull(endpoint.getConfiguration().getAmazonSQSClient());
+        assertNull(endpoint.getConfiguration().getAttributeNames());
+        assertNull(endpoint.getConfiguration().getMessageAttributeNames());
+        assertNull(endpoint.getConfiguration().getDefaultVisibilityTimeout());
+        assertNull(endpoint.getConfiguration().getVisibilityTimeout());
+        assertNull(endpoint.getConfiguration().getMaximumMessageSize());
+        assertNull(endpoint.getConfiguration().getMessageRetentionPeriod());
+        assertNull(endpoint.getConfiguration().getPolicy());
+        assertNull(endpoint.getConfiguration().getRedrivePolicy());
+    }
+    
+    @Test
     public void createEndpointWithMinimalArnConfiguration() throws Exception {
         AmazonSQSClientMock mock = new AmazonSQSClientMock();
         
         ((JndiRegistry) ((PropertyPlaceholderDelegateRegistry) context.getRegistry()).getRegistry()).bind("amazonSQSClient", mock);
         SqsComponent component = new SqsComponent(context);
-        SqsEndpoint endpoint = (SqsEndpoint) component.createEndpoint("aws-sqs://arn:aws:sqs:region:account:MyQueue?amazonSQSClient=#amazonSQSClient&accessKey=xxx&secretKey=yyy");
+        SqsEndpoint endpoint = (SqsEndpoint) component.createEndpoint("aws-sqs://arn:aws:sqs:us-east-1:account:MyQueue?amazonSQSClient=#amazonSQSClient&accessKey=xxx&secretKey=yyy");
 
-        assertEquals("region", endpoint.getConfiguration().getRegion());
+        assertEquals("US_EAST_1", endpoint.getConfiguration().getRegion());
         assertEquals("account", endpoint.getConfiguration().getQueueOwnerAWSAccountId());
         assertEquals("MyQueue", endpoint.getConfiguration().getQueueName());
         assertEquals("xxx", endpoint.getConfiguration().getAccessKey());
@@ -115,7 +133,6 @@ public class SqsComponentConfigurationTest extends CamelTestSupport {
         assertNull(endpoint.getConfiguration().getMessageAttributeNames());
         assertNull(endpoint.getConfiguration().getDefaultVisibilityTimeout());
         assertNull(endpoint.getConfiguration().getVisibilityTimeout());
-        assertNull(endpoint.getConfiguration().getAmazonSQSEndpoint());
         assertNull(endpoint.getConfiguration().getMaximumMessageSize());
         assertNull(endpoint.getConfiguration().getMessageRetentionPeriod());
         assertNull(endpoint.getConfiguration().getPolicy());
@@ -130,7 +147,7 @@ public class SqsComponentConfigurationTest extends CamelTestSupport {
         ((JndiRegistry) ((PropertyPlaceholderDelegateRegistry) context.getRegistry()).getRegistry()).bind("amazonSQSClient", mock);
         SqsComponent component = new SqsComponent(context);
 
-        SqsEndpoint endpoint = (SqsEndpoint) component.createEndpoint("aws-sqs://MyQueue?amazonSQSClient=#amazonSQSClient&amazonSQSEndpoint=sns.eu-west-1.amazonaws.com&accessKey=xxx"
+        SqsEndpoint endpoint = (SqsEndpoint) component.createEndpoint("aws-sqs://MyQueue?amazonSQSClient=#amazonSQSClient&accessKey=xxx"
                 + "&secretKey=yyy&attributeNames=color,size"
                 + "&messageAttributeNames=msgColor,msgSize&DefaultVisibilityTimeout=1000&visibilityTimeout=2000&maximumMessageSize=65536&messageRetentionPeriod=1209600&policy="
                 + "%7B%22Version%22%3A%222008-10-17%22%2C%22Id%22%3A%22%2F195004372649%2FMyQueue%2FSQSDefaultPolicy%22%2C%22Statement%22%3A%5B%7B%22Sid%22%3A%22Queue1ReceiveMessage%22%2C%22"
@@ -147,7 +164,6 @@ public class SqsComponentConfigurationTest extends CamelTestSupport {
         assertEquals("msgColor,msgSize", endpoint.getConfiguration().getMessageAttributeNames());
         assertEquals(new Integer(1000), endpoint.getConfiguration().getDefaultVisibilityTimeout());
         assertEquals(new Integer(2000), endpoint.getConfiguration().getVisibilityTimeout());
-        assertEquals("sns.eu-west-1.amazonaws.com", endpoint.getConfiguration().getAmazonSQSEndpoint());
         assertEquals(new Integer(65536), endpoint.getConfiguration().getMaximumMessageSize());
         assertEquals(new Integer(1209600), endpoint.getConfiguration().getMessageRetentionPeriod());
         assertEquals("{\"Version\":\"2008-10-17\",\"Id\":\"/195004372649/MyQueue/SQSDefaultPolicy\",\"Statement\":[{\"Sid\":\"Queue1ReceiveMessage\",\"Effect\":\"Allow\",\"Principal\":"

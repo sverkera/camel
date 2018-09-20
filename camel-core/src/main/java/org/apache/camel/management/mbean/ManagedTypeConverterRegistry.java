@@ -17,6 +17,7 @@
 package org.apache.camel.management.mbean;
 
 import java.util.List;
+
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeType;
@@ -114,7 +115,9 @@ public class ManagedTypeConverterRegistry extends ManagedService implements Mana
                 String from = entry[0].getCanonicalName();
                 String to = entry[1].getCanonicalName();
                 CompositeData data = new CompositeDataSupport(ct, new String[]{"from", "to"}, new Object[]{from, to});
-                answer.put(data);
+                if (!answer.containsValue(data)) {
+                    answer.put(data);
+                }
             }
             return answer;
         } catch (Exception e) {

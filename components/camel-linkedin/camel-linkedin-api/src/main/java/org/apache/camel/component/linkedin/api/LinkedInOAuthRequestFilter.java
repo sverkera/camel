@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.client.ClientRequestContext;
@@ -50,7 +51,6 @@ import com.gargoylesoftware.htmlunit.html.HtmlPasswordInput;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import com.gargoylesoftware.htmlunit.html.HtmlTextInput;
 import com.gargoylesoftware.htmlunit.util.WebConnectionWrapper;
-
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -207,7 +207,7 @@ public final class LinkedInOAuthRequestFilter implements ClientRequestFilter {
             if (redirectQuery == null) {
                 throw new IllegalArgumentException("Redirect response query is null, check username, password and permissions");
             }
-            final Map<String, String> params = new HashMap<String, String>();
+            final Map<String, String> params = new HashMap<>();
             final Matcher matcher = QUERY_PARAM_PATTERN.matcher(redirectQuery);
             while (matcher.find()) {
                 params.put(matcher.group(1), matcher.group(2));

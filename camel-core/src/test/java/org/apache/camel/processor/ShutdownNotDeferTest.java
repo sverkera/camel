@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 package org.apache.camel.processor;
-
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,6 +26,8 @@ import org.apache.camel.component.file.FileConsumer;
 import org.apache.camel.component.file.FileEndpoint;
 import org.apache.camel.component.file.GenericFileOperations;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.apache.camel.ShutdownRoute.Default;
 
@@ -38,11 +39,13 @@ public class ShutdownNotDeferTest extends ContextTestSupport {
     private static final AtomicBoolean CONSUMER_SUSPENDED = new AtomicBoolean();
 
     @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         deleteDirectory("target/deferred");
         super.setUp();
     }
 
+    @Test
     public void testShutdownNotDeferred() throws Exception {
         MockEndpoint bar = getMockEndpoint("mock:bar");
         bar.expectedMinimumMessageCount(1);
@@ -89,7 +92,7 @@ public class ShutdownNotDeferTest extends ContextTestSupport {
 
         @Override
         protected FileConsumer newFileConsumer(Processor processor, GenericFileOperations<File> operations) {
-            return new FileConsumer(this, processor, operations) {
+            return new FileConsumer(this, processor, operations, createGenericFileStrategy()) {
                 @Override
                 protected void doSuspend() throws Exception {
                     CONSUMER_SUSPENDED.set(true);

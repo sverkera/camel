@@ -18,6 +18,7 @@ package org.apache.camel.model;
 
 import java.util.Collections;
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -25,17 +26,13 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.camel.AsyncProcessor;
 import org.apache.camel.ErrorHandlerFactory;
-import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
 import org.apache.camel.Processor;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.model.language.HeaderExpression;
 import org.apache.camel.processor.RoutingSlip;
-import org.apache.camel.processor.SendDynamicProcessor;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.RouteContext;
-
-import static org.apache.camel.builder.ExpressionBuilder.headerExpression;
 
 /**
  * Routes a message through a series of steps that are pre-determined (the slip)
@@ -78,6 +75,11 @@ public class RoutingSlipDefinition<Type extends ProcessorDefinition<Type>> exten
     @Override
     public String toString() {
         return "RoutingSlip[" + getExpression() + "]";
+    }
+
+    @Override
+    public String getShortName() {
+        return "routingSlip";
     }
 
     @Override

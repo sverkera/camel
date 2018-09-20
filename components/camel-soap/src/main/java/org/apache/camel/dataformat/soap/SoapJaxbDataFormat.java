@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.xml.bind.JAXBContext;
@@ -29,8 +30,6 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.JAXBIntrospector;
 import javax.xml.namespace.QName;
-
-import org.xml.sax.SAXException;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
@@ -169,13 +168,13 @@ public class SoapJaxbDataFormat extends JaxbDataFormat {
      */
     protected List<Object> createContentFromObject(final Object inputObject, String soapAction,
                                                          List<Object> headerElements) {
-        List<Object> bodyParts = new ArrayList<Object>();
-        List<Object> headerParts = new ArrayList<Object>();
+        List<Object> bodyParts = new ArrayList<>();
+        List<Object> headerParts = new ArrayList<>();
         if (inputObject instanceof BeanInvocation) {
             BeanInvocation bi = (BeanInvocation)inputObject;
             Annotation[][] annotations = bi.getMethod().getParameterAnnotations();
 
-            List<WebParam> webParams = new ArrayList<WebParam>();
+            List<WebParam> webParams = new ArrayList<>();
             for (Annotation[] singleParameterAnnotations : annotations) {
                 for (Annotation annotation : singleParameterAnnotations) {
                     if (annotation instanceof WebParam) {
@@ -210,11 +209,11 @@ public class SoapJaxbDataFormat extends JaxbDataFormat {
             bodyParts.add(inputObject);
         }
 
-        List<Object> bodyElements = new ArrayList<Object>();
+        List<Object> bodyElements = new ArrayList<>();
         for (Object bodyObj : bodyParts) {
             QName name = elementNameStrategy.findQNameForSoapActionOrType(soapAction, bodyObj.getClass());
             if (name == null) {
-                LOG.warn("Could not find QName for class " + bodyObj.getClass().getName());
+                LOG.warn("Could not find QName for class {}", bodyObj.getClass().getName());
                 continue;
             } else {
                 bodyElements.add(getElement(bodyObj, name));
@@ -224,7 +223,7 @@ public class SoapJaxbDataFormat extends JaxbDataFormat {
         for (Object headerObj : headerParts) {
             QName name = elementNameStrategy.findQNameForSoapActionOrType(soapAction, headerObj.getClass());
             if (name == null) {
-                LOG.warn("Could not find QName for class " + headerObj.getClass().getName());
+                LOG.warn("Could not find QName for class {}", headerObj.getClass().getName());
                 continue;
             } else {
                 JAXBElement<?> headerElem = getElement(headerObj, name);

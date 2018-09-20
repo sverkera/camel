@@ -35,26 +35,27 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @EnableAutoConfiguration
 @SpringBootApplication
-@SpringBootTest(classes = {CamelAutoConfiguration.class, CamelRoutesEndpointAutoConfiguration.class, ActuatorTestRoute.class},
-        properties = {
-                "endpoints.enabled = false",
-                "endpoints.camelroutes.enabled = true"
-        })
+@SpringBootTest(
+    classes = {CamelAutoConfiguration.class, CamelRoutesEndpointAutoConfiguration.class,
+               CamelRouteControllerEndpointAutoConfiguration.class, ActuatorTestRoute.class},
+    properties = {"management.endpoints.enabled-by-default = false",
+                  "management.endpoint.camelroutes.enabled = true"}
+)
 public class CamelRoutesEndpointGloballyDisabledAndReenabledTest extends Assert {
 
     @Autowired
     CamelRoutesEndpoint routesEndpoint;
 
-    @Autowired
-    CamelRoutesMvcEndpoint routesMvcEndpoint;
+    @Autowired(required = false)
+    CamelRouteControllerEndpoint routeControllerEndpoint;
 
     @Autowired
     CamelContext camelContext;
 
     @Test
     public void testRoutesEndpointPresent() throws Exception {
+        Assert.assertNull(routeControllerEndpoint);
         Assert.assertNotNull(routesEndpoint);
-        Assert.assertNotNull(routesMvcEndpoint);
     }
 
 }

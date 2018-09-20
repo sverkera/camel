@@ -51,12 +51,13 @@ import org.slf4j.LoggerFactory;
 public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(BindyCsvFactory.class);
+    private static final String DOUBLE_QUOTES_SYMBOL = "\"";
 
     boolean isOneToMany;
 
-    private Map<Integer, DataField> dataFields = new LinkedHashMap<Integer, DataField>();
-    private Map<Integer, Field> annotatedFields = new LinkedHashMap<Integer, Field>();
-    private Map<String, Integer> sections = new HashMap<String, Integer>();
+    private Map<Integer, DataField> dataFields = new LinkedHashMap<>();
+    private Map<Integer, Field> annotatedFields = new LinkedHashMap<>();
+    private Map<String, Integer> sections = new HashMap<>();
 
     private int numberOptionalFields;
     private int numberMandatoryFields;
@@ -95,7 +96,7 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
         // Find annotated Datafields declared in the Model classes
         initAnnotatedFields();
 
-        // initialize Csv parameter(s)
+        // initialize CSV parameter(s)
         // separator and skip first line from @CSVrecord annotation
         initCsvRecordParameters();
     }
@@ -105,7 +106,7 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
 
         maxpos = 0;
         for (Class<?> cl : models) {
-            List<Field> linkFields = new ArrayList<Field>();
+            List<Field> linkFields = new ArrayList<>();
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Class retrieved: {}", cl.getName());
@@ -222,7 +223,7 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
         field.setAccessible(true);
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Pos: {}, Data: {}, Field type: {}", new Object[]{pos, data, field.getType()});
+            LOG.debug("Pos: {}, Data: {}, Field type: {}", pos, data, field.getType());
         }
 
         // Create format object to format the field
@@ -242,6 +243,10 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
             try {
                 if (quoting && quote != null && (data.contains("\\" + quote) || data.contains(quote)) && quotingEscaped) {
                     value = format.parse(data.replaceAll("\\\\" + quote, "\\" + quote));
+                } else if (quote != null && quote.equals(DOUBLE_QUOTES_SYMBOL) && data.contains(DOUBLE_QUOTES_SYMBOL + DOUBLE_QUOTES_SYMBOL) && !quotingEscaped) {
+                    // If double-quotes are used to enclose fields, the two double 
+                    // quotes character must be replaced with one according to RFC 4180 section 2.7
+                    value = format.parse(data.replaceAll(DOUBLE_QUOTES_SYMBOL + DOUBLE_QUOTES_SYMBOL, DOUBLE_QUOTES_SYMBOL));
                 } else {
                     value = format.parse(data);
                 }
@@ -291,7 +296,7 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
     public String unbind(CamelContext camelContext, Map<String, Object> model) throws Exception {
 
         StringBuilder buffer = new StringBuilder();
-        Map<Integer, List<String>> results = new HashMap<Integer, List<String>>();
+        Map<Integer, List<String>> results = new HashMap<>();
 
         // Check if separator exists
         ObjectHelper.notNull(this.separator, "The separator has not been instantiated or property not defined in the @CsvRecord annotation");
@@ -319,13 +324,13 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
         }
 
         // Transpose result
-        List<List<String>> l = new ArrayList<List<String>>();
+        List<List<String>> l = new ArrayList<>();
         if (isOneToMany) {
             l = product(results);
         } else {
             // Convert Map<Integer, List> into List<List>
-            TreeMap<Integer, List<String>> sortValues = new TreeMap<Integer, List<String>>(results);
-            List<String> temp = new ArrayList<String>();
+            TreeMap<Integer, List<String>> sortValues = new TreeMap<>(results);
+            List<String> temp = new ArrayList<>();
 
             for (Entry<Integer, List<String>> entry : sortValues.entrySet()) {
                 // Get list of values
@@ -359,9 +364,14 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
                         if (quoting && quote != null) {
                             buffer.append(quote);
                         }
-                        // CAMEL-7519 - improvoment escape the token itself by prepending escape char
+                        // CAMEL-7519 - improvement escape the token itself by prepending escape char
                         if (quoting && quote != null && (res.contains("\\" + quote) || res.contains(quote))  && quotingEscaped) {
                             buffer.append(res.replaceAll("\\" + quote, "\\\\" + quote));
+                        } else if (quoting && quote != null && quote.equals(DOUBLE_QUOTES_SYMBOL) && res.contains(quote) && !quotingEscaped) {
+                            // If double-quotes are used to enclose fields, then a double-quote 
+                            // appearing inside a field must be escaped by preceding it with another 
+                            // double quote according to RFC 4180 section 2.7
+                            buffer.append(res.replaceAll(DOUBLE_QUOTES_SYMBOL, DOUBLE_QUOTES_SYMBOL + DOUBLE_QUOTES_SYMBOL));
                         } else {
                             buffer.append(res);
                         }
@@ -385,16 +395,16 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
     }
 
     private List<List<String>> product(Map<Integer, List<String>> values) {
-        TreeMap<Integer, List<String>> sortValues = new TreeMap<Integer, List<String>>(values);
+        TreeMap<Integer, List<String>> sortValues = new TreeMap<>(values);
 
-        List<List<String>> product = new ArrayList<List<String>>();
-        Map<Integer, Integer> index = new HashMap<Integer, Integer>();
+        List<List<String>> product = new ArrayList<>();
+        Map<Integer, Integer> index = new HashMap<>();
 
         int idx = 0;
         int idxSize = 0;
         do {
             idxSize = 0;
-            List<String> v = new ArrayList<String>();
+            List<String> v = new ArrayList<>();
 
             for (int ii = 1; ii <= sortValues.lastKey(); ii++) {
                 List<String> l = values.get(ii);
@@ -408,14 +418,14 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
                     v.add(l.get(idx));
                     index.put(ii, idx);
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Value: {}, pos: {}, at: {}", new Object[]{l.get(idx), ii, idx});
+                        LOG.debug("Value: {}, pos: {}, at: {}", l.get(idx), ii, idx);
                     }
                 } else {
                     v.add(l.get(0));
                     index.put(ii, 0);
                     ++idxSize;
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Value: {}, pos: {}, at index: {}", new Object[]{l.get(0), ii, 0});
+                        LOG.debug("Value: {}, pos: {}, at index: {}", l.get(0), ii, 0);
                     }
                 }
             }
@@ -450,9 +460,6 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
 
                 if (obj != null) {
 
-                    // Retrieve the format, pattern and precision associated to the type
-                    Class<?> type = field.getType();
-
                     // Create format
                     FormattingOptions formattingOptions = ConverterUtils.convert(datafield,
                             field.getType(),
@@ -479,7 +486,7 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
                     }
 
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Value to be formatted: {}, position: {}, and its formatted value: {}", new Object[]{value, datafield.pos(), result});
+                        LOG.debug("Value to be formatted: {}, position: {}, and its formatted value: {}", value, datafield.pos(), result);
                     }
 
                 } else {
@@ -507,7 +514,7 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
                 }
 
                 if (!results.containsKey(key)) {
-                    List<String> list = new LinkedList<String>();
+                    List<String> list = new LinkedList<>();
                     list.add(result);
                     results.put(key, list);
                 } else {
@@ -552,7 +559,7 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
      */
     public String generateHeader() {
 
-        Map<Integer, DataField> dataFieldsSorted = new TreeMap<Integer, DataField>(dataFields);
+        Map<Integer, DataField> dataFieldsSorted = new TreeMap<>(dataFields);
         Iterator<Integer> it = dataFieldsSorted.keySet().iterator();
 
         StringBuilder builderHeader = new StringBuilder();
@@ -567,10 +574,23 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
             field.setAccessible(true);
 
             // Get dataField
+            final String res;
             if (!dataField.columnName().equals("")) {
-                builderHeader.append(dataField.columnName());
+                res = dataField.columnName();
             } else {
-                builderHeader.append(field.getName());
+                res = field.getName();
+            }
+
+            if (quoting && quote != null) {
+                builderHeader.append(quote);
+            }
+            if (quoting && quote != null && (res.contains("\\" + quote) || res.contains(quote))  && quotingEscaped) {
+                builderHeader.append(res.replaceAll("\\" + quote, "\\\\" + quote));
+            } else {
+                builderHeader.append(res);
+            }
+            if (quoting && quote != null) {
+                builderHeader.append(quote);
             }
 
             if (it.hasNext()) {
@@ -600,11 +620,11 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
 
                     // Get skipFirstLine parameter
                     skipFirstLine = record.skipFirstLine();
-                    LOG.debug("Skip First Line parameter of the CSV: {}" + skipFirstLine);
+                    LOG.debug("Skip First Line parameter of the CSV: {}", skipFirstLine);
 
                     // Get skipFirstLine parameter
                     skipField = record.skipField();
-                    LOG.debug("Skip Field parameter of the CSV: {}" + skipField);
+                    LOG.debug("Skip Field parameter of the CSV: {}", skipField);
 
                     // Get generateHeaderColumnNames parameter
                     generateHeaderColumnNames = record.generateHeaderColumns();
@@ -636,15 +656,15 @@ public class BindyCsvFactory extends BindyAbstractFactory implements BindyFactor
                     
                     // Get allowEmptyStream parameter
                     allowEmptyStream = record.allowEmptyStream();
-                    LOG.debug("Allow empty stream parameter of the CSV: {}" + allowEmptyStream);
+                    LOG.debug("Allow empty stream parameter of the CSV: {}", allowEmptyStream);
                     
                     // Get quotingEscaped parameter
                     quotingEscaped = record.quotingEscaped();
-                    LOG.debug("Escape quote character flag of the CSV: {}" + quotingEscaped);
+                    LOG.debug("Escape quote character flag of the CSV: {}", quotingEscaped);
                     
                     // Get endWithLineBreak parameter
                     endWithLineBreak = record.endWithLineBreak();
-                    LOG.debug("End with line break: {}" + endWithLineBreak);
+                    LOG.debug("End with line break: {}", endWithLineBreak);
                 }
 
                 if (section != null) {

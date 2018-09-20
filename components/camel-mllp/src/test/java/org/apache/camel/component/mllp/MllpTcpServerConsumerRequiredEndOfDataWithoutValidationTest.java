@@ -20,8 +20,8 @@ package org.apache.camel.component.mllp;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.builder.NotifyBuilder;
-
 import org.apache.camel.test.mllp.Hl7TestMessageGenerator;
+import org.junit.Test;
 
 public class MllpTcpServerConsumerRequiredEndOfDataWithoutValidationTest extends TcpServerConsumerEndOfDataAndValidationTestSupport {
 
@@ -36,20 +36,19 @@ public class MllpTcpServerConsumerRequiredEndOfDataWithoutValidationTest extends
     }
 
     @Override
+    @Test
     public void testInvalidMessage() throws Exception {
-        expectedFailedCount = 1;
-
         runNthInvalidMessage();
     }
 
     @Override
+    @Test
     public void testNthInvalidMessage() throws Exception {
-        expectedFailedCount = 1;
-
         runNthInvalidMessage();
     }
 
     @Override
+    @Test
     public void testMessageContainingEmbeddedStartOfBlock() throws Exception {
         expectedCompleteCount = 1;
 
@@ -58,12 +57,14 @@ public class MllpTcpServerConsumerRequiredEndOfDataWithoutValidationTest extends
 
 
     @Override
+    @Test
     public void testNthMessageContainingEmbeddedStartOfBlock() throws Exception {
         runNthMessageContainingEmbeddedStartOfBlock();
     }
 
 
     @Override
+    @Test
     public void testMessageContainingEmbeddedEndOfBlock() throws Exception {
         setExpectedCounts();
 
@@ -75,6 +76,7 @@ public class MllpTcpServerConsumerRequiredEndOfDataWithoutValidationTest extends
     }
 
     @Override
+    @Test
     public void testInvalidMessageContainingEmbeddedEndOfBlock() throws Exception {
         expectedInvalidCount = 1;
 
@@ -82,6 +84,7 @@ public class MllpTcpServerConsumerRequiredEndOfDataWithoutValidationTest extends
     }
 
     @Override
+    @Test
     public void testNthMessageContainingEmbeddedEndOfBlock() throws Exception {
         expectedInvalidCount = 1;
 
@@ -89,6 +92,7 @@ public class MllpTcpServerConsumerRequiredEndOfDataWithoutValidationTest extends
     }
 
     @Override
+    @Test
     public void testInitialMessageWithoutEndOfDataByte() throws Exception {
         setExpectedCounts();
 
@@ -98,6 +102,7 @@ public class MllpTcpServerConsumerRequiredEndOfDataWithoutValidationTest extends
     }
 
     @Override
+    @Test
     public void testMessageWithoutEndOfDataByte() throws Exception {
         expectedCompleteCount = 1;
         expectedInvalidCount = 1;

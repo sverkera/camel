@@ -19,14 +19,16 @@ package org.apache.camel.component.mllp.internal;
 
 import java.io.ByteArrayOutputStream;
 
+import org.apache.camel.component.mllp.MllpAcknowledgementGenerationException;
 import org.apache.camel.component.mllp.MllpProtocolConstants;
-
-import org.apache.camel.processor.mllp.Hl7AcknowledgementGenerationException;
 import org.apache.camel.test.stub.camel.MllpEndpointStub;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 public class Hl7UtilTest {
@@ -48,28 +50,34 @@ public class Hl7UtilTest {
             + "565-33-2222|||||^^^^^USA|||UNKNOWN|||||||||||||||||||||||||||||" + '\r'
             + "UB2||||||||" + '\r';
 
-    static final String EXPTECTED_ACKNOWLEDGEMENT_PAYLOAD =
+    static final String EXPECTED_ACKNOWLEDGEMENT_PAYLOAD_START = MllpProtocolConstants.START_OF_BLOCK + "MSH|^~\\&|JCAPS|CC|ADT|EPIC|";
+
+    static final String EXPECTED_ACKNOWLEDGEMENT_PAYLOAD_END = "||ACK^A08|00001A|D|2.3^^|||||||\r"
+        + "MSA|AA|00001\r"
+        + MllpProtocolConstants.END_OF_BLOCK + MllpProtocolConstants.END_OF_DATA;
+
+    static final String EXPECTED_ACKNOWLEDGEMENT_PAYLOAD =
         MllpProtocolConstants.START_OF_BLOCK
-            + "MSH|^~\\&|JCAPS|CC|ADT|EPIC|20161206193919|RISTECH|ACK^A08|00001|D|2.3^^|||||||\r"
-            + "MSA|AA|00001\r"
-            + MllpProtocolConstants.END_OF_BLOCK + MllpProtocolConstants.END_OF_DATA;
+        + "MSH|^~\\&|JCAPS|CC|ADT|EPIC|20161206193919||ACK^A08|00001A|D|2.3^^|||||||\r"
+        + "MSA|AA|00001\r"
+        + MllpProtocolConstants.END_OF_BLOCK + MllpProtocolConstants.END_OF_DATA;
 
     static final String EXPECTED_MESSAGE =
-        "MSH|^~\\&|ADT|EPIC|JCAPS|CC|20161206193919|RISTECH|ADT^A08|00001|D|2.3^^|||||||" + "<CR>"
-            + "EVN|A08|20150107161440||REG_UPDATE_SEND_VISIT_MESSAGES_ON_PATIENT_CHANGES|RISTECH^RADIOLOGY^TECHNOLOGIST^^^^^^UCLA^^^^^RRMC||" + "<CR>"
+        "MSH|^~\\&|ADT|EPIC|JCAPS|CC|20161206193919|RISTECH|ADT^A08|00001|D|2.3^^|||||||" + "<0x0D CR>"
+            + "EVN|A08|20150107161440||REG_UPDATE_SEND_VISIT_MESSAGES_ON_PATIENT_CHANGES|RISTECH^RADIOLOGY^TECHNOLOGIST^^^^^^UCLA^^^^^RRMC||" + "<0x0D CR>"
             + "PID|1|2100355^^^MRN^MRN|2100355^^^MRN^MRN||MDCLS9^MC9||19700109|F||U|111 HOVER STREET^^LOS ANGELES^CA^90032^USA^P^^LOS ANGELE|LOS ANGELE|(310)725-6952^P^PH^^^310^7256952"
-            +     "||ENGLISH|U||60000013647|565-33-2222|||U||||||||N||" + "<CR>"
-            + "PD1|||UCLA HEALTH SYSTEM^^10|10002116^ADAMS^JOHN^D^^^^^EPIC^^^^PROVID||||||||||||||" + "<CR>"
-            + "NK1|1|DOE^MC9^^|OTH|^^^^^USA|(310)888-9999^^^^^310^8889999|(310)999-2222^^^^^310^9992222|Emergency Contact 1|||||||||||||||||||||||||||" + "<CR>"
+            +     "||ENGLISH|U||60000013647|565-33-2222|||U||||||||N||" + "<0x0D CR>"
+            + "PD1|||UCLA HEALTH SYSTEM^^10|10002116^ADAMS^JOHN^D^^^^^EPIC^^^^PROVID||||||||||||||" + "<0x0D CR>"
+            + "NK1|1|DOE^MC9^^|OTH|^^^^^USA|(310)888-9999^^^^^310^8889999|(310)999-2222^^^^^310^9992222|Emergency Contact 1|||||||||||||||||||||||||||" + "<0x0D CR>"
             + "PV1|1|OUTPATIENT|RR CT^^^1000^^^^^^^DEPID|EL|||017511^TOBIAS^JONATHAN^^^^^^EPIC^^^^PROVID|017511^TOBIAS^JONATHAN^^^^^^EPIC^^^^PROVID||||||CLR|||||60000013647|SELF"
-            +     "|||||||||||||||||||||HOV_CONF|^^^1000^^^^^^^||20150107161438||||||||||" + "<CR>"
-            + "PV2||||||||20150107161438||||CT BRAIN W WO CONTRAST||||||||||N|||||||||||||||||||||||||||" + "<CR>"
-            + "ZPV||||||||||||20150107161438|||||||||" + "<CR>"
-            + "AL1|1||33361^NO KNOWN ALLERGIES^^NOTCOMPUTRITION^NO KNOWN ALLERGIES^EXTELG||||||" + "<CR>"
-            + "DG1|1|DX|784.0^Headache^DX|Headache||VISIT" + "<CR>"
+            +     "|||||||||||||||||||||HOV_CONF|^^^1000^^^^^^^||20150107161438||||||||||" + "<0x0D CR>"
+            + "PV2||||||||20150107161438||||CT BRAIN W WO CONTRAST||||||||||N|||||||||||||||||||||||||||" + "<0x0D CR>"
+            + "ZPV||||||||||||20150107161438|||||||||" + "<0x0D CR>"
+            + "AL1|1||33361^NO KNOWN ALLERGIES^^NOTCOMPUTRITION^NO KNOWN ALLERGIES^EXTELG||||||" + "<0x0D CR>"
+            + "DG1|1|DX|784.0^Headache^DX|Headache||VISIT" + "<0x0D CR>"
             + "GT1|1|1000235129|MDCLS9^MC9^^||111 HOVER STREET^^LOS ANGELES^CA^90032^USA^^^LOS ANGELE|(310)725-6952^^^^^310^7256952||19700109|F|P/F|SLF|565-33-2222|||||^^^^^USA|||UNKNOWN"
-            +     "|||||||||||||||||||||||||||||" + "<CR>"
-            + "UB2||||||||" + "<CR>";
+            +     "|||||||||||||||||||||||||||||" + "<0x0D CR>"
+            + "UB2||||||||" + "<0x0D CR>";
     // @formatter:on
 
     static final String MSH_SEGMENT = "MSH|^~\\&|0|90100053675|JCAPS|CC|20131125122938|RISMD|ORM|28785|D|2.3";
@@ -179,7 +187,10 @@ public class Hl7UtilTest {
         MllpSocketBuffer mllpSocketBuffer = new MllpSocketBuffer(new MllpEndpointStub());
         Hl7Util.generateAcknowledgementPayload(mllpSocketBuffer, TEST_MESSAGE.getBytes(), "AA");
 
-        assertEquals(EXPTECTED_ACKNOWLEDGEMENT_PAYLOAD, mllpSocketBuffer.toString());
+        String actual = mllpSocketBuffer.toString();
+
+        assertThat(actual, startsWith(EXPECTED_ACKNOWLEDGEMENT_PAYLOAD_START));
+        assertThat(actual, endsWith(EXPECTED_ACKNOWLEDGEMENT_PAYLOAD_END));
     }
 
     /**
@@ -187,12 +198,12 @@ public class Hl7UtilTest {
      *
      * @throws Exception in the event of a test error.
      */
-    @Test(expected = Hl7AcknowledgementGenerationException.class)
+    @Test(expected = MllpAcknowledgementGenerationException.class)
     public void testGenerateAcknowledgementPayloadFromNullMessage() throws Exception {
         MllpSocketBuffer mllpSocketBuffer = new MllpSocketBuffer(new MllpEndpointStub());
         Hl7Util.generateAcknowledgementPayload(mllpSocketBuffer, null, "AA");
 
-        assertEquals(EXPTECTED_ACKNOWLEDGEMENT_PAYLOAD, mllpSocketBuffer.toString());
+        assertEquals(EXPECTED_ACKNOWLEDGEMENT_PAYLOAD, mllpSocketBuffer.toString());
     }
 
     /**
@@ -200,12 +211,12 @@ public class Hl7UtilTest {
      *
      * @throws Exception in the event of a test error.
      */
-    @Test(expected = Hl7AcknowledgementGenerationException.class)
+    @Test(expected = MllpAcknowledgementGenerationException.class)
     public void testGenerateAcknowledgementPayloadFromEmptyMessage() throws Exception {
         MllpSocketBuffer mllpSocketBuffer = new MllpSocketBuffer(new MllpEndpointStub());
         Hl7Util.generateAcknowledgementPayload(mllpSocketBuffer, new byte[0], "AA");
 
-        assertEquals(EXPTECTED_ACKNOWLEDGEMENT_PAYLOAD, mllpSocketBuffer.toString());
+        assertEquals(EXPECTED_ACKNOWLEDGEMENT_PAYLOAD, mllpSocketBuffer.toString());
     }
 
     /**
@@ -213,12 +224,12 @@ public class Hl7UtilTest {
      *
      * @throws Exception in the event of a test error.
      */
-    @Test
+    @Test(expected = MllpAcknowledgementGenerationException.class)
     public void testGenerateAcknowledgementPayloadWithoutEnoughFields() throws Exception {
-        MllpSocketBuffer mllpSocketBuffer = new MllpSocketBuffer(new MllpEndpointStub());
-        Hl7Util.generateAcknowledgementPayload(mllpSocketBuffer, TEST_MESSAGE.replaceFirst("|RISTECH|ADT^A08|00001|D|2.3^^|||||||", "").getBytes(), "AA");
+        final byte[] testMessage = TEST_MESSAGE.replace("|RISTECH|ADT^A08|00001|D|2.3^^|||||||", "").getBytes();
 
-        assertEquals(EXPTECTED_ACKNOWLEDGEMENT_PAYLOAD, mllpSocketBuffer.toString());
+        MllpSocketBuffer mllpSocketBuffer = new MllpSocketBuffer(new MllpEndpointStub());
+        Hl7Util.generateAcknowledgementPayload(mllpSocketBuffer, testMessage, "AA");
     }
 
     /**
@@ -231,17 +242,15 @@ public class Hl7UtilTest {
         String junkMessage = "MSH|^~\\&|ADT|EPIC|JCAPS|CC|20161206193919|RISTECH|ADT^A08|00001|D|2.3^^|||||||"
             + "EVN|A08|20150107161440||REG_UPDATE_SEND_VISIT_MESSAGES_ON_PATIENT_CHANGES|RISTECH^RADIOLOGY^TECHNOLOGIST^^^^^^UCLA^^^^^RRMC||";
 
-        String junkAcknowledgement =
-            MllpProtocolConstants.START_OF_BLOCK
-                + "MSH|^~\\&|JCAPS|CC|ADT|EPIC|20161206193919|RISTECH|ACK^A08|00001|D|2.3^^|||||||"
-                + "EVN|A08|20150107161440||REG_UPDATE_SEND_VISIT_MESSAGES_ON_PATIENT_CHANGES|RISTECH^RADIOLOGY^TECHNOLOGIST^^^^^^UCLA^^^^^RRMC|\r"
-                + "MSA|AA|00001\r"
-                + MllpProtocolConstants.END_OF_BLOCK + MllpProtocolConstants.END_OF_DATA;
-
         MllpSocketBuffer mllpSocketBuffer = new MllpSocketBuffer(new MllpEndpointStub());
         Hl7Util.generateAcknowledgementPayload(mllpSocketBuffer, junkMessage.getBytes(), "AA");
 
-        assertEquals(junkAcknowledgement, mllpSocketBuffer.toString());
+        String actual = mllpSocketBuffer.toString();
+
+        assertThat(actual, startsWith(EXPECTED_ACKNOWLEDGEMENT_PAYLOAD_START));
+        assertThat(actual, endsWith("|EVN|A08|20150107161440||REG_UPDATE_SEND_VISIT_MESSAGES_ON_PATIENT_CHANGES|RISTECH^RADIOLOGY^TECHNOLOGIST^^^^^^UCLA^^^^^RRMC|\r"
+                                    + "MSA|AA|00001\r"
+                                    + MllpProtocolConstants.END_OF_BLOCK + MllpProtocolConstants.END_OF_DATA));
     }
 
     /**
@@ -381,7 +390,7 @@ public class Hl7UtilTest {
         assertEquals("", Hl7Util.bytesToPrintFriendlyStringBuilder(TEST_MESSAGE_BYTES, 1000000, -14).toString());
         assertEquals("", Hl7Util.bytesToPrintFriendlyStringBuilder(TEST_MESSAGE_BYTES, 1000000, 1000000).toString());
 
-        assertEquals("ADT^A08|00001|D|2.3^^|||||||<CR>EVN|A08|2015010716144", Hl7Util.bytesToPrintFriendlyStringBuilder(TEST_MESSAGE_BYTES, 50, 100).toString());
+        assertEquals("ADT^A08|00001|D|2.3^^|||||||<0x0D CR>EVN|A08|2015010716144", Hl7Util.bytesToPrintFriendlyStringBuilder(TEST_MESSAGE_BYTES, 50, 100).toString());
     }
 
     /**
@@ -562,7 +571,7 @@ public class Hl7UtilTest {
 
         builder = new StringBuilder();
         Hl7Util.appendBytesAsPrintFriendlyString(builder, TEST_MESSAGE_BYTES, 50, 100);
-        assertEquals("ADT^A08|00001|D|2.3^^|||||||<CR>EVN|A08|2015010716144", builder.toString());
+        assertEquals("ADT^A08|00001|D|2.3^^|||||||<0x0D CR>EVN|A08|2015010716144", builder.toString());
     }
 
     /**
@@ -583,28 +592,28 @@ public class Hl7UtilTest {
 
         builder = new StringBuilder();
         Hl7Util.appendCharacterAsPrintFriendlyString(builder, MllpProtocolConstants.START_OF_BLOCK);
-        assertEquals(Hl7Util.START_OF_BLOCK_REPLACEMENT_VALUE, builder.toString());
+        assertEquals("<0x0B VT>", builder.toString());
 
         builder = new StringBuilder();
         Hl7Util.appendCharacterAsPrintFriendlyString(builder, MllpProtocolConstants.END_OF_BLOCK);
-        assertEquals(Hl7Util.END_OF_BLOCK_REPLACEMENT_VALUE, builder.toString());
+        assertEquals("<0x1C FS>", builder.toString());
 
         builder = new StringBuilder();
         Hl7Util.appendCharacterAsPrintFriendlyString(builder, MllpProtocolConstants.SEGMENT_DELIMITER);
-        assertEquals(Hl7Util.SEGMENT_DELIMITER_REPLACEMENT_VALUE, builder.toString());
+        assertEquals("<0x0D CR>", builder.toString());
 
         builder = new StringBuilder();
         Hl7Util.appendCharacterAsPrintFriendlyString(builder, MllpProtocolConstants.MESSAGE_TERMINATOR);
-        assertEquals(Hl7Util.MESSAGE_TERMINATOR_REPLACEMENT_VALUE, builder.toString());
+        assertEquals("<0x0A LF>", builder.toString());
     }
 
     @Test
     public void testGetCharacterAsPrintFriendlyString() throws Exception {
-        assertEquals(Hl7Util.START_OF_BLOCK_REPLACEMENT_VALUE, Hl7Util.getCharacterAsPrintFriendlyString(MllpProtocolConstants.START_OF_BLOCK));
-        assertEquals(Hl7Util.END_OF_BLOCK_REPLACEMENT_VALUE, Hl7Util.getCharacterAsPrintFriendlyString(MllpProtocolConstants.END_OF_BLOCK));
-        assertEquals(Hl7Util.SEGMENT_DELIMITER_REPLACEMENT_VALUE, Hl7Util.getCharacterAsPrintFriendlyString(MllpProtocolConstants.SEGMENT_DELIMITER));
-        assertEquals(Hl7Util.MESSAGE_TERMINATOR_REPLACEMENT_VALUE, Hl7Util.getCharacterAsPrintFriendlyString(MllpProtocolConstants.MESSAGE_TERMINATOR));
-        assertEquals(Hl7Util.TAB_REPLACEMENT_VALUE, Hl7Util.getCharacterAsPrintFriendlyString('\t'));
+        assertEquals("<0x0B VT>", Hl7Util.getCharacterAsPrintFriendlyString(MllpProtocolConstants.START_OF_BLOCK));
+        assertEquals("<0x1C FS>", Hl7Util.getCharacterAsPrintFriendlyString(MllpProtocolConstants.END_OF_BLOCK));
+        assertEquals("<0x0D CR>", Hl7Util.getCharacterAsPrintFriendlyString(MllpProtocolConstants.SEGMENT_DELIMITER));
+        assertEquals("<0x0A LF>", Hl7Util.getCharacterAsPrintFriendlyString(MllpProtocolConstants.MESSAGE_TERMINATOR));
+        assertEquals("<0x09 TAB>", Hl7Util.getCharacterAsPrintFriendlyString('\t'));
     }
 
     /**
@@ -614,7 +623,7 @@ public class Hl7UtilTest {
      */
     @Test
     public void testFindMsh18WhenExistsWithoutTrailingPipe() throws Exception {
-        final String testMessage = MSH_SEGMENT + "|||||||8859/1" + '\r' + REMAINING_SEGMENTS;
+        final String testMessage = MSH_SEGMENT + "||||||8859/1" + '\r' + REMAINING_SEGMENTS;
 
         assertEquals("8859/1", Hl7Util.findMsh18(testMessage.getBytes()));
     }
@@ -626,7 +635,7 @@ public class Hl7UtilTest {
      */
     @Test
     public void testFindMsh18WhenExistsWithTrailingPipe() throws Exception {
-        final String testMessage = MSH_SEGMENT + "|||||||8859/1|" + '\r' + REMAINING_SEGMENTS;
+        final String testMessage = MSH_SEGMENT + "||||||8859/1|" + '\r' + REMAINING_SEGMENTS;
 
         assertEquals("8859/1", Hl7Util.findMsh18(testMessage.getBytes()));
     }
@@ -638,7 +647,7 @@ public class Hl7UtilTest {
      */
     @Test
     public void testFindMsh18WhenMissingWithoutTrailingPipe() throws Exception {
-        final String testMessage = MSH_SEGMENT + "|||||||" + '\r' + REMAINING_SEGMENTS;
+        final String testMessage = MSH_SEGMENT + "||||||" + '\r' + REMAINING_SEGMENTS;
 
         assertEquals("", Hl7Util.findMsh18(testMessage.getBytes()));
     }
@@ -650,7 +659,7 @@ public class Hl7UtilTest {
      */
     @Test
     public void testFindMsh18WhenMissingWithTrailingPipe() throws Exception {
-        final String testMessage = MSH_SEGMENT + "||||||||" + '\r' + REMAINING_SEGMENTS;
+        final String testMessage = MSH_SEGMENT + "|||||||" + '\r' + REMAINING_SEGMENTS;
 
         assertEquals("", Hl7Util.findMsh18(testMessage.getBytes()));
     }

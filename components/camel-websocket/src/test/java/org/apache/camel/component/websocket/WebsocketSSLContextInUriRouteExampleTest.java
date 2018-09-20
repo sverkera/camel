@@ -29,7 +29,6 @@ import javax.net.ssl.SSLContext;
 
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.JdkSslContext;
-
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.impl.JndiRegistry;
 import org.apache.camel.test.AvailablePortFinder;
@@ -52,7 +51,7 @@ import org.junit.Test;
 public class WebsocketSSLContextInUriRouteExampleTest extends CamelTestSupport {
 
     private static final String NULL_VALUE_MARKER = CamelTestSupport.class.getCanonicalName();
-    private static List<String> received = new ArrayList<String>();
+    private static List<String> received = new ArrayList<>();
     private static CountDownLatch latch = new CountDownLatch(10);
     private Properties originalValues = new Properties();
     private String pwd = "changeit";

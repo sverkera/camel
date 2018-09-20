@@ -35,7 +35,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
-
 import org.apache.camel.CamelContext;
 import org.apache.camel.CamelContextAware;
 import org.apache.camel.Exchange;
@@ -58,6 +57,7 @@ public class JacksonDataFormat extends ServiceSupport implements DataFormat, Dat
 
     private CamelContext camelContext;
     private ObjectMapper objectMapper;
+    private boolean useDefaultObjectMapper = true;
     private Class<? extends Collection> collectionType;
     private List<Module> modules;
     private String moduleClassNames;
@@ -206,6 +206,14 @@ public class JacksonDataFormat extends ServiceSupport implements DataFormat, Dat
         this.objectMapper = objectMapper;
     }
 
+    public boolean isUseDefaultObjectMapper() {
+        return useDefaultObjectMapper;
+    }
+
+    public void setUseDefaultObjectMapper(boolean useDefaultObjectMapper) {
+        this.useDefaultObjectMapper = useDefaultObjectMapper;
+    }
+
     public Class<?> getUnmarshalType() {
         return this.unmarshalType;
     }
@@ -286,7 +294,7 @@ public class JacksonDataFormat extends ServiceSupport implements DataFormat, Dat
      */
     public void addModule(Module module) {
         if (this.modules == null) {
-            this.modules = new ArrayList<Module>();
+            this.modules = new ArrayList<>();
         }
         this.modules.add(module);
     }
@@ -469,7 +477,7 @@ public class JacksonDataFormat extends ServiceSupport implements DataFormat, Dat
     protected void doStart() throws Exception {
         if (objectMapper == null) {
             // lookup if there is a single default mapper we can use
-            if (camelContext != null) {
+            if (useDefaultObjectMapper && camelContext != null) {
                 Set<ObjectMapper> set = camelContext.getRegistry().findByType(ObjectMapper.class);
                 if (set.size() == 1) {
                     objectMapper = set.iterator().next();

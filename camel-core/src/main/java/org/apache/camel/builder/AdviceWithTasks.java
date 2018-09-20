@@ -429,19 +429,26 @@ public final class AdviceWithTasks {
                                                                final int selectFrom, final int selectTo, int maxDeep) {
 
         // first iterator and apply match by
-        List<ProcessorDefinition<?>> matched = new ArrayList<ProcessorDefinition<?>>();
+        List<ProcessorDefinition<?>> matched = new ArrayList<>();
 
         List<ProcessorDefinition<?>> outputs = new ArrayList<>();
+
+        // if we are in first|last mode then we should
         // skip abstract nodes in the beginning as they are cross cutting functionality such as onException, onCompletion etc
+        // and the user want to select first or last outputs in the route (not cross cutting functionality)
+        boolean skip = selectFirst || selectLast;
+
         for (ProcessorDefinition output : route.getOutputs()) {
             // special for transacted, which we need to unwrap
             if (output instanceof TransactedDefinition) {
                 outputs.addAll(output.getOutputs());
-            } else {
+            } else if (skip) {
                 boolean invalid = outputs.isEmpty() && output.isAbstract();
                 if (!invalid) {
                     outputs.add(output);
                 }
+            } else {
+                outputs.add(output);
             }
         }
 

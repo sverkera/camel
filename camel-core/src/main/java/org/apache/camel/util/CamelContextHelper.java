@@ -508,7 +508,7 @@ public final class CamelContextHelper {
      */
     public static SortedMap<String, Properties> findComponents(CamelContext camelContext) throws LoadPropertiesException {
         ClassResolver resolver = camelContext.getClassResolver();
-        LOG.debug("Finding all components using class resolver: {} -> {}", new Object[]{resolver});
+        LOG.debug("Finding all components using class resolver: {} -> {}", resolver);
         Enumeration<URL> iter = resolver.loadAllResourcesAsURL(COMPONENT_DESCRIPTOR);
         return findComponents(camelContext, iter);
     }
@@ -516,7 +516,7 @@ public final class CamelContextHelper {
     public static SortedMap<String, Properties> findComponents(CamelContext camelContext, Enumeration<URL> componentDescriptionIter)
         throws LoadPropertiesException {
 
-        SortedMap<String, Properties> map = new TreeMap<String, Properties>();
+        SortedMap<String, Properties> map = new TreeMap<>();
         while (componentDescriptionIter != null && componentDescriptionIter.hasMoreElements()) {
             URL url = componentDescriptionIter.nextElement();
             LOG.trace("Finding components in url: {}", url);
@@ -608,10 +608,10 @@ public final class CamelContextHelper {
      * Find information about all the EIPs from camel-core.
      */
     public static SortedMap<String, Properties> findEips(CamelContext camelContext) throws LoadPropertiesException {
-        SortedMap<String, Properties> answer = new TreeMap<String, Properties>();
+        SortedMap<String, Properties> answer = new TreeMap<>();
 
         ClassResolver resolver = camelContext.getClassResolver();
-        LOG.debug("Finding all EIPs using class resolver: {} -> {}", new Object[]{resolver});
+        LOG.debug("Finding all EIPs using class resolver: {} -> {}", resolver);
         URL url = resolver.loadResourceAsURL(MODEL_DESCRIPTOR);
         if (url != null) {
             InputStream is = null;
@@ -764,10 +764,10 @@ public final class CamelContextHelper {
         LOG.trace("Resolving property placeholders for: {}", target);
 
         // find all getter/setter which we can use for property placeholders
-        Map<String, Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<>();
         IntrospectionSupport.getProperties(target, properties, null);
 
-        Map<String, Object> changedProperties = new HashMap<String, Object>();
+        Map<String, Object> changedProperties = new HashMap<>();
         if (!properties.isEmpty()) {
             LOG.trace("There are {} properties on: {}", properties.size(), target);
             // lookup and resolve properties for String based properties
@@ -787,7 +787,7 @@ public final class CamelContextHelper {
                         }
                         changedProperties.put(name, value);
                         if (LOG.isDebugEnabled()) {
-                            LOG.debug("Changed property [{}] from: {} to: {}", new Object[]{name, value, text});
+                            LOG.debug("Changed property [{}] from: {} to: {}", name, value, text);
                         }
                     }
                 }

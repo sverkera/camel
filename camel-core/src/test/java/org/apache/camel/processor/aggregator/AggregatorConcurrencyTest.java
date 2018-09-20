@@ -28,6 +28,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.processor.aggregate.AggregationStrategy;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,10 +45,11 @@ public class AggregatorConcurrencyTest extends ContextTestSupport {
     private final int size = 100;
     private final String uri = "direct:start";
 
+    @Test
     public void testAggregateConcurrency() throws Exception {
         int total = 0;
         ExecutorService service = Executors.newFixedThreadPool(20);
-        List<Callable<Object>> tasks = new ArrayList<Callable<Object>>();
+        List<Callable<Object>> tasks = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             final int count = i;
             total += i;

@@ -18,6 +18,7 @@ package org.apache.camel.component.wordpress;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.impl.DefaultComponent;
@@ -76,7 +77,7 @@ public class WordpressComponent extends DefaultComponent {
     }
 
     private WordpressComponentConfiguration copyComponentProperties() throws Exception {
-        Map<String, Object> componentProperties = new HashMap<String, Object>();
+        Map<String, Object> componentProperties = new HashMap<>();
         IntrospectionSupport.getProperties(configuration, componentProperties, null, false);
 
         // create endpoint configuration with component properties

@@ -271,7 +271,7 @@ public abstract class AbstractRestProcessor extends AbstractSalesforceProcessor 
             requestsBody = new ApprovalRequests(request);
         }
 
-        final InputStream request = getRequestStream(requestsBody);
+        final InputStream request = getRequestStream(incomingMessage, requestsBody);
 
         restClient.approval(request, determineHeaders(exchange), processWithResponseCallback(exchange, callback));
     }
@@ -641,7 +641,7 @@ public abstract class AbstractRestProcessor extends AbstractSalesforceProcessor 
     private Map<String, Object> getQueryParams(Exchange exchange) {
 
         // use endpoint map
-        Map<String, Object> queryParams = new HashMap<String, Object>(endpoint.getConfiguration().getApexQueryParams());
+        Map<String, Object> queryParams = new HashMap<>(endpoint.getConfiguration().getApexQueryParams());
 
         // look for individual properties, allowing endpoint properties to be overridden
         for (Map.Entry<String, Object> entry : exchange.getIn().getHeaders().entrySet()) {
@@ -744,7 +744,7 @@ public abstract class AbstractRestProcessor extends AbstractSalesforceProcessor 
      *            object to serialize
      * @return stream to read serialized object from
      */
-    protected abstract InputStream getRequestStream(Object object) throws SalesforceException;
+    protected abstract InputStream getRequestStream(Message in, Object object) throws SalesforceException;
 
     private void setResponseClass(Exchange exchange, String sObjectName) throws SalesforceException {
 

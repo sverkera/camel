@@ -29,36 +29,20 @@ import org.springframework.test.context.junit4.SpringRunner;
 @DirtiesContext
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-    classes = {
-        CamelAutoConfiguration.class,
-        CamelHealthCheckEndpointAutoConfiguration.class
-    },
-    properties = {
-        "endpoints.enabled = false"
-    }
+    classes = {CamelAutoConfiguration.class, CamelRouteControllerEndpointAutoConfiguration.class,
+               CamelRoutesEndpointAutoConfiguration.class},
+    properties = {"management.endpoints.enabled-by-default = false"}
 )
 public class CamelEndpointsGloballyDisabledTest {
-    @Autowired(required = false)
-    private CamelHealthCheckEndpoint healthCheckEndpoint;
-
     @Autowired(required = false)
     private CamelRouteControllerEndpoint routeControllerEndpoint;
 
     @Autowired(required = false)
-    private CamelRouteControllerMvcEndpoint routeControllerMvcEndpoint;
-
-    @Autowired(required = false)
     private CamelRoutesEndpoint routesEndpoint;
-
-    @Autowired(required = false)
-    private CamelRoutesMvcEndpoint routesMvcEndpoint;
 
     @Test
     public void testHealthCheckEndpointNotPresent() throws Exception {
-        Assert.assertNull(healthCheckEndpoint);
         Assert.assertNull(routeControllerEndpoint);
-        Assert.assertNull(routeControllerMvcEndpoint);
         Assert.assertNull(routesEndpoint);
-        Assert.assertNull(routesMvcEndpoint);
     }
 }

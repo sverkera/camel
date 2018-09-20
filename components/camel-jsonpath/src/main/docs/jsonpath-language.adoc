@@ -1,9 +1,10 @@
+[[jsonpath-language]]
 == JsonPath Language
 
 *Available as of Camel version 2.13*
 
 Camel supports https://code.google.com/p/json-path/[JSonPath] to allow
-using link:expression.html[Expression] or link:predicate.html[Predicate]
+using Expression or Predicate
 on json messages.
 
 [source,java]
@@ -22,7 +23,7 @@ from("queue:books.new")
 
 
 // language options: START
-The JsonPath language supports 7 options which are listed below.
+The JsonPath language supports 7 options, which are listed below.
 
 
 
@@ -34,17 +35,38 @@ The JsonPath language supports 7 options which are listed below.
 | allowSimple | true | Boolean | Whether to allow in inlined simple exceptions in the JsonPath expression
 | allowEasyPredicate | true | Boolean | Whether to allow using the easy predicate parser to pre-parse predicates.
 | writeAsString | false | Boolean | Whether to write the output of each row/element as a JSON String value instead of a Map/POJO value.
-| headerName |  | String | Name of header to use as input instead of the message body
+| headerName |  | String | Name of header to use as input, instead of the message body
 | trim | true | Boolean | Whether to trim the value to remove leading and trailing whitespaces and line breaks
 |===
 // language options: END
+// spring-boot-auto-configure options: START
+=== Spring Boot Auto-Configuration
+
+
+The component supports 7 options, which are listed below.
+
+
+
+[width="100%",cols="2,5,^1,2",options="header"]
+|===
+| Name | Description | Default | Type
+| *camel.language.jsonpath.allow-easy-predicate* | Whether to allow using the easy predicate parser to pre-parse predicates. | true | Boolean
+| *camel.language.jsonpath.allow-simple* | Whether to allow in inlined simple exceptions in the JsonPath expression | true | Boolean
+| *camel.language.jsonpath.enabled* | Enable jsonpath language | true | Boolean
+| *camel.language.jsonpath.header-name* | Name of header to use as input, instead of the message body |  | String
+| *camel.language.jsonpath.suppress-exceptions* | Whether to suppress exceptions such as PathNotFoundException. | false | Boolean
+| *camel.language.jsonpath.trim* | Whether to trim the value to remove leading and trailing whitespaces and line breaks | true | Boolean
+| *camel.language.jsonpath.write-as-string* | Whether to write the output of each row/element as a JSON String value instead of a Map/POJO value. | false | Boolean
+|===
+// spring-boot-auto-configure options: END
+
 
 
 
 === Using XML configuration
 
-If you prefer to configure your routes in your link:spring.html[Spring]
-XML file then you can use link:jsonpath.html[JSonPath] expressions as
+If you prefer to configure your routes in your Spring
+XML file then you can use <<jsonpath-language,JSonPath>> expressions as
 follows
 
 [source,xml]
@@ -231,7 +253,7 @@ And in XML DSL:
 
 === JSonPath injection
 
-You can use link:bean-integration.html[Bean Integration] to invoke a
+You can use Bean Integration to invoke a
 method on a bean and use various languages such as JSonPath to extract a
 value from the message and bind it to a method parameter.
 
@@ -324,7 +346,7 @@ To use JSonPath in your camel routes you need to add the a dependency on
 
 If you use maven you could just add the following to your pom.xml,
 substituting the version number for the latest & greatest release (see
-link:download.html[the download page for the latest versions]).
+the download page for the latest versions).
 
 [source,xml]
 ----

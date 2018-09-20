@@ -28,7 +28,6 @@ import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -39,6 +38,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
+import javax.tools.Diagnostic.Kind;
 
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriEndpoint;
@@ -70,7 +70,6 @@ import static org.apache.camel.tools.apt.helper.Strings.isNullOrEmpty;
  * Processes all Camel {@link UriEndpoint}s and generate json schema documentation for the endpoint/component.
  */
 @SupportedAnnotationTypes({"org.apache.camel.spi.*"})
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class EndpointAnnotationProcessor extends AbstractProcessor {
 
     // CHECKSTYLE:OFF
@@ -89,9 +88,15 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
                 }
             }
         } catch (Throwable e) {
+            processingEnv.getMessager().printMessage(Kind.ERROR, "Unable to process elements annotated with @UriEndpoint: " + e.getMessage());
             dumpExceptionToErrorFile("camel-apt-error.log", "Error processing @UriEndpoint", e);
         }
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     private void processEndpointClass(final RoundEnvironment roundEnv, final TypeElement classElement) {
@@ -141,9 +146,9 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
         ComponentModel componentModel = findComponentProperties(roundEnv, uriEndpoint, classElement, title, scheme, extendsScheme, label);
 
         // get endpoint information which is divided into paths and options (though there should really only be one path)
-        Set<EndpointPath> endpointPaths = new LinkedHashSet<EndpointPath>();
-        Set<EndpointOption> endpointOptions = new LinkedHashSet<EndpointOption>();
-        Set<ComponentOption> componentOptions = new LinkedHashSet<ComponentOption>();
+        Set<EndpointPath> endpointPaths = new LinkedHashSet<>();
+        Set<EndpointOption> endpointOptions = new LinkedHashSet<>();
+        Set<ComponentOption> componentOptions = new LinkedHashSet<>();
 
         TypeElement componentClassElement = findTypeElement(processingEnv, roundEnv, componentModel.getJavaType());
         if (componentClassElement != null) {
@@ -240,7 +245,7 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
         first = true;
 
         // sort the endpoint options in the standard order we prefer
-        List<EndpointPath> paths = new ArrayList<EndpointPath>();
+        List<EndpointPath> paths = new ArrayList<>();
         paths.addAll(endpointPaths);
         Collections.sort(paths, EndpointHelper.createPathComparator(componentModel.getSyntax()));
 
@@ -288,7 +293,7 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
         }
 
         // sort the endpoint options in the standard order we prefer
-        List<EndpointOption> options = new ArrayList<EndpointOption>();
+        List<EndpointOption> options = new ArrayList<>();
         options.addAll(endpointOptions);
         Collections.sort(options, EndpointHelper.createGroupAndLabelComparator());
 
@@ -509,7 +514,7 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
                 }
 
                 // gather enums
-                Set<String> enums = new LinkedHashSet<String>();
+                Set<String> enums = new LinkedHashSet<>();
 
                 boolean isEnum;
                 if (metadata != null && !Strings.isNullOrEmpty(metadata.enums())) {
@@ -595,7 +600,6 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
                     if (Strings.isNullOrEmpty(defaultValue) && metadata != null) {
                         defaultValue = metadata.defaultValue();
                     }
-                    String defaultValueNote = path.defaultValueNote();
                     String required = metadata != null ? metadata.required() : null;
                     String label = path.label();
                     if (Strings.isNullOrEmpty(label) && metadata != null) {
@@ -616,7 +620,7 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
                     }
 
                     // gather enums
-                    Set<String> enums = new LinkedHashSet<String>();
+                    Set<String> enums = new LinkedHashSet<>();
 
                     boolean isEnum;
                     if (!Strings.isNullOrEmpty(path.enums())) {
@@ -711,7 +715,7 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
                         }
 
                         // gather enums
-                        Set<String> enums = new LinkedHashSet<String>();
+                        Set<String> enums = new LinkedHashSet<>();
 
                         boolean isEnum;
                         if (!Strings.isNullOrEmpty(param.enums())) {
@@ -777,7 +781,7 @@ public class EndpointAnnotationProcessor extends AbstractProcessor {
     }
 
     private static Map<String, String> parseAsMap(String data) {
-        Map<String, String> answer = new HashMap<String, String>();
+        Map<String, String> answer = new HashMap<>();
         String[] lines = data.split("\n");
         for (String line : lines) {
             if (!line.isEmpty()) {

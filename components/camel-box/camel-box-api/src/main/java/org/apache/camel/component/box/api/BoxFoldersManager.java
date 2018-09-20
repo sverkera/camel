@@ -16,7 +16,7 @@
  */
 package org.apache.camel.component.box.api;
 
-import java.text.SimpleDateFormat;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -87,7 +87,7 @@ public class BoxFoldersManager {
      */
     public BoxFolder getFolder(String... path) {
         try {
-            LOG.debug("Getting folder at path=" + Arrays.toString(path));
+            LOG.debug("Getting folder at path={}", Arrays.toString(path));
 
             BoxFolder folder = BoxFolder.getRootFolder(boxConnection);
             if (path == null || path.length == 0) {
@@ -143,7 +143,7 @@ public class BoxFoldersManager {
             if (offset != null && limit != null) {
                 return folder.getChildrenRange(offset, limit, fields);
             } else {
-                Collection<BoxItem.Info> folderItems = new ArrayList<BoxItem.Info>();
+                Collection<BoxItem.Info> folderItems = new ArrayList<>();
                 Iterable<BoxItem.Info> iterable;
                 if (fields.length > 0) {
                     iterable = folder.getChildren(fields);
@@ -201,7 +201,7 @@ public class BoxFoldersManager {
      */
     public BoxFolder createFolder(String parentFolderId, String... path) {
         try {
-            LOG.debug("Creating folder with path '" + path + "' in parent_folder(id=" + parentFolderId + ")");
+            LOG.debug("Creating folder with path '" + Arrays.toString(path) + "' in parent_folder(id=" + parentFolderId + ")");
             if (parentFolderId == null) {
                 throw new IllegalArgumentException("Parameter 'parentFolderId' can not be null");
             }
@@ -332,7 +332,7 @@ public class BoxFoldersManager {
      */
     public void deleteFolder(String folderId) {
         try {
-            LOG.debug("Deleting folder(id=" + folderId + ")");
+            LOG.debug("Deleting folder(id={})", folderId);
             if (folderId == null) {
                 throw new IllegalArgumentException("Parameter 'folderId' can not be null");
             }
@@ -356,7 +356,7 @@ public class BoxFoldersManager {
      */
     public BoxFolder.Info getFolderInfo(String folderId, String... fields) {
         try {
-            LOG.debug("Getting info for folder(id=" + folderId + ")");
+            LOG.debug("Getting info for folder(id={})", folderId);
             if (folderId == null) {
                 throw new IllegalArgumentException("Parameter 'folderId' can not be null");
             }
@@ -385,7 +385,7 @@ public class BoxFoldersManager {
      */
     public BoxFolder updateFolderInfo(String folderId, BoxFolder.Info info) {
         try {
-            LOG.debug("Updating info for folder(id=" + folderId + ")");
+            LOG.debug("Updating info for folder(id={})", folderId);
             if (folderId == null) {
                 throw new IllegalArgumentException("Parameter 'folderId' can not be null");
             }
@@ -423,7 +423,7 @@ public class BoxFoldersManager {
         try {
             LOG.debug("Creating shared link for folder(id=" + folderId + ") with access=" + access
                     + (unshareDate == null ? ""
-                            : " unsharedDate=" + SimpleDateFormat.getDateTimeInstance().format(unshareDate)
+                            : " unsharedDate=" + DateFormat.getDateTimeInstance().format(unshareDate)
                                     + " permissions=" + permissions));
 
             if (folderId == null) {

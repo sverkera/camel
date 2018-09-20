@@ -35,8 +35,6 @@ public class SqsConfiguration implements Cloneable {
     private String secretKey;
     @UriParam(defaultValue = "amazonaws.com")
     private String amazonAWSHost = "amazonaws.com";
-    @UriParam
-    private String amazonSQSEndpoint;
     @UriParam(secret = true)
     private String queueOwnerAWSAccountId;
     @UriParam
@@ -65,6 +63,8 @@ public class SqsConfiguration implements Cloneable {
     private boolean extendMessageVisibility;
     @UriParam(label = "consumer", defaultValue = "1")
     private int concurrentConsumers = 1;
+    @UriParam(label = "advanced")
+    private String queueUrl;
 
     // producer properties
     @UriParam(label = "producer")
@@ -98,19 +98,6 @@ public class SqsConfiguration implements Cloneable {
             return true;
         }
         return false;
-    }
-
-     /**
-     * The region with which the AWS-SQS client wants to work with.
-     * Only works if Camel creates the AWS-SQS client, i.e., if you explicitly set amazonSQSClient,
-     * then this setting will have no effect. You would have to set it on the client you create directly
-     */
-    public void setAmazonSQSEndpoint(String amazonSQSEndpoint) {
-        this.amazonSQSEndpoint = amazonSQSEndpoint;
-    }
-
-    public String getAmazonSQSEndpoint() {
-        return amazonSQSEndpoint;
     }
 
     public String getAmazonAWSHost() {
@@ -350,35 +337,47 @@ public class SqsConfiguration implements Cloneable {
         this.region = region;
     }
 
-    /**
-     * Allows you to use multiple threads to poll the sqs queue to increase throughput
-     */
     public int getConcurrentConsumers() {
         return concurrentConsumers;
     }
 
+    /**
+     * Allows you to use multiple threads to poll the sqs queue to increase throughput
+     */
     public void setConcurrentConsumers(int concurrentConsumers) {
         this.concurrentConsumers = concurrentConsumers;
+    }
+
+    public String getQueueUrl() {
+        return queueUrl;
+    }
+
+    /**
+     * To define the queueUrl explicitly. All other parameters, which would influence the queueUrl, are ignored.
+     * This parameter is intended to be used, to connect to a mock implementation of SQS, for testing purposes.
+     */
+    public void setQueueUrl(String queueUrl) {
+        this.queueUrl = queueUrl;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
     }
 
     /**
      * To define a proxy host when instantiating the SQS client
      */
-    public String getProxyHost() {
-        return proxyHost;
-    }
-
     public void setProxyHost(String proxyHost) {
         this.proxyHost = proxyHost;
+    }
+
+    public Integer getProxyPort() {
+        return proxyPort;
     }
 
     /**
      * To define a proxy port when instantiating the SQS client
      */
-    public Integer getProxyPort() {
-        return proxyPort;
-    }
-
     public void setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
     }

@@ -27,6 +27,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.dataformat.bindy.BindyAbstractDataFormat;
@@ -78,7 +80,7 @@ public class BindyCsvDataFormat extends BindyAbstractDataFormat {
             outputStream.write(bytesCRLF);
         }
 
-        List<Map<String, Object>> models = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> models = new ArrayList<>();
 
         // the body is not a prepared list of map that bindy expects so help a bit here and create one for us
         Iterator<Object> it = ObjectHelper.createIterator(body);
@@ -88,7 +90,7 @@ public class BindyCsvDataFormat extends BindyAbstractDataFormat {
                 models.add((Map<String, Object>) model);
             } else {
                 String name = model.getClass().getName();
-                Map<String, Object> row = new HashMap<String, Object>(1);
+                Map<String, Object> row = new HashMap<>(1);
                 row.put(name, model);
                 row.putAll(createLinkedFieldsModel(model));
                 models.add(row);
@@ -134,7 +136,7 @@ public class BindyCsvDataFormat extends BindyAbstractDataFormat {
         ObjectHelper.notNull(factory, "not instantiated");
 
         // List of Pojos
-        List<Map<String, Object>> models = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> models = new ArrayList<>();
 
         // Pojos of the model
         Map<String, Object> model;
@@ -152,7 +154,7 @@ public class BindyCsvDataFormat extends BindyAbstractDataFormat {
     
             // Retrieve the separator defined to split the record
             String separator = factory.getSeparator();
-            String quote = factory .getQuote();
+            String quote = factory.getQuote();
             ObjectHelper.notNull(separator, "The separator has not been defined in the annotation @CsvRecord or not instantiated during initModel.");
     
             int count = 0;
@@ -184,10 +186,23 @@ public class BindyCsvDataFormat extends BindyAbstractDataFormat {
     
                 // Split the CSV record according to the separator defined in
                 // annotated class @CSVRecord
-                String[] tokens = line.split(separator, factory.getAutospanLine() ? factory.getMaxpos() : -1);
+                Pattern pattern = Pattern.compile(separator);
+                Matcher matcher = pattern.matcher(line);
+                List<String> separators = new ArrayList<>();
+                
+                // Retrieve separators for each match
+                while (matcher.find()) {
+                    separators.add(matcher.group());
+                }
+                // Add terminal separator
+                if (separators.size() > 0) {
+                    separators.add(separators.get(separators.size() - 1));
+                }
+                
+                String[] tokens = pattern.split(line, factory.getAutospanLine() ? factory.getMaxpos() : -1);
                 List<String> result = Arrays.asList(tokens);
                 // must unquote tokens before use
-                result = unquoteTokens(result, separator, quote);
+                result = unquoteTokens(result, separators, quote);
     
                 if (result.size() == 0 || result.isEmpty()) {
                     throw new java.lang.IllegalArgumentException("No records have been defined in the CSV");
@@ -233,7 +248,7 @@ public class BindyCsvDataFormat extends BindyAbstractDataFormat {
      * as will handling fixing broken tokens which may have been split
      * by a separator inside a quote.
      */
-    private List<String> unquoteTokens(List<String> result, String separator, String quote) {
+    private List<String> unquoteTokens(List<String> result, List<String> separators, String quote) {
         // a current quoted token which we assemble from the broken pieces
         // we need to do this as we use the split method on the String class
         // to split the line using regular expression, and it does not handle
@@ -241,7 +256,8 @@ public class BindyCsvDataFormat extends BindyAbstractDataFormat {
         // to fix this afterwards
         StringBuilder current = new StringBuilder();
         boolean inProgress = false;
-        List<String> answer = new ArrayList<String>();
+        List<String> answer = new ArrayList<>();
+        int idxSeparator = 0;
 
         //parsing assumes matching close and end quotes
         for (String s : result) {
@@ -279,7 +295,7 @@ public class BindyCsvDataFormat extends BindyAbstractDataFormat {
 
             // are we in progress of rebuilding a broken token
             if (inProgress) {
-                current.append(separator);
+                current.append(separators.get(idxSeparator));
                 current.append(s);
 
                 if (canClose) {
@@ -296,7 +312,7 @@ public class BindyCsvDataFormat extends BindyAbstractDataFormat {
                     answer.add(s);
                 }
             }
-
+            idxSeparator++;
         }
 
         // any left over from current?

@@ -19,6 +19,7 @@ package org.apache.camel.component.jms;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.jms.ConnectionFactory;
 
 import org.apache.camel.CamelContext;
@@ -160,7 +161,7 @@ public class JmsMessageTypeTest extends CamelTestSupport {
         mock.expectedMessageCount(1);
         mock.message(0).body().isInstanceOf(Map.class);
 
-        Map<String, Object> body = new HashMap<String, Object>();
+        Map<String, Object> body = new HashMap<>();
         body.put("name", "Claus");
 
         // we send a Map object and force it to use Map type
@@ -244,7 +245,7 @@ public class JmsMessageTypeTest extends CamelTestSupport {
                 return (T) ("Bye " + ((MyFooBean)value).getName()).getBytes();
             }
             if (type.isAssignableFrom(Map.class)) {
-                Map<String, Object> map = new HashMap<String, Object>();
+                Map<String, Object> map = new HashMap<>();
                 map.put("name", ((MyFooBean)value).getName());
                 return (T) map;
             }

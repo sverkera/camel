@@ -16,15 +16,21 @@
  */
 package org.apache.camel.swagger;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.lang.invoke.MethodHandles.publicLookup;
 
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.models.ArrayModel;
@@ -34,8 +40,13 @@ import io.swagger.models.Operation;
 import io.swagger.models.Path;
 import io.swagger.models.RefModel;
 import io.swagger.models.Response;
+import io.swagger.models.SecurityRequirement;
 import io.swagger.models.Swagger;
 import io.swagger.models.Tag;
+import io.swagger.models.auth.ApiKeyAuthDefinition;
+import io.swagger.models.auth.BasicAuthDefinition;
+import io.swagger.models.auth.In;
+import io.swagger.models.auth.OAuth2Definition;
 import io.swagger.models.parameters.AbstractSerializableParameter;
 import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.FormParameter;
@@ -60,6 +71,12 @@ import org.apache.camel.model.rest.RestOperationResponseHeaderDefinition;
 import org.apache.camel.model.rest.RestOperationResponseMsgDefinition;
 import org.apache.camel.model.rest.RestParamType;
 import org.apache.camel.model.rest.RestPropertyDefinition;
+import org.apache.camel.model.rest.RestSecuritiesDefinition;
+import org.apache.camel.model.rest.RestSecurityApiKey;
+import org.apache.camel.model.rest.RestSecurityBasicAuth;
+import org.apache.camel.model.rest.RestSecurityDefinition;
+import org.apache.camel.model.rest.RestSecurityOAuth2;
+import org.apache.camel.model.rest.SecurityDefinition;
 import org.apache.camel.model.rest.VerbDefinition;
 import org.apache.camel.spi.ClassResolver;
 import org.apache.camel.util.FileUtil;
@@ -80,8 +97,9 @@ public class RestSwaggerReader {
      * @param config            the swagger configuration
      * @param classResolver     class resolver to use
      * @return the swagger model
+     * @throws ClassNotFoundException 
      */
-    public Swagger read(List<RestDefinition> rests, String route, BeanConfig config, String camelContextId, ClassResolver classResolver) {
+    public Swagger read(List<RestDefinition> rests, String route, BeanConfig config, String camelContextId, ClassResolver classResolver) throws ClassNotFoundException {
         Swagger swagger = new Swagger();
 
         for (RestDefinition rest : rests) {
@@ -101,7 +119,7 @@ public class RestSwaggerReader {
         return swagger;
     }
 
-    private void parse(Swagger swagger, RestDefinition rest, String camelContextId, ClassResolver classResolver) {
+    private void parse(Swagger swagger, RestDefinition rest, String camelContextId, ClassResolver classResolver) throws ClassNotFoundException {
         List<VerbDefinition> verbs = new ArrayList<>(rest.getVerbs());
         // must sort the verbs by uri so we group them together when an uri has multiple operations
         Collections.sort(verbs, new VerbOrdering());
@@ -116,6 +134,48 @@ public class RestSwaggerReader {
             tag.description(summary);
             tag.name(pathAsTag);
             swagger.addTag(tag);
+        }
+
+        // setup security definitions
+        RestSecuritiesDefinition sd = rest.getSecurityDefinitions();
+        if (sd != null) {
+            for (RestSecurityDefinition def : sd.getSecurityDefinitions()) {
+                if (def instanceof RestSecurityBasicAuth) {
+                    BasicAuthDefinition auth = new BasicAuthDefinition();
+                    auth.setDescription(def.getDescription());
+                    swagger.addSecurityDefinition(def.getKey(), auth);
+                } else if (def instanceof RestSecurityApiKey) {
+                    RestSecurityApiKey rs = (RestSecurityApiKey) def;
+                    ApiKeyAuthDefinition auth = new ApiKeyAuthDefinition();
+                    auth.setDescription(rs.getDescription());
+                    auth.setName(rs.getName());
+                    if (rs.getInHeader() != null && rs.getInHeader()) {
+                        auth.setIn(In.HEADER);
+                    } else {
+                        auth.setIn(In.QUERY);
+                    }
+                    swagger.addSecurityDefinition(def.getKey(), auth);
+                } else if (def instanceof RestSecurityOAuth2) {
+                    RestSecurityOAuth2 rs = (RestSecurityOAuth2) def;
+                    OAuth2Definition auth = new OAuth2Definition();
+                    auth.setDescription(rs.getDescription());
+                    String flow = rs.getFlow();
+                    if (flow == null) {
+                        if (rs.getAuthorizationUrl() != null && rs.getTokenUrl() != null) {
+                            flow = "accessCode";
+                        } else if (rs.getTokenUrl() == null && rs.getAuthorizationUrl() != null) {
+                            flow = "implicit";
+                        }
+                    }
+                    auth.setFlow(flow);
+                    auth.setAuthorizationUrl(rs.getAuthorizationUrl());
+                    auth.setTokenUrl(rs.getTokenUrl());
+                    for (RestPropertyDefinition scope : rs.getScopes()) {
+                        auth.addScope(scope.getKey(), scope.getValue());
+                    }
+                    swagger.addSecurityDefinition(def.getKey(), auth);
+                }
+            }
         }
 
         // gather all types in use
@@ -164,7 +224,7 @@ public class RestSwaggerReader {
 
         // use annotation scanner to find models (annotated classes)
         for (String type : types) {
-            Class<?> clazz = classResolver.resolveClass(type);
+            Class<?> clazz = classResolver.resolveMandatoryClass(type);
             appendModels(clazz, swagger);
         }
 
@@ -235,6 +295,19 @@ public class RestSwaggerReader {
                 op.summary(verb.getDescriptionText());
             }
 
+            // security
+            for (SecurityDefinition sd : verb.getSecurity()) {
+                List<String> scopes = new ArrayList<>();
+                if (sd.getScopes() != null) {
+                    Iterator<Object> it = ObjectHelper.createIterator(sd.getScopes());
+                    while (it.hasNext()) {
+                        String scope = it.next().toString();
+                        scopes.add(scope);
+                    }
+                }
+                op.addSecurity(sd.getKey(), scopes);
+            }
+
             for (RestOperationParamDefinition param : verb.getParams()) {
                 Parameter parameter = null;
                 if (param.getType().equals(RestParamType.body)) {
@@ -260,30 +333,33 @@ public class RestSwaggerReader {
                     if (parameter instanceof SerializableParameter) {
                         SerializableParameter serializableParameter = (SerializableParameter) parameter;
 
+                        final boolean isArray = param.getDataType().equalsIgnoreCase("array");
+                        final List<String> allowableValues = param.getAllowableValues();
+                        final boolean hasAllowableValues = allowableValues != null && !allowableValues.isEmpty();
                         if (param.getDataType() != null) {
                             serializableParameter.setType(param.getDataType());
                             if (param.getDataFormat() != null) {
                                 serializableParameter.setFormat(param.getDataFormat());
                             }
-                            if (param.getDataType().equalsIgnoreCase("array")) {
+                            if (isArray) {
                                 if (param.getArrayType() != null) {
                                     if (param.getArrayType().equalsIgnoreCase("string")) {
-                                        serializableParameter.setItems(new StringProperty());
+                                        defineItems(serializableParameter, allowableValues, new StringProperty(), String.class);
                                     }
                                     if (param.getArrayType().equalsIgnoreCase("int") || param.getArrayType().equalsIgnoreCase("integer")) {
-                                        serializableParameter.setItems(new IntegerProperty());
+                                        defineItems(serializableParameter, allowableValues, new IntegerProperty(), Integer.class);
                                     }
                                     if (param.getArrayType().equalsIgnoreCase("long")) {
-                                        serializableParameter.setItems(new LongProperty());
+                                        defineItems(serializableParameter, allowableValues, new LongProperty(), Long.class);
                                     }
                                     if (param.getArrayType().equalsIgnoreCase("float")) {
-                                        serializableParameter.setItems(new FloatProperty());
+                                        defineItems(serializableParameter, allowableValues, new FloatProperty(), Float.class);
                                     }
                                     if (param.getArrayType().equalsIgnoreCase("double")) {
-                                        serializableParameter.setItems(new DoubleProperty());
+                                        defineItems(serializableParameter, allowableValues, new DoubleProperty(), Double.class);
                                     }
                                     if (param.getArrayType().equalsIgnoreCase("boolean")) {
-                                        serializableParameter.setItems(new BooleanProperty());
+                                        defineItems(serializableParameter, allowableValues, new BooleanProperty(), Boolean.class);
                                     }
                                 }
                             }
@@ -291,8 +367,8 @@ public class RestSwaggerReader {
                         if (param.getCollectionFormat() != null) {
                             serializableParameter.setCollectionFormat(param.getCollectionFormat().name());
                         }
-                        if (param.getAllowableValues() != null && !param.getAllowableValues().isEmpty()) {
-                            serializableParameter.setEnum(param.getAllowableValues());
+                        if (hasAllowableValues && !isArray) {
+                            serializableParameter.setEnum(allowableValues);
                         }
                     }
 
@@ -313,20 +389,28 @@ public class RestSwaggerReader {
                     if (parameter instanceof BodyParameter) {
                         BodyParameter bp = (BodyParameter) parameter;
 
-                        if (verb.getType() != null) {
-                            if (verb.getType().endsWith("[]")) {
-                                String typeName = verb.getType();
-                                typeName = typeName.substring(0, typeName.length() - 2);
-                                Property prop = modelTypeAsProperty(typeName, swagger);
+                        String type = param.getDataType() != null ? param.getDataType() : verb.getType();
+                        if (type != null) {
+                            if (type.endsWith("[]")) {
+                                type = type.substring(0, type.length() - 2);
+                                Property prop = modelTypeAsProperty(type, swagger);
                                 if (prop != null) {
                                     ArrayModel arrayModel = new ArrayModel();
                                     arrayModel.setItems(prop);
                                     bp.setSchema(arrayModel);
                                 }
                             } else {
-                                String ref = modelTypeAsRef(verb.getType(), swagger);
+                                String ref = modelTypeAsRef(type, swagger);
                                 if (ref != null) {
                                     bp.setSchema(new RefModel(ref));
+                                } else {
+                                    Property prop = modelTypeAsProperty(type, swagger);
+                                    if (prop != null) {
+                                        ModelImpl model = new ModelImpl();
+                                        model.setFormat(prop.getFormat());
+                                        model.setType(prop.getType());
+                                        bp.setSchema(model);
+                                    }
                                 }
                             }
                         }
@@ -361,6 +445,44 @@ public class RestSwaggerReader {
 
             // add path
             swagger.path(opPath, path);
+        }
+    }
+
+    private static void defineItems(final SerializableParameter serializableParameter,
+        final List<String> allowableValues, final Property items, final Class<?> type) {
+        serializableParameter.setItems(items);
+        if (allowableValues != null && !allowableValues.isEmpty()) {
+            if (String.class.equals(type)) {
+                ((StringProperty) items).setEnum(allowableValues);
+            } else {
+                convertAndSetItemsEnum(items, allowableValues, type);
+            }
+        }
+    }
+
+    private static void convertAndSetItemsEnum(final Property items, final List<String> allowableValues, final Class<?> type) {
+        try {
+            final MethodHandle valueOf = publicLookup().findStatic(type, "valueOf", MethodType.methodType(type, String.class));
+            final MethodHandle setEnum = publicLookup().bind(items, "setEnum",
+                MethodType.methodType(void.class, List.class));
+            final List<?> values = allowableValues.stream().map(v -> {
+                try {
+                    return valueOf.invoke(v);
+                } catch (Throwable e) {
+                    if (e instanceof RuntimeException) {
+                        throw (RuntimeException) e;
+                    }
+
+                    throw new IllegalStateException(e);
+                }
+            }).collect(Collectors.toList());
+            setEnum.invoke(values);
+        } catch (Throwable e) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+
+            throw new IllegalStateException(e);
         }
     }
 
@@ -598,7 +720,7 @@ public class RestSwaggerReader {
             if (array && ("byte".equals(typeName) || "java.lang.Byte".equals(typeName))) {
                 prop = new ByteArrayProperty();
                 array = false;
-            } else if ("java.lang.String".equals(typeName)) {
+            } else if ("string".equalsIgnoreCase(typeName) || "java.lang.String".equals(typeName)) {
                 prop = new StringProperty();
             } else if ("int".equals(typeName) || "java.lang.Integer".equals(typeName)) {
                 prop = new IntegerProperty();

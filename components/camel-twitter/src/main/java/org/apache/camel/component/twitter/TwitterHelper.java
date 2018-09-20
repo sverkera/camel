@@ -23,9 +23,6 @@ import org.apache.camel.Processor;
 import org.apache.camel.Producer;
 import org.apache.camel.component.twitter.consumer.AbstractTwitterConsumerHandler;
 import org.apache.camel.component.twitter.consumer.DefaultTwitterConsumer;
-import org.apache.camel.component.twitter.consumer.TwitterConsumerDirect;
-import org.apache.camel.component.twitter.consumer.TwitterConsumerEvent;
-import org.apache.camel.component.twitter.consumer.TwitterConsumerPolling;
 import org.apache.camel.component.twitter.data.ConsumerType;
 import org.apache.camel.component.twitter.data.StreamingType;
 import org.apache.camel.component.twitter.data.TimelineType;
@@ -41,7 +38,6 @@ import org.apache.camel.component.twitter.timeline.MentionsConsumerHandler;
 import org.apache.camel.component.twitter.timeline.RetweetsConsumerHandler;
 import org.apache.camel.component.twitter.timeline.UserConsumerHandler;
 import org.apache.camel.component.twitter.timeline.UserProducer;
-
 import twitter4j.User;
 
 public final class TwitterHelper {

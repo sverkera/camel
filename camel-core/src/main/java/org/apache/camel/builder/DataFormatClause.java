@@ -34,6 +34,8 @@ import org.apache.camel.model.dataformat.BoonDataFormat;
 import org.apache.camel.model.dataformat.CastorDataFormat;
 import org.apache.camel.model.dataformat.CsvDataFormat;
 import org.apache.camel.model.dataformat.CustomDataFormat;
+import org.apache.camel.model.dataformat.FhirJsonDataFormat;
+import org.apache.camel.model.dataformat.FhirXmlDataFormat;
 import org.apache.camel.model.dataformat.GzipDataFormat;
 import org.apache.camel.model.dataformat.HL7DataFormat;
 import org.apache.camel.model.dataformat.HessianDataFormat;
@@ -182,6 +184,21 @@ public class DataFormatClause<T extends ProcessorDefinition<?>> {
         BindyDataFormat bindy = new BindyDataFormat();
         bindy.setType(type);
         bindy.setClassType(classType);
+        return dataFormat(bindy);
+    }
+
+    /**
+     * Uses the Bindy data format
+     *
+     * @param type      the type of bindy data format to use
+     * @param classType the POJO class type
+     * @param unwrapSingleInstance whether unmarshal should unwrap if there is a single instance in the result
+     */
+    public T bindy(BindyType type, Class<?> classType, boolean unwrapSingleInstance) {
+        BindyDataFormat bindy = new BindyDataFormat();
+        bindy.setType(type);
+        bindy.setClassType(classType);
+        bindy.setUnwrapSingleInstance(unwrapSingleInstance);
         return dataFormat(bindy);
     }
 
@@ -1010,6 +1027,56 @@ public class DataFormatClause<T extends ProcessorDefinition<?>> {
         return dataFormat(xsdf);
     }
     
+    
+    /**
+     * Uses the XML Security data format
+     */
+    public T secureXML(String secureTag, boolean secureTagContents, byte[] passPhraseByte) {
+        XMLSecurityDataFormat xsdf = new XMLSecurityDataFormat();
+        xsdf.setSecureTag(secureTag);
+        xsdf.setSecureTagContents(secureTagContents);
+        xsdf.setPassPhraseByte(passPhraseByte);
+        return dataFormat(xsdf);
+    }
+    
+    /**
+     * Uses the XML Security data format
+     */
+    public T secureXML(String secureTag, Map<String, String> namespaces, boolean secureTagContents, byte[] passPhraseByte) {
+        XMLSecurityDataFormat xsdf = new XMLSecurityDataFormat();
+        xsdf.setSecureTag(secureTag);
+        xsdf.setNamespaces(namespaces);
+        xsdf.setSecureTagContents(secureTagContents);
+        xsdf.setPassPhraseByte(passPhraseByte);
+        return dataFormat(xsdf);
+    }
+    
+    /**
+     * Uses the XML Security data format
+     */
+    public T secureXML(String secureTag, boolean secureTagContents, byte[] passPhraseByte, String xmlCipherAlgorithm) {
+        XMLSecurityDataFormat xsdf = new XMLSecurityDataFormat();
+        xsdf.setSecureTag(secureTag);
+        xsdf.setSecureTagContents(secureTagContents);
+        xsdf.setPassPhraseByte(passPhraseByte);
+        xsdf.setXmlCipherAlgorithm(xmlCipherAlgorithm);
+        return dataFormat(xsdf);
+    }
+    
+    
+    /**
+     * Uses the XML Security data format
+     */
+    public T secureXML(String secureTag, Map<String, String> namespaces, boolean secureTagContents, byte[] passPhraseByte, String xmlCipherAlgorithm) {
+        XMLSecurityDataFormat xsdf = new XMLSecurityDataFormat();
+        xsdf.setSecureTag(secureTag);
+        xsdf.setNamespaces(namespaces);
+        xsdf.setSecureTagContents(secureTagContents);
+        xsdf.setPassPhraseByte(passPhraseByte);
+        xsdf.setXmlCipherAlgorithm(xmlCipherAlgorithm);
+        return dataFormat(xsdf);
+    }
+    
     /**
      * @deprecated Use {@link #secureXML(String, Map, boolean, String, String, String, String)} instead.
      * Uses the XML Security data format
@@ -1181,6 +1248,60 @@ public class DataFormatClause<T extends ProcessorDefinition<?>> {
     
     public T asn1(Boolean usingIterator) {
         return dataFormat(new ASN1DataFormat(usingIterator));
+    }
+
+    /**
+     * Uses the FHIR JSON data format
+     */
+    public T fhirJson() {
+        FhirJsonDataFormat jsonDataFormat = new FhirJsonDataFormat();
+        return dataFormat(jsonDataFormat);
+    }
+
+    public T fhirJson(String version) {
+        FhirJsonDataFormat jsonDataFormat = new FhirJsonDataFormat();
+        jsonDataFormat.setFhirVersion(version);
+        return dataFormat(jsonDataFormat);
+    }
+
+    public T fhirJson(boolean prettyPrint) {
+        FhirJsonDataFormat jsonDataFormat = new FhirJsonDataFormat();
+        jsonDataFormat.setPrettyPrint(prettyPrint);
+        return dataFormat(jsonDataFormat);
+    }
+
+    public T fhirJson(String version, boolean prettyPrint) {
+        FhirJsonDataFormat jsonDataFormat = new FhirJsonDataFormat();
+        jsonDataFormat.setPrettyPrint(prettyPrint);
+        jsonDataFormat.setFhirVersion(version);
+        return dataFormat(jsonDataFormat);
+    }
+
+    /**
+     * Uses the FHIR XML data format
+     */
+    public T fhirXml() {
+        FhirXmlDataFormat fhirXmlDataFormat = new FhirXmlDataFormat();
+        return dataFormat(fhirXmlDataFormat);
+    }
+
+    public T fhirXml(String version) {
+        FhirXmlDataFormat fhirXmlDataFormat = new FhirXmlDataFormat();
+        fhirXmlDataFormat.setFhirVersion(version);
+        return dataFormat(fhirXmlDataFormat);
+    }
+
+    public T fhirXml(boolean prettyPrint) {
+        FhirXmlDataFormat fhirXmlDataFormat = new FhirXmlDataFormat();
+        fhirXmlDataFormat.setPrettyPrint(prettyPrint);
+        return dataFormat(fhirXmlDataFormat);
+    }
+
+    public T fhirXml(String version, boolean prettyPrint) {
+        FhirXmlDataFormat fhirXmlDataFormat = new FhirXmlDataFormat();
+        fhirXmlDataFormat.setFhirVersion(version);
+        fhirXmlDataFormat.setPrettyPrint(prettyPrint);
+        return dataFormat(fhirXmlDataFormat);
     }
 
     @SuppressWarnings("unchecked")

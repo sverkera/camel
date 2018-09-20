@@ -51,7 +51,6 @@ import org.apache.camel.spi.TypeConverterRegistry;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.CamelLogger;
 import org.apache.camel.util.LRUCacheFactory;
-import org.apache.camel.util.LRUSoftCache;
 import org.apache.camel.util.MessageHelper;
 import org.apache.camel.util.ObjectHelper;
 import org.slf4j.Logger;
@@ -66,12 +65,12 @@ import org.slf4j.LoggerFactory;
 public abstract class BaseTypeConverterRegistry extends ServiceSupport implements TypeConverter, TypeConverterRegistry, CamelContextAware {
     protected final Logger log = LoggerFactory.getLogger(getClass());
     protected final OptimisedTypeConverter optimisedTypeConverter = new OptimisedTypeConverter();
-    protected final ConcurrentMap<TypeMapping, TypeConverter> typeMappings = new ConcurrentHashMap<TypeMapping, TypeConverter>();
+    protected final ConcurrentMap<TypeMapping, TypeConverter> typeMappings = new ConcurrentHashMap<>();
     // for misses use a soft reference cache map, as the classes may be un-deployed at runtime
     @SuppressWarnings("unchecked")
-    protected final LRUSoftCache<TypeMapping, TypeMapping> misses = LRUCacheFactory.newLRUSoftCache(1000);
-    protected final List<TypeConverterLoader> typeConverterLoaders = new ArrayList<TypeConverterLoader>();
-    protected final List<FallbackTypeConverter> fallbackConverters = new CopyOnWriteArrayList<FallbackTypeConverter>();
+    protected final Map<TypeMapping, TypeMapping> misses = LRUCacheFactory.newLRUSoftCache(1000);
+    protected final List<TypeConverterLoader> typeConverterLoaders = new ArrayList<>();
+    protected final List<FallbackTypeConverter> fallbackConverters = new CopyOnWriteArrayList<>();
     protected final PackageScanClassResolver resolver;
     protected CamelContext camelContext;
     protected Injector injector;
@@ -519,7 +518,7 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
     }
 
     public Set<Class<?>> getFromClassMappings() {
-        Set<Class<?>> answer = new HashSet<Class<?>>();
+        Set<Class<?>> answer = new HashSet<>();
         for (TypeMapping mapping : typeMappings.keySet()) {
             answer.add(mapping.getFromType());
         }
@@ -527,7 +526,7 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
     }
 
     public Map<Class<?>, TypeConverter> getToClassMappings(Class<?> fromClass) {
-        Map<Class<?>, TypeConverter> answer = new HashMap<Class<?>, TypeConverter>();
+        Map<Class<?>, TypeConverter> answer = new HashMap<>();
         for (Map.Entry<TypeMapping, TypeConverter> entry : typeMappings.entrySet()) {
             TypeMapping mapping = entry.getKey();
             if (mapping.isApplicable(fromClass)) {
@@ -616,7 +615,7 @@ public abstract class BaseTypeConverterRegistry extends ServiceSupport implement
     }
 
     public List<Class<?>[]> listAllTypeConvertersFromTo() {
-        List<Class<?>[]> answer = new ArrayList<Class<?>[]>(typeMappings.size());
+        List<Class<?>[]> answer = new ArrayList<>(typeMappings.size());
         for (TypeMapping mapping : typeMappings.keySet()) {
             answer.add(new Class<?>[]{mapping.getFromType(), mapping.getToType()});
         }

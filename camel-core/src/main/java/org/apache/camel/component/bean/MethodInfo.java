@@ -205,7 +205,7 @@ public class MethodInfo {
     }
 
     private Map<Class<?>, Annotation> collectMethodAnnotations(Class<?> c, Method method) {
-        Map<Class<?>, Annotation> annotations = new HashMap<Class<?>, Annotation>();
+        Map<Class<?>, Annotation> annotations = new HashMap<>();
         collectMethodAnnotations(c, method, annotations);
         return annotations;
     }
@@ -295,7 +295,7 @@ public class MethodInfo {
 
                 // invoke pojo
                 if (LOG.isTraceEnabled()) {
-                    LOG.trace(">>>> invoking: {} on bean: {} with arguments: {} for exchange: {}", new Object[]{method, pojo, asString(arguments), exchange});
+                    LOG.trace(">>>> invoking: {} on bean: {} with arguments: {} for exchange: {}", method, pojo, asString(arguments), exchange);
                 }
                 Object result = invoke(method, pojo, arguments, exchange);
 
@@ -517,7 +517,7 @@ public class MethodInfo {
             Class<?> type = method.getDeclaringClass();
 
             // create the search order of types to scan
-            List<Class<?>> typesToSearch = new ArrayList<Class<?>>();
+            List<Class<?>> typesToSearch = new ArrayList<>();
             addTypeAndSuperTypes(type, typesToSearch);
             Class<?>[] interfaces = type.getInterfaces();
             for (Class<?> anInterface : interfaces) {
@@ -800,11 +800,11 @@ public class MethodInfo {
                             // its a valid parameter value, so convert it to the expected type of the parameter
                             answer = exchange.getContext().getTypeConverter().mandatoryConvertTo(parameterType, exchange, parameterValue);
                             if (LOG.isTraceEnabled()) {
-                                LOG.trace("Parameter #{} evaluated as: {} type: ", new Object[]{index, answer, ObjectHelper.type(answer)});
+                                LOG.trace("Parameter #{} evaluated as: {} type: ", index, answer, ObjectHelper.type(answer));
                             }
                         } catch (Exception e) {
                             if (LOG.isDebugEnabled()) {
-                                LOG.debug("Cannot convert from type: {} to type: {} for parameter #{}", new Object[]{ObjectHelper.type(parameterValue), parameterType, index});
+                                LOG.debug("Cannot convert from type: {} to type: {} for parameter #{}", ObjectHelper.type(parameterValue), parameterType, index);
                             }
                             throw new ParameterBindingException(e, method, index, parameterType, parameterValue);
                         }
@@ -833,11 +833,11 @@ public class MethodInfo {
                         answer = exchange.getContext().getTypeConverter().mandatoryConvertTo(parameterType, result);
                     }
                     if (LOG.isTraceEnabled()) {
-                        LOG.trace("Parameter #{} evaluated as: {} type: ", new Object[]{index, answer, ObjectHelper.type(answer)});
+                        LOG.trace("Parameter #{} evaluated as: {} type: ", index, answer, ObjectHelper.type(answer));
                     }
                 } catch (NoTypeConversionAvailableException e) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Cannot convert from type: {} to type: {} for parameter #{}", new Object[]{ObjectHelper.type(result), parameterType, index});
+                        LOG.debug("Cannot convert from type: {} to type: {} for parameter #{}", ObjectHelper.type(result), parameterType, index);
                     }
                     throw new ParameterBindingException(e, method, index, parameterType, result);
                 }

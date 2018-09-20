@@ -23,7 +23,6 @@ import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
 import org.apache.camel.spi.UriPath;
-import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
@@ -42,7 +41,7 @@ import static org.apache.camel.component.pdf.PdfPageSizeConstant.PAGE_SIZE_LETTE
  */
 @UriParams
 public class PdfConfiguration {
-    private static final Map<String, PDRectangle> PAGE_MAP = new HashMap<String, PDRectangle>();
+    private static final Map<String, PDRectangle> PAGE_MAP = new HashMap<>();
 
     static {
         PAGE_MAP.put(PAGE_SIZE_A0, PDRectangle.A0);

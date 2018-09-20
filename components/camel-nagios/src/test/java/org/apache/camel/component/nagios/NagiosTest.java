@@ -23,7 +23,6 @@ import com.googlecode.jsendnsca.Level;
 import com.googlecode.jsendnsca.MessagePayload;
 import com.googlecode.jsendnsca.NagiosPassiveCheckSender;
 import com.googlecode.jsendnsca.PassiveCheckSender;
-
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
@@ -149,7 +148,7 @@ public class NagiosTest extends CamelTestSupport {
         mock.expectedMessageCount(1);
         mock.expectedBodiesReceived("Hello Nagios");
 
-        Map<String, Object> headers = new HashMap<String, Object>();
+        Map<String, Object> headers = new HashMap<>();
         headers.put(NagiosConstants.LEVEL, "CRITICAL");
         headers.put(NagiosConstants.HOST_NAME, "myHost");
         headers.put(NagiosConstants.SERVICE_NAME, "myService");

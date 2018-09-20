@@ -34,6 +34,11 @@ public class SnsComponentConfiguration
             ComponentConfigurationPropertiesCommon {
 
     /**
+     * Whether to enable auto configuration of the aws-sns component. This is
+     * enabled by default.
+     */
+    private Boolean enabled;
+    /**
      * The AWS SNS default configuration
      */
     private SnsConfigurationNestedConfiguration configuration;
@@ -101,10 +106,6 @@ public class SnsComponentConfiguration
     public static class SnsConfigurationNestedConfiguration {
         public static final Class CAMEL_NESTED_CLASS = org.apache.camel.component.aws.sns.SnsConfiguration.class;
         /**
-         * The region with which the AWS-SNS client wants to work with.
-         */
-        private String amazonSNSEndpoint;
-        /**
          * The subject which is used if the message header 'CamelAwsSnsSubject'
          * is not present.
          */
@@ -137,17 +138,18 @@ public class SnsComponentConfiguration
          * The message structure to use such as json
          */
         private String messageStructure;
+        /**
+         * To define a proxy host when instantiating the SNS client
+         */
         private String proxyHost;
+        /**
+         * To define a proxy port when instantiating the SNS client
+         */
         private Integer proxyPort;
+        /**
+         * The region in which SNS client needs to work
+         */
         private String region;
-
-        public String getAmazonSNSEndpoint() {
-            return amazonSNSEndpoint;
-        }
-
-        public void setAmazonSNSEndpoint(String amazonSNSEndpoint) {
-            this.amazonSNSEndpoint = amazonSNSEndpoint;
-        }
 
         public String getSubject() {
             return subject;

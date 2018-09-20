@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.github.dozermapper.core.Mapper;
+import com.github.dozermapper.core.metadata.ClassMappingMetadata;
+import com.github.dozermapper.core.metadata.MappingMetadata;
+import com.github.dozermapper.core.util.DozerClassLoader;
 import org.apache.camel.CamelContext;
 import org.apache.camel.CamelContextAware;
 import org.apache.camel.TypeConverter;
@@ -30,14 +34,10 @@ import org.apache.camel.spi.TypeConverterRegistry;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.ResourceHelper;
-import org.dozer.Mapper;
-import org.dozer.metadata.ClassMappingMetadata;
-import org.dozer.metadata.MappingMetadata;
-import org.dozer.util.DozerClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.dozer.classmap.MappingDirection.ONE_WAY;
+import static com.github.dozermapper.core.classmap.MappingDirection.ONE_WAY;
 
 /**
  * <code>DozerTypeConverterLoader</code> provides the mechanism for registering
@@ -197,14 +197,14 @@ public class DozerTypeConverterLoader extends ServiceSupport implements CamelCon
      * Lookup the dozer {@link Mapper} to be used.
      */
     protected Map<String, Mapper> lookupDozerBeanMappers() {
-        return new HashMap<String, Mapper>(camelContext.getRegistry().findByTypeWithName(Mapper.class));
+        return new HashMap<>(camelContext.getRegistry().findByTypeWithName(Mapper.class));
     }
 
     /**
      * Lookup the dozer {@link DozerBeanMapperConfiguration} to be used.
      */
     protected Map<String, DozerBeanMapperConfiguration> lookupDozerBeanMapperConfigurations() {
-        return new HashMap<String, DozerBeanMapperConfiguration>(camelContext.getRegistry().findByTypeWithName(DozerBeanMapperConfiguration.class));
+        return new HashMap<>(camelContext.getRegistry().findByTypeWithName(DozerBeanMapperConfiguration.class));
     }
 
     protected void registerClassMaps(TypeConverterRegistry registry, String dozerId, Mapper dozer, List<ClassMappingMetadata> all) {
@@ -239,7 +239,7 @@ public class DozerTypeConverterLoader extends ServiceSupport implements CamelCon
     /**
      * Sets the {@link CamelContext} <b>and also</b> initializes this loader.
      * <p/>
-     * The reason why {@link #init(org.apache.camel.CamelContext, org.dozer.Mapper)} is also called
+     * The reason why {@link #init(org.apache.camel.CamelContext, com.github.dozermapper.core.Mapper)} is also called
      * is because making using Dozer in Spring XML files easier, as no need to use the init-method attribute.
      *
      * @param camelContext the CamelContext

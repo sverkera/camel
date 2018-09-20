@@ -92,7 +92,7 @@ public class PropertiesComponent extends UriEndpointComponent {
     private static final Logger LOG = LoggerFactory.getLogger(PropertiesComponent.class);
     @SuppressWarnings("unchecked")
     private final Map<CacheKey, Properties> cacheMap = LRUCacheFactory.newLRUSoftCache(1000);
-    private final Map<String, PropertiesFunction> functions = new HashMap<String, PropertiesFunction>();
+    private final Map<String, PropertiesFunction> functions = new HashMap<>();
     private PropertiesResolver propertiesResolver = new DefaultPropertiesResolver(this);
     private PropertiesParser propertiesParser = new DefaultPropertiesParser(this);
     private boolean isDefaultCreated;
@@ -543,11 +543,11 @@ public class PropertiesComponent extends UriEndpointComponent {
         List<PropertiesLocation> answer = new ArrayList<>();
 
         for (PropertiesLocation location : locations) {
-            LOG.trace("Parsing location: {} ", location);
+            LOG.trace("Parsing location: {}", location);
 
             try {
                 String path = FilePathResolver.resolvePath(location.getPath());
-                LOG.debug("Parsed location: {} ", path);
+                LOG.debug("Parsed location: {}", path);
                 if (ObjectHelper.isNotEmpty(path)) {
                     answer.add(new PropertiesLocation(
                         location.getResolver(),

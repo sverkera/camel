@@ -66,6 +66,16 @@ public class KinesisFirehoseEndpoint extends DefaultEndpoint {
             : createKinesisFirehoseClient();
                
     }
+    
+    @Override
+    public void doStop() throws Exception {
+        if (ObjectHelper.isEmpty(configuration.getAmazonKinesisFirehoseClient())) {
+            if (kinesisFirehoseClient != null) {
+                kinesisFirehoseClient.shutdown();
+            }
+        }
+        super.doStop();
+    }
 
     @Override
     public boolean isSingleton() {

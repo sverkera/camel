@@ -35,6 +35,11 @@ public class LambdaComponentConfiguration
             ComponentConfigurationPropertiesCommon {
 
     /**
+     * Whether to enable auto configuration of the aws-lambda component. This is
+     * enabled by default.
+     */
+    private Boolean enabled;
+    /**
      * The AWS Lambda default configuration
      */
     private LambdaConfigurationNestedConfiguration configuration;
@@ -122,15 +127,17 @@ public class LambdaComponentConfiguration
          */
         private String region;
         /**
-         * The AWS-Lambda client to use.
-         */
-        private String awsLambdaEndpoint;
-        /**
          * The operation to perform. It can be listFunctions, getFunction,
          * createFunction, deleteFunction or invokeFunction
          */
         private LambdaOperations operation;
+        /**
+         * To define a proxy host when instantiating the Lambda client
+         */
         private String proxyHost;
+        /**
+         * To define a proxy port when instantiating the Lambda client
+         */
         private Integer proxyPort;
 
         public String getFunction() {
@@ -171,14 +178,6 @@ public class LambdaComponentConfiguration
 
         public void setRegion(String region) {
             this.region = region;
-        }
-
-        public String getAwsLambdaEndpoint() {
-            return awsLambdaEndpoint;
-        }
-
-        public void setAwsLambdaEndpoint(String awsLambdaEndpoint) {
-            this.awsLambdaEndpoint = awsLambdaEndpoint;
         }
 
         public LambdaOperations getOperation() {

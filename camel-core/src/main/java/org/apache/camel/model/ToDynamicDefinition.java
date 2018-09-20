@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -34,7 +35,7 @@ import org.apache.camel.processor.SendDynamicProcessor;
 import org.apache.camel.spi.Language;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.RouteContext;
-import org.apache.camel.util.ObjectHelper;
+import org.apache.camel.util.StringHelper;
 
 /**
  * Sends the message to a dynamic endpoint
@@ -60,6 +61,8 @@ public class ToDynamicDefinition extends NoOutputDefinition<ToDynamicDefinition>
     private Integer cacheSize;
     @XmlAttribute
     private Boolean ignoreInvalidEndpoint;
+    @XmlAttribute @Metadata(defaultValue = "true")
+    private Boolean allowOptimisedComponents;
 
     public ToDynamicDefinition() {
     }
@@ -70,7 +73,7 @@ public class ToDynamicDefinition extends NoOutputDefinition<ToDynamicDefinition>
 
     @Override
     public Processor createProcessor(RouteContext routeContext) throws Exception {
-        ObjectHelper.notEmpty(uri, "uri", this);
+        StringHelper.notEmpty(uri, "uri", this);
 
         Expression exp = createExpression(routeContext);
 
@@ -87,15 +90,15 @@ public class ToDynamicDefinition extends NoOutputDefinition<ToDynamicDefinition>
     }
 
     protected Expression createExpression(RouteContext routeContext) {
-        List<Expression> list = new ArrayList<Expression>();
+        List<Expression> list = new ArrayList<>();
 
         String[] parts = safeSplitRaw(uri);
         for (String part : parts) {
             // the part may have optional language to use, so you can mix languages
-            String value = ObjectHelper.after(part, "language:");
+            String value = StringHelper.after(part, "language:");
             if (value != null) {
-                String before = ObjectHelper.before(value, ":");
-                String after = ObjectHelper.after(value, ":");
+                String before = StringHelper.before(value, ":");
+                String after = StringHelper.after(value, ":");
                 if (before != null && after != null) {
                     // maybe its a language, must have language: as prefix
                     try {
@@ -124,6 +127,11 @@ public class ToDynamicDefinition extends NoOutputDefinition<ToDynamicDefinition>
         }
 
         return exp;
+    }
+
+    @Override
+    public String getShortName() {
+        return "toD";
     }
 
     @Override
@@ -160,6 +168,16 @@ public class ToDynamicDefinition extends NoOutputDefinition<ToDynamicDefinition>
      */
     public ToDynamicDefinition ignoreInvalidEndpoint() {
         setIgnoreInvalidEndpoint(true);
+        return this;
+    }
+
+    /**
+     * Whether to allow components to optimise toD if they are {@link org.apache.camel.spi.SendDynamicAware}.
+     *
+     * @return the builder
+     */
+    public ToDynamicDefinition allowOptimisedComponents(boolean allowOptimisedComponents) {
+        setAllowOptimisedComponents(allowOptimisedComponents);
         return this;
     }
 
@@ -201,6 +219,14 @@ public class ToDynamicDefinition extends NoOutputDefinition<ToDynamicDefinition>
         this.ignoreInvalidEndpoint = ignoreInvalidEndpoint;
     }
 
+    public Boolean getAllowOptimisedComponents() {
+        return allowOptimisedComponents;
+    }
+
+    public void setAllowOptimisedComponents(Boolean allowOptimisedComponents) {
+        this.allowOptimisedComponents = allowOptimisedComponents;
+    }
+
     // Utilities
     // -------------------------------------------------------------------------
 
@@ -215,7 +241,7 @@ public class ToDynamicDefinition extends NoOutputDefinition<ToDynamicDefinition>
 
     private static List<Pair> checkRAW(String s) {
         Matcher matcher = RAW_PATTERN.matcher(s);
-        List<Pair> answer = new ArrayList<Pair>();
+        List<Pair> answer = new ArrayList<>();
         // Check all occurrences
         while (matcher.find()) {
             answer.add(new Pair(matcher.start(), matcher.end() - 1));

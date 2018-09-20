@@ -164,7 +164,7 @@ public final class ServiceHelper {
                 stopService(value);
             } catch (Exception e) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Caught exception stopping service: " + value, e);
+                    LOG.debug("Caught exception stopping service: {}", value, e);
                 }
                 if (firstException == null) {
                     firstException = e;
@@ -242,7 +242,7 @@ public final class ServiceHelper {
                 }
             } catch (Exception e) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Caught exception shutting down service: " + value, e);
+                    LOG.debug("Caught exception shutting down service: {}", value, e);
                 }
                 if (firstException == null) {
                     firstException = e;
@@ -275,7 +275,7 @@ public final class ServiceHelper {
                     resumeService(service);
                 } catch (Exception e) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Caught exception resuming service: " + service, e);
+                        LOG.debug("Caught exception resuming service: {}", service, e);
                     }
                     if (firstException == null) {
                         firstException = e;
@@ -346,7 +346,7 @@ public final class ServiceHelper {
                     suspendService(service);
                 } catch (Exception e) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Caught exception suspending service: " + service, e);
+                        LOG.debug("Caught exception suspending service: {}", service, e);
                     }
                     if (firstException == null) {
                         firstException = e;
@@ -467,7 +467,7 @@ public final class ServiceHelper {
      * @return the services, including the parent service, and all its children
      */
     public static Set<Service> getChildServices(Service service, boolean includeErrorHandler) {
-        Set<Service> answer = new LinkedHashSet<Service>();
+        Set<Service> answer = new LinkedHashSet<>();
         doGetChildServices(answer, service, includeErrorHandler);
         return answer;
     }

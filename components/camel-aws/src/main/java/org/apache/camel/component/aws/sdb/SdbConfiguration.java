@@ -35,8 +35,6 @@ public class SdbConfiguration {
     @UriParam
     private String secretKey;
     @UriParam
-    private String amazonSdbEndpoint;
-    @UriParam
     private Integer maxNumberOfDomains;
     @UriParam
     private boolean consistentRead;
@@ -48,17 +46,6 @@ public class SdbConfiguration {
     private Integer proxyPort;
     @UriParam
     private String region;
-
-    /**
-     * The region with which the AWS-SDB client wants to work with.
-     */
-    public void setAmazonSdbEndpoint(String amazonSdbEndpoint) {
-        this.amazonSdbEndpoint = amazonSdbEndpoint;
-    }
-
-    public String getAmazonSdbEndpoint() {
-        return amazonSdbEndpoint;
-    }
 
     public String getAccessKey() {
         return accessKey;
@@ -137,35 +124,35 @@ public class SdbConfiguration {
         this.consistentRead = consistentRead;
     }
     
-    /**
-     * To define a proxy host when instantiating the SDB client
-     */
     public String getProxyHost() {
         return proxyHost;
     }
 
+    /**
+     * To define a proxy host when instantiating the SDB client
+     */
     public void setProxyHost(String proxyHost) {
         this.proxyHost = proxyHost;
+    }
+
+    public Integer getProxyPort() {
+        return proxyPort;
     }
 
     /**
      * To define a proxy port when instantiating the SDB client
      */
-    public Integer getProxyPort() {
-        return proxyPort;
-    }
-
     public void setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
     }
     
-    /**
-     * The region in which SDB client needs to work
-     */
     public String getRegion() {
         return region;
     }
 
+    /**
+     * The region in which SDB client needs to work
+     */
     public void setRegion(String region) {
         this.region = region;
     }

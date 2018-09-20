@@ -26,12 +26,11 @@ import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.component.mllp.MllpConstants;
 import org.apache.camel.component.mllp.MllpProtocolConstants;
-import org.apache.camel.component.mllp.internal.MllpSocketBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A Camel Processor for generating HL7 Acknowledgements.
+ * An example of a Camel Processor for generating HL7 Acknowledgements.
  */
 public class Hl7AcknowledgementGenerator implements Processor {
     private static final Logger LOG = LoggerFactory.getLogger(Hl7AcknowledgementGenerator.class);
@@ -98,11 +97,11 @@ public class Hl7AcknowledgementGenerator implements Processor {
         }
 
         if (-1 == endOfMSH) {
-            throw new Hl7AcknowledgementGenerationException("Failed to find the end of the  MSH Segment while attempting to generate response", hl7MessageBytes);
+            throw new Hl7AcknowledgementGenerationException("Failed to find the end of the MSH Segment while attempting to generate response", hl7MessageBytes);
         }
 
         if (8 > fieldSeparatorIndexes.size()) {
-            throw new Hl7AcknowledgementGenerationException("Insufficient number of fields in after MSH-2 in MSH to generate a response - 8 are required but "
+            throw new Hl7AcknowledgementGenerationException("Insufficient number of fields in MSH to generate a response - 8 are required but "
                 + fieldSeparatorIndexes.size() + " " + "were found", hl7MessageBytes);
         }
 
